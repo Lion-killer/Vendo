@@ -18,6 +18,9 @@ frontend/android/local.properties
 frontend/android/.idea/
 frontend/android/app/src/main/assets/public/
 
+# 1C metadata export (reference only, large; not part of the app)
+TradeUkr/
+
 # Logs
 *.log
 npm-debug.log*
