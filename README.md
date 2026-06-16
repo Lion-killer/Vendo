@@ -1,4 +1,4 @@
-# TradeRep
+# Vendo
 
 Мобільний застосунок для торгових представників (B2B) — каталог товарів, контрагенти та оформлення замовлень «у полі». Прототип з українським інтерфейсом, **offline-first** логікою та збіркою під Android через Capacitor.
 
@@ -15,7 +15,7 @@
 ## Структура
 
 ```
-TradeRep/
+Vendo/
 ├─ backend/            # REST API над SQLite
 │  ├─ server.js        # точка входу (порт 3000)
 │  ├─ db.js            # схема SQLite + одноразовий сід із db.json
@@ -51,7 +51,7 @@ cd backend
 npm install
 npm start
 ```
-При першому запуску `db.js` створює `data/traderep.db` і сідить його з `data/db.json`.
+При першому запуску `db.js` створює `data/vendo.db` і сідить його з `data/db.json`.
 
 **Frontend:**
 ```bash
@@ -99,5 +99,5 @@ npx cap sync android   # синхронізувати веб-збірку в And
 Зупиніть backend і видаліть файли БД — вони пересіються з `db.json` при наступному запуску:
 
 ```bash
-rm backend/data/traderep.db backend/data/traderep.db-wal backend/data/traderep.db-shm
+rm backend/data/vendo.db backend/data/vendo.db-wal backend/data/vendo.db-shm
 ```

@@ -6,9 +6,9 @@ frontend/dist/
 frontend/build_err.txt
 
 # SQLite database (runtime data; re-seeds from db.json)
-backend/data/traderep.db
-backend/data/traderep.db-shm
-backend/data/traderep.db-wal
+backend/data/vendo.db
+backend/data/vendo.db-shm
+backend/data/vendo.db-wal
 
 # Capacitor / Android build artifacts
 frontend/android/.gradle/

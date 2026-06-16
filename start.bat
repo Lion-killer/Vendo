@@ -1,16 +1,16 @@
 @echo off
 echo ==============================================
-echo        Starting TradeRep Application
+echo        Starting Vendo Application
 echo ==============================================
 echo.
 
 echo [1/2] Starting Backend API Server (Port 3000)...
-start "TradeRep Backend" cmd /k "cd backend && npm start"
+start "Vendo Backend" cmd /k "cd backend && npm start"
 
 timeout /t 2 /nobreak > nul
 
 echo [2/2] Starting Frontend Vite Server...
-start "TradeRep Frontend" cmd /k "cd frontend && npm run dev -- --host"
+start "Vendo Frontend" cmd /k "cd frontend && npm run dev -- --host"
 
 echo.
 echo All servers are starting up! 

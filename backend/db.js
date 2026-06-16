@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 
-const DB_FILE = path.join(__dirname, 'data', 'traderep.db');
+const DB_FILE = path.join(__dirname, 'data', 'vendo.db');
 const SEED_FILE = path.join(__dirname, 'data', 'db.json');
 
 const db = new Database(DB_FILE);

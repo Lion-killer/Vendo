@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'traderep_local_orders';
+const STORAGE_KEY = 'vendo_local_orders';
 
 export const getLocalOrders = () => {
     try {

@@ -1,4 +1,4 @@
-package com.traderep.app;
+package com.vendo.app;
 
 import com.getcapacitor.BridgeActivity;
 

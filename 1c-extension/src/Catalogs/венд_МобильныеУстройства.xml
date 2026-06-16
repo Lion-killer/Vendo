@@ -2,29 +2,29 @@
 <MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xen="http://v8.1c.ru/8.3/xcf/enums" xmlns:xpr="http://v8.1c.ru/8.3/xcf/predef" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
 	<Catalog uuid="050b36b5-d9be-49ea-99da-c3b943ec16e6">
 		<InternalInfo>
-			<xr:GeneratedType name="CatalogObject.трепр_МобильныеУстройства" category="Object">
+			<xr:GeneratedType name="CatalogObject.венд_МобильныеУстройства" category="Object">
 				<xr:TypeId>160f019e-0d40-4ccf-8380-11475ba76aa3</xr:TypeId>
 				<xr:ValueId>357db2a9-74a4-43ec-b7fa-b24cabf41769</xr:ValueId>
 			</xr:GeneratedType>
-			<xr:GeneratedType name="CatalogRef.трепр_МобильныеУстройства" category="Ref">
+			<xr:GeneratedType name="CatalogRef.венд_МобильныеУстройства" category="Ref">
 				<xr:TypeId>3deea5e5-2252-4ef6-a441-fc9d2b10ac2a</xr:TypeId>
 				<xr:ValueId>f588f5df-6a66-4322-95a1-c148c8f6bdda</xr:ValueId>
 			</xr:GeneratedType>
-			<xr:GeneratedType name="CatalogSelection.трепр_МобильныеУстройства" category="Selection">
+			<xr:GeneratedType name="CatalogSelection.венд_МобильныеУстройства" category="Selection">
 				<xr:TypeId>8d627861-fbbf-48c0-8c8e-8101743aa0cd</xr:TypeId>
 				<xr:ValueId>9bef609e-5a93-4bd7-b740-0af5e005f6bc</xr:ValueId>
 			</xr:GeneratedType>
-			<xr:GeneratedType name="CatalogList.трепр_МобильныеУстройства" category="List">
+			<xr:GeneratedType name="CatalogList.венд_МобильныеУстройства" category="List">
 				<xr:TypeId>19212010-b553-46d0-8008-08df092a235d</xr:TypeId>
 				<xr:ValueId>08bf71dc-f5e1-49ef-b30f-ccdc91b4e9cc</xr:ValueId>
 			</xr:GeneratedType>
-			<xr:GeneratedType name="CatalogManager.трепр_МобильныеУстройства" category="Manager">
+			<xr:GeneratedType name="CatalogManager.венд_МобильныеУстройства" category="Manager">
 				<xr:TypeId>ab031e93-8ad7-442e-8621-b180f16bbffd</xr:TypeId>
 				<xr:ValueId>e210c39c-b9f0-457b-b49a-fcc8a5c61f31</xr:ValueId>
 			</xr:GeneratedType>
 		</InternalInfo>
 		<Properties>
-			<Name>трепр_МобильныеУстройства</Name>
+			<Name>венд_МобильныеУстройства</Name>
 			<Synonym>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
@@ -290,8 +290,8 @@
 			<QuickChoice>false</QuickChoice>
 			<ChoiceMode>BothWays</ChoiceMode>
 			<InputByString>
-				<xr:Field>Catalog.трепр_МобильныеУстройства.StandardAttribute.Description</xr:Field>
-				<xr:Field>Catalog.трепр_МобильныеУстройства.StandardAttribute.Code</xr:Field>
+				<xr:Field>Catalog.венд_МобильныеУстройства.StandardAttribute.Description</xr:Field>
+				<xr:Field>Catalog.венд_МобильныеУстройства.StandardAttribute.Code</xr:Field>
 			</InputByString>
 			<SearchStringModeOnInputByString>Begin</SearchStringModeOnInputByString>
 			<FullTextSearchOnInputByString>DontUse</FullTextSearchOnInputByString>
@@ -489,11 +489,11 @@
 			</Attribute>
 			<TabularSection uuid="89781d48-6727-455a-9479-4041bf6f2db6">
 				<InternalInfo>
-					<xr:GeneratedType name="CatalogTabularSection.трепр_МобильныеУстройства.Контрагенты" category="TabularSection">
+					<xr:GeneratedType name="CatalogTabularSection.венд_МобильныеУстройства.Контрагенты" category="TabularSection">
 						<xr:TypeId>219d6561-baba-4a52-920a-7c0235bd060a</xr:TypeId>
 						<xr:ValueId>3e74695b-aef4-463c-9312-b9e42071b25f</xr:ValueId>
 					</xr:GeneratedType>
-					<xr:GeneratedType name="CatalogTabularSectionRow.трепр_МобильныеУстройства.Контрагенты" category="TabularSectionRow">
+					<xr:GeneratedType name="CatalogTabularSectionRow.венд_МобильныеУстройства.Контрагенты" category="TabularSectionRow">
 						<xr:TypeId>762848e0-3676-47d8-b1d9-18a818976490</xr:TypeId>
 						<xr:ValueId>00e8c276-3981-4d2a-92d0-8c2c33847e8c</xr:ValueId>
 					</xr:GeneratedType>
@@ -581,11 +581,11 @@
 			</TabularSection>
 			<TabularSection uuid="3ad2449f-bc54-4c63-8767-ddb1d23c0ae8">
 				<InternalInfo>
-					<xr:GeneratedType name="CatalogTabularSection.трепр_МобильныеУстройства.Товары" category="TabularSection">
+					<xr:GeneratedType name="CatalogTabularSection.венд_МобильныеУстройства.Товары" category="TabularSection">
 						<xr:TypeId>1775754b-3818-491d-a15c-a892969e2e01</xr:TypeId>
 						<xr:ValueId>d9287000-f56d-4362-82e5-8a393013547b</xr:ValueId>
 					</xr:GeneratedType>
-					<xr:GeneratedType name="CatalogTabularSectionRow.трепр_МобильныеУстройства.Товары" category="TabularSectionRow">
+					<xr:GeneratedType name="CatalogTabularSectionRow.венд_МобильныеУстройства.Товары" category="TabularSectionRow">
 						<xr:TypeId>daea45be-a54b-40ad-9f3d-300a4683bc7e</xr:TypeId>
 						<xr:ValueId>0df38204-4c4a-4def-888e-c18c45faa711</xr:ValueId>
 					</xr:GeneratedType>

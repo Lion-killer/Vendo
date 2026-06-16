@@ -1,5 +1,5 @@
 {
-  "name": "traderep-frontend",
+  "name": "vendo-frontend",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",

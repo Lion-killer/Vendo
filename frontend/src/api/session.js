@@ -1,7 +1,7 @@
 // Збереження сесії логіну (#24). Дозволяє пропускати екран автентифікації при
 // повторному запуску. Зараз тримає mock-дані (ім'я, роль, токен); сумісно з
 // майбутньою real-auth за GUID мобільного пристрою (#4).
-const STORAGE_KEY = 'traderep_session';
+const STORAGE_KEY = 'vendo_session';
 
 export const getSession = () => {
     try {

@@ -33,7 +33,7 @@
 		</InternalInfo>
 		<Properties>
 			<ObjectBelonging>Adopted</ObjectBelonging>
-			<Name>TradeRep</Name>
+			<Name>Vendo</Name>
 			<Synonym>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
@@ -43,7 +43,7 @@
 			<Comment />
 			<ConfigurationExtensionPurpose>AddOn</ConfigurationExtensionPurpose>
 			<KeepMappingToExtendedConfigurationObjectsByIDs>true</KeepMappingToExtendedConfigurationObjectsByIDs>
-			<NamePrefix>трепр_</NamePrefix>
+			<NamePrefix>венд_</NamePrefix>
 			<ConfigurationExtensionCompatibilityMode>Version8_3_19</ConfigurationExtensionCompatibilityMode>
 			<DefaultRunMode>ManagedApplication</DefaultRunMode>
 			<UsePurposes>
@@ -51,7 +51,7 @@
 			</UsePurposes>
 			<ScriptVariant>Russian</ScriptVariant>
 			<DefaultRoles>
-				<xr:Item xsi:type="xr:MDObjectRef">Role.трепр_ОсновнаяРоль</xr:Item>
+				<xr:Item xsi:type="xr:MDObjectRef">Role.венд_ОсновнаяРоль</xr:Item>
 			</DefaultRoles>
 			<Vendor></Vendor>
 			<Version>1.0.0.1</Version>
@@ -65,9 +65,9 @@
 		</Properties>
 		<ChildObjects>
 			<Language>Русский</Language>
-			<Role>трепр_ОсновнаяРоль</Role>
-			<Catalog>трепр_МобильныеУстройства</Catalog>
-			<HTTPService>трепр_МобильноеПриложение</HTTPService>
+			<Role>венд_ОсновнаяРоль</Role>
+			<Catalog>венд_МобильныеУстройства</Catalog>
+			<HTTPService>венд_МобильноеПриложение</HTTPService>
 		</ChildObjects>
 	</Configuration>
 </MetaDataObject>
