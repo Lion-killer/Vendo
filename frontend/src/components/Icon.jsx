@@ -32,6 +32,7 @@ export const Icon = ({ name, size = 22, color = "currentColor", style = {} }) =>
         info: <><circle cx="12" cy="12" r="10" fill="none" stroke={color} strokeWidth="1.8" /><line x1="12" y1="8" x2="12" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round" /><line x1="12" y1="16" x2="12.01" y2="16" stroke={color} strokeWidth="2.5" strokeLinecap="round" /></>,
         building: <><rect x="4" y="2" width="16" height="20" rx="1" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" /><path d="M9 22V12h6v10M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01" stroke={color} strokeWidth="1.8" strokeLinecap="round" /></>,
         mapPin: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" /><circle cx="12" cy="10" r="3" fill="none" stroke={color} strokeWidth="1.8" /></>,
+        logout: <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><polyline points="16 17 21 12 16 7" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><line x1="21" y1="12" x2="9" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round" /></>,
     };
     return (
         <svg width={size} height={size} viewBox="0 0 24 24" style={style} xmlns="http://www.w3.org/2000/svg">

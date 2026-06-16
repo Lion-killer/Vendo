@@ -15,7 +15,7 @@ export const LoginScreen = ({ t, onLogin }) => {
             const res = await auth();
             if (res.success) {
                 setLoading(false); setScanned(true);
-                setTimeout(() => onLogin(res.user.name), 800);
+                setTimeout(() => onLogin(res.user.name, res.token), 800);
             } else {
                 throw new Error("Invalid token");
             }

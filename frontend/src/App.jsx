@@ -9,12 +9,14 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, pingServer } from './api/client';
+import { getSession, saveSession, clearSession } from './api/session';
 
 export default function App() {
   const [isDark, setIsDark] = useState(false);
-  const [screen, setScreen] = useState("login");
+  // Відновлюємо збережену сесію (#24): якщо вона є, пропускаємо екран логіну.
+  const [screen, setScreen] = useState(() => getSession() ? "dashboard" : "login");
   const [isOnline, setIsOnline] = useState(true);
-  const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState(() => getSession()?.userName || "");
   const [orderItems, setOrderItems] = useState([]);
   const [editOrderId, setEditOrderId] = useState(null);
   const [editCustomer, setEditCustomer] = useState(null);
@@ -100,9 +102,20 @@ export default function App() {
     };
   }, []);
 
-  const handleLogin = (name) => {
-    setUserName(name || "Користувач");
+  const handleLogin = (name, token) => {
+    const resolvedName = name || "Користувач";
+    saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
+    setUserName(resolvedName);
     setScreen("dashboard");
+  };
+
+  const handleLogout = () => {
+    clearSession();
+    setUserName("");
+    setOrderItems([]);
+    setEditOrderId(null);
+    setEditCustomer(null);
+    setScreen("login");
   };
 
   const handleNav = (s, params = {}) => {
@@ -154,7 +167,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} refreshOrders={loadData} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} refreshOrders={loadData} onLogout={handleLogout} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItemsCount={orderItems.length} editOrderId={editOrderId} editCustomer={editCustomer} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} />}

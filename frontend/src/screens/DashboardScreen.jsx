@@ -4,9 +4,10 @@ import { Snackbar } from '../components/Shared';
 import { createOrder, updateOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder } from '../api/localOrders';
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, refreshOrders }) => {
+export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, refreshOrders, onLogout }) => {
     const [syncing, setSyncing] = useState(false);
     const [snack, setSnack] = useState("");
+    const [showProfile, setShowProfile] = useState(false);
 
     const doSync = async () => {
         if (!isOnline) {
@@ -72,15 +73,15 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, refreshO
             {/* Header */}
             <div style={{ background: `linear-gradient(135deg, ${t.primaryDark} 0%, ${t.primary} 100%)`, padding: "20px 20px 28px", paddingTop: "max(20px, env(safe-area-inset-top))" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
                         <div style={{ width: 42, height: 42, borderRadius: 14, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <Icon name="user" size={22} color="#fff" />
                         </div>
                         <div>
                             <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, margin: 0, fontWeight: 600, letterSpacing: .8, textTransform: "uppercase" }}>Торговий представник</p>
-                            <p style={{ color: "#fff", fontSize: 16, margin: 0, fontWeight: 800 }}>{userName}</p>
+                            <p style={{ color: "#fff", fontSize: 16, margin: 0, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 }}>{userName}<Icon name="chevronDown" size={16} color="rgba(255,255,255,0.7)" /></p>
                         </div>
-                    </div>
+                    </button>
                     <button onClick={doSync} style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <div style={{ animation: syncing ? "spin 1s linear infinite" : "none" }}>
                             <Icon name="sync" size={20} color="#fff" />
@@ -149,6 +150,28 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, refreshO
                     <span style={{ color: "#fff", fontSize: 15, fontWeight: 800, letterSpacing: .3 }}>Нове замовлення</span>
                 </button>
             </div>
+            {/* Profile sheet */}
+            {showProfile && (
+                <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "20px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
+                        <div style={{ width: 40, height: 4, borderRadius: 2, background: t.border, margin: "0 auto 16px" }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: "0 4px" }}>
+                            <div style={{ width: 52, height: 52, borderRadius: 16, background: t.chip, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Icon name="user" size={26} color={t.primary} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                                <p style={{ color: t.textMuted, fontSize: 11, margin: 0, fontWeight: 700, textTransform: "uppercase", letterSpacing: .5 }}>Торговий представник</p>
+                                <p style={{ color: t.text, fontSize: 17, margin: "2px 0 0", fontWeight: 800 }}>{userName}</p>
+                            </div>
+                        </div>
+                        <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.error + "15", border: `1px solid ${t.error}33`, color: t.error, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
+                            <Icon name="logout" size={20} color={t.error} />
+                            Вийти
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <Snackbar msg={snack} t={t} />
         </div>
     );
