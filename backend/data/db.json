@@ -1,0 +1,222 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Молоко ультрапастеризоване 2.5%",
+      "sku": "ML-001",
+      "price": 42.5,
+      "stock": 284,
+      "unit": "л",
+      "category": "Молочні продукти",
+      "img": "🥛"
+    },
+    {
+      "id": 2,
+      "name": "Масло вершкове 82%",
+      "sku": "MB-002",
+      "price": 98,
+      "stock": 56,
+      "unit": "пач",
+      "category": "Молочні продукти",
+      "img": "🧈"
+    },
+    {
+      "id": 3,
+      "name": "Сир твердий Едам 45%",
+      "sku": "CH-003",
+      "price": 189,
+      "stock": 12,
+      "unit": "кг",
+      "category": "Молочні продукти",
+      "img": "🧀"
+    },
+    {
+      "id": 4,
+      "name": "Хліб білий формовий",
+      "sku": "BR-001",
+      "price": 28,
+      "stock": 0,
+      "unit": "шт",
+      "category": "Хлібобулочні",
+      "img": "🍞"
+    },
+    {
+      "id": 5,
+      "name": "Батон нарізний 400г",
+      "sku": "BR-002",
+      "price": 22.5,
+      "stock": 145,
+      "unit": "шт",
+      "category": "Хлібобулочні",
+      "img": "🥖"
+    },
+    {
+      "id": 6,
+      "name": "Вода мінеральна 1.5л",
+      "sku": "WA-001",
+      "price": 18,
+      "stock": 512,
+      "unit": "пл",
+      "category": "Напої",
+      "img": "💧"
+    },
+    {
+      "id": 7,
+      "name": "Сік яблучний 1л",
+      "sku": "JU-001",
+      "price": 52,
+      "stock": 88,
+      "unit": "пл",
+      "category": "Напої",
+      "img": "🧃"
+    }
+  ],
+  "customers": [
+    {
+      "id": 1,
+      "name": "ТОВ \"Фуршет Плюс\"",
+      "code": "К-00142",
+      "city": "Київ",
+      "contact": "Іваненко Олег",
+      "phone": "+380 67 123 4567",
+      "debt": 12500,
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "name": "ФОП Петренко В.М.",
+      "code": "К-00218",
+      "city": "Харків",
+      "contact": "Петренко Василь",
+      "phone": "+380 50 987 6543",
+      "debt": 0,
+      "status": "active"
+    },
+    {
+      "id": 3,
+      "name": "ТОВ \"АТБ-Маркет\"",
+      "code": "К-00305",
+      "city": "Дніпро",
+      "contact": "Коваленко Н.О.",
+      "phone": "+380 63 456 7890",
+      "debt": 3200,
+      "status": "active"
+    },
+    {
+      "id": 4,
+      "name": "Супермаркет \"Сільпо\"",
+      "code": "К-00401",
+      "city": "Одеса",
+      "contact": "Мороз Ірина",
+      "phone": "+380 44 321 0987",
+      "debt": 0,
+      "status": "vip"
+    },
+    {
+      "id": 5,
+      "name": "ТОВ \"Billa Україна\"",
+      "code": "К-00488",
+      "city": "Львів",
+      "contact": "Шевченко Т.Г.",
+      "phone": "+380 32 234 5678",
+      "debt": 7800,
+      "status": "active"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Молочні продукти",
+      "icon": "🥛",
+      "count": 24,
+      "expanded": false
+    },
+    {
+      "id": 2,
+      "name": "Хлібобулочні",
+      "icon": "🍞",
+      "count": 18,
+      "expanded": false
+    },
+    {
+      "id": 3,
+      "name": "Напої",
+      "icon": "🥤",
+      "count": 31,
+      "expanded": false
+    },
+    {
+      "id": 4,
+      "name": "М'ясні вироби",
+      "icon": "🥩",
+      "count": 15,
+      "expanded": false
+    },
+    {
+      "id": 5,
+      "name": "Кондитерські",
+      "icon": "🍰",
+      "count": 22,
+      "expanded": false
+    }
+  ],
+  "orders": [
+    {
+      "num": "ЗМ-2027",
+      "customerId": 1,
+      "date": "2026-06-16",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 6,
+          "qty": 3,
+          "price": 18
+        },
+        {
+          "productId": 2,
+          "qty": 10,
+          "price": 98
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2026",
+      "customerId": 1,
+      "date": "2026-03-05",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 2,
+          "qty": 11,
+          "price": 98
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2025",
+      "customerId": 5,
+      "date": "2026-03-05",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 1,
+          "qty": 6,
+          "price": 42.5
+        },
+        {
+          "productId": 2,
+          "qty": 3,
+          "price": 98
+        },
+        {
+          "productId": 3,
+          "qty": 5,
+          "price": 189
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "lastOrderSeq": 2031
+  }
+}

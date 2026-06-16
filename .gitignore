@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+frontend/build_err.txt
+
+# SQLite database (runtime data; re-seeds from db.json)
+backend/data/traderep.db
+backend/data/traderep.db-shm
+backend/data/traderep.db-wal
+
+# Capacitor / Android build artifacts
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/local.properties
+frontend/android/.idea/
+frontend/android/app/src/main/assets/public/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
