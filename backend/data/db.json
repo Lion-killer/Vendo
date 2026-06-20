@@ -2,124 +2,220 @@
   "products": [
     {
       "id": 1,
+      "name": "Сир твердий Едам 45%",
+      "sku": "CH-003",
+      "price": 189.0,
+      "stock": 12,
+      "unit": "кг",
+      "category": "Тверді сири",
+      "categoryId": 3,
+      "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
+    },
+    {
+      "id": 2,
+      "name": "Сир Гауда 48%",
+      "sku": "CH-008",
+      "price": 212.0,
+      "stock": 34,
+      "unit": "кг",
+      "category": "Тверді сири",
+      "categoryId": 3,
+      "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
+    },
+    {
+      "id": 3,
+      "name": "Сир Пармезан витриманий",
+      "sku": "CH-021",
+      "price": 498.0,
+      "stock": 6,
+      "unit": "кг",
+      "category": "Тверді сири",
+      "categoryId": 3,
+      "img": "https://www.themealdb.com/images/ingredients/Parmesan.png"
+    },
+    {
+      "id": 4,
+      "name": "Сир Моцарела 45%",
+      "sku": "CH-014",
+      "price": 164.0,
+      "stock": 48,
+      "unit": "кг",
+      "category": "М'які та розсольні",
+      "categoryId": 4,
+      "img": "https://www.themealdb.com/images/ingredients/Mozzarella.png"
+    },
+    {
+      "id": 5,
+      "name": "Сир Фета 50%",
+      "sku": "CH-017",
+      "price": 178.0,
+      "stock": 0,
+      "unit": "кг",
+      "category": "М'які та розсольні",
+      "categoryId": 4,
+      "img": "https://www.themealdb.com/images/ingredients/Feta.png"
+    },
+    {
+      "id": 6,
+      "name": "Сир плавлений Вершковий",
+      "sku": "CH-030",
+      "price": 44.0,
+      "stock": 120,
+      "unit": "шт",
+      "category": "Сири",
+      "categoryId": 2,
+      "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
+    },
+    {
+      "id": 7,
       "name": "Молоко ультрапастеризоване 2.5%",
       "sku": "ML-001",
       "price": 42.5,
       "stock": 284,
       "unit": "л",
       "category": "Молочні продукти",
-      "img": "🥛"
+      "categoryId": 1,
+      "img": "https://www.themealdb.com/images/ingredients/Milk.png"
     },
     {
-      "id": 2,
+      "id": 8,
+      "name": "Вершки 10% 500мл",
+      "sku": "ML-031",
+      "price": 63.0,
+      "stock": 92,
+      "unit": "пл",
+      "category": "Молочні продукти",
+      "categoryId": 1,
+      "img": "https://www.themealdb.com/images/ingredients/Cream.png"
+    },
+    {
+      "id": 9,
       "name": "Масло вершкове 82%",
       "sku": "MB-002",
-      "price": 98,
+      "price": 98.0,
       "stock": 56,
       "unit": "пач",
-      "category": "Молочні продукти",
-      "img": "🧈"
+      "category": "Масло та спреди",
+      "categoryId": 5,
+      "img": "https://www.themealdb.com/images/ingredients/Butter.png"
     },
     {
-      "id": 3,
-      "name": "Сир твердий Едам 45%",
-      "sku": "CH-003",
-      "price": 189,
-      "stock": 12,
-      "unit": "кг",
-      "category": "Молочні продукти",
-      "img": "🧀"
+      "id": 10,
+      "name": "Масло селянське 73%",
+      "sku": "MB-005",
+      "price": 72.0,
+      "stock": 88,
+      "unit": "пач",
+      "category": "Масло та спреди",
+      "categoryId": 5,
+      "img": "https://www.themealdb.com/images/ingredients/Butter.png"
     },
     {
-      "id": 4,
-      "name": "Хліб білий формовий",
-      "sku": "BR-001",
-      "price": 28,
-      "stock": 0,
-      "unit": "шт",
-      "category": "Хлібобулочні",
-      "img": "🍞"
+      "id": 11,
+      "name": "Рис довгозернистий 1кг",
+      "sku": "GR-001",
+      "price": 54.0,
+      "stock": 210,
+      "unit": "пач",
+      "category": "Крупи",
+      "categoryId": 7,
+      "img": "https://www.themealdb.com/images/ingredients/Rice.png"
     },
     {
-      "id": 5,
-      "name": "Батон нарізний 400г",
-      "sku": "BR-002",
-      "price": 22.5,
-      "stock": 145,
-      "unit": "шт",
-      "category": "Хлібобулочні",
-      "img": "🥖"
+      "id": 12,
+      "name": "Гречка ядриця 800г",
+      "sku": "GR-006",
+      "price": 61.0,
+      "stock": 175,
+      "unit": "пач",
+      "category": "Крупи",
+      "categoryId": 7,
+      "img": "https://www.themealdb.com/images/ingredients/Buckwheat.png"
     },
     {
-      "id": 6,
-      "name": "Вода мінеральна 1.5л",
+      "id": 13,
+      "name": "Олія соняшникова 1л",
+      "sku": "OL-001",
+      "price": 76.0,
+      "stock": 240,
+      "unit": "пл",
+      "category": "Бакалія",
+      "categoryId": 6,
+      "img": "https://www.themealdb.com/images/ingredients/Sunflower%20Oil.png"
+    },
+    {
+      "id": 14,
+      "name": "Вода мінеральна газ. 1.5л",
       "sku": "WA-001",
-      "price": 18,
+      "price": 18.0,
       "stock": 512,
       "unit": "пл",
-      "category": "Напої",
-      "img": "💧"
+      "category": "Вода",
+      "categoryId": 9,
+      "img": "https://www.themealdb.com/images/ingredients/Water.png"
     },
     {
-      "id": 7,
+      "id": 15,
+      "name": "Вода негаз. 1.5л",
+      "sku": "WA-004",
+      "price": 17.0,
+      "stock": 480,
+      "unit": "пл",
+      "category": "Вода",
+      "categoryId": 9,
+      "img": "https://www.themealdb.com/images/ingredients/Water.png"
+    },
+    {
+      "id": 16,
       "name": "Сік яблучний 1л",
       "sku": "JU-001",
-      "price": 52,
+      "price": 52.0,
       "stock": 88,
       "unit": "пл",
-      "category": "Напої",
-      "img": "🧃"
+      "category": "Соки",
+      "categoryId": 10,
+      "img": "https://www.themealdb.com/images/ingredients/Apple%20Juice.png"
     }
   ],
   "customers": [
     {
       "id": 1,
-      "name": "ТОВ \"Фуршет Плюс\"",
+      "name": "ТОВ «Фуршет Плюс»",
       "code": "К-00142",
       "city": "Київ",
-      "contact": "Іваненко Олег",
-      "phone": "+380 67 123 4567",
-      "debt": 12500,
+      "contact": "Іваненко І.",
+      "phone": "+380671112233",
+      "debt": 12500.0,
       "status": "active"
     },
     {
       "id": 2,
-      "name": "ФОП Петренко В.М.",
-      "code": "К-00218",
-      "city": "Харків",
-      "contact": "Петренко Василь",
-      "phone": "+380 50 987 6543",
-      "debt": 0,
+      "name": "АТБ-Маркет",
+      "code": "К-00098",
+      "city": "Дніпро",
+      "contact": "Петренко П.",
+      "phone": "+380505556677",
+      "debt": 0.0,
       "status": "active"
     },
     {
       "id": 3,
-      "name": "ТОВ \"АТБ-Маркет\"",
-      "code": "К-00305",
-      "city": "Дніпро",
-      "contact": "Коваленко Н.О.",
-      "phone": "+380 63 456 7890",
-      "debt": 3200,
+      "name": "Сільпо №14",
+      "code": "К-00076",
+      "city": "Львів",
+      "contact": "Коваль О.",
+      "phone": "+380638889900",
+      "debt": 3200.0,
       "status": "active"
     },
     {
       "id": 4,
-      "name": "Супермаркет \"Сільпо\"",
-      "code": "К-00401",
-      "city": "Одеса",
-      "contact": "Мороз Ірина",
-      "phone": "+380 44 321 0987",
-      "debt": 0,
-      "status": "vip"
-    },
-    {
-      "id": 5,
-      "name": "ТОВ \"Billa Україна\"",
-      "code": "К-00488",
-      "city": "Львів",
-      "contact": "Шевченко Т.Г.",
-      "phone": "+380 32 234 5678",
-      "debt": 7800,
+      "name": "ФОП Петренко В.М.",
+      "code": "К-00211",
+      "city": "Ірпінь",
+      "contact": "",
+      "phone": "",
+      "debt": 0.0,
       "status": "active"
     }
   ],
@@ -127,96 +223,118 @@
     {
       "id": 1,
       "name": "Молочні продукти",
-      "icon": "🥛",
-      "count": 24,
+      "parentId": null,
+      "icon": "",
+      "count": 0,
       "expanded": false
     },
     {
       "id": 2,
-      "name": "Хлібобулочні",
-      "icon": "🍞",
-      "count": 18,
+      "name": "Сири",
+      "parentId": 1,
+      "icon": "",
+      "count": 0,
       "expanded": false
     },
     {
       "id": 3,
-      "name": "Напої",
-      "icon": "🥤",
-      "count": 31,
+      "name": "Тверді сири",
+      "parentId": 2,
+      "icon": "",
+      "count": 0,
       "expanded": false
     },
     {
       "id": 4,
-      "name": "М'ясні вироби",
-      "icon": "🥩",
-      "count": 15,
+      "name": "М'які та розсольні",
+      "parentId": 2,
+      "icon": "",
+      "count": 0,
       "expanded": false
     },
     {
       "id": 5,
-      "name": "Кондитерські",
-      "icon": "🍰",
-      "count": 22,
+      "name": "Масло та спреди",
+      "parentId": 1,
+      "icon": "",
+      "count": 0,
+      "expanded": false
+    },
+    {
+      "id": 6,
+      "name": "Бакалія",
+      "parentId": null,
+      "icon": "",
+      "count": 0,
+      "expanded": false
+    },
+    {
+      "id": 7,
+      "name": "Крупи",
+      "parentId": 6,
+      "icon": "",
+      "count": 0,
+      "expanded": false
+    },
+    {
+      "id": 8,
+      "name": "Напої",
+      "parentId": null,
+      "icon": "",
+      "count": 0,
+      "expanded": false
+    },
+    {
+      "id": 9,
+      "name": "Вода",
+      "parentId": 8,
+      "icon": "",
+      "count": 0,
+      "expanded": false
+    },
+    {
+      "id": 10,
+      "name": "Соки",
+      "parentId": 8,
+      "icon": "",
+      "count": 0,
       "expanded": false
     }
   ],
   "orders": [
     {
-      "num": "ЗМ-2027",
+      "num": "ЗМ-2024",
       "customerId": 1,
-      "date": "2026-06-16",
+      "date": "2026-06-19",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 6,
-          "qty": 3,
-          "price": 18
-        },
-        {
-          "productId": 2,
+          "productId": 7,
           "qty": 10,
-          "price": 98
-        }
-      ]
-    },
-    {
-      "num": "ЗМ-2026",
-      "customerId": 1,
-      "date": "2026-03-05",
-      "status": "Відправлено",
-      "items": [
-        {
-          "productId": 2,
-          "qty": 11,
-          "price": 98
-        }
-      ]
-    },
-    {
-      "num": "ЗМ-2025",
-      "customerId": 5,
-      "date": "2026-03-05",
-      "status": "Відправлено",
-      "items": [
-        {
-          "productId": 1,
-          "qty": 6,
           "price": 42.5
         },
         {
-          "productId": 2,
-          "qty": 3,
-          "price": 98
-        },
+          "productId": 9,
+          "qty": 4,
+          "price": 98.0
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2022",
+      "customerId": 2,
+      "date": "2026-06-18",
+      "status": "Підтверджено",
+      "items": [
         {
-          "productId": 3,
-          "qty": 5,
-          "price": 189
+          "productId": 14,
+          "qty": 24,
+          "price": 18.0
         }
       ]
     }
   ],
   "meta": {
-    "lastOrderSeq": 2031
+    "lastOrderSeq": 2024
   }
 }

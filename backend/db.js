@@ -19,6 +19,7 @@ db.exec(`
         stock INTEGER NOT NULL DEFAULT 0,
         unit TEXT,
         category TEXT,
+        categoryId INTEGER,
         img TEXT
     );
 
@@ -36,6 +37,7 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
+        parentId INTEGER,
         icon TEXT,
         count INTEGER NOT NULL DEFAULT 0,
         expanded INTEGER NOT NULL DEFAULT 0
@@ -73,16 +75,16 @@ const seedIfEmpty = () => {
     const seed = JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
 
     const insertProduct = db.prepare(
-        `INSERT INTO products (id, name, sku, price, stock, unit, category, img)
-         VALUES (@id, @name, @sku, @price, @stock, @unit, @category, @img)`
+        `INSERT INTO products (id, name, sku, price, stock, unit, category, categoryId, img)
+         VALUES (@id, @name, @sku, @price, @stock, @unit, @category, @categoryId, @img)`
     );
     const insertCustomer = db.prepare(
         `INSERT INTO customers (id, name, code, city, contact, phone, debt, status)
          VALUES (@id, @name, @code, @city, @contact, @phone, @debt, @status)`
     );
     const insertCategory = db.prepare(
-        `INSERT INTO categories (id, name, icon, count, expanded)
-         VALUES (@id, @name, @icon, @count, @expanded)`
+        `INSERT INTO categories (id, name, parentId, icon, count, expanded)
+         VALUES (@id, @name, @parentId, @icon, @count, @expanded)`
     );
     const insertOrder = db.prepare(
         `INSERT INTO orders (num, customerId, date, status) VALUES (@num, @customerId, @date, @status)`
@@ -93,9 +95,9 @@ const seedIfEmpty = () => {
     const setMeta = db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`);
 
     const seedAll = db.transaction(() => {
-        (seed.products || []).forEach(p => insertProduct.run(p));
+        (seed.products || []).forEach(p => insertProduct.run({ ...p, categoryId: p.categoryId ?? null }));
         (seed.customers || []).forEach(c => insertCustomer.run(c));
-        (seed.categories || []).forEach(c => insertCategory.run({ ...c, expanded: c.expanded ? 1 : 0 }));
+        (seed.categories || []).forEach(c => insertCategory.run({ ...c, parentId: c.parentId ?? null, expanded: c.expanded ? 1 : 0 }));
         (seed.orders || []).forEach(o => {
             insertOrder.run({ num: o.num, customerId: o.customerId ?? null, date: o.date, status: o.status });
             (o.items || []).forEach(it => insertItem.run({
