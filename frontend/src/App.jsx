@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LIGHT, DARK } from './theme';
-import { Icon } from './components/Icon';
-import { PhoneFrame, BottomNav } from './components/Shared';
+import { BottomNav, OnlineIndicator } from './components/ui';
 import { LoginScreen } from './screens/LoginScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { CatalogScreen } from './screens/CatalogScreen';
@@ -11,8 +10,16 @@ import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, pingServer } from './api/client';
 import { getSession, saveSession, clearSession } from './api/session';
 
+// Тема: збережений вибір користувача (vendo_theme) має пріоритет; інакше — системна.
+const getInitialDark = () => {
+  const saved = localStorage.getItem('vendo_theme');
+  if (saved === 'dark') return true;
+  if (saved === 'light') return false;
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+};
+
 export default function App() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(getInitialDark);
   // Відновлюємо збережену сесію (#24): якщо вона є, пропускаємо екран логіну.
   const [screen, setScreen] = useState(() => getSession() ? "dashboard" : "login");
   const [isOnline, setIsOnline] = useState(true);
@@ -26,6 +33,21 @@ export default function App() {
   const [orders, setOrders] = useState([]);
 
   const t = isDark ? DARK : LIGHT;
+
+  // Поки користувач не обрав тему вручну — слідуємо за системною.
+  useEffect(() => {
+    if (localStorage.getItem('vendo_theme')) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = e => setIsDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const toggleTheme = () => setIsDark(d => {
+    const next = !d;
+    localStorage.setItem('vendo_theme', next ? 'dark' : 'light');
+    return next;
+  });
 
   const loadData = async () => {
     try {
@@ -139,10 +161,16 @@ export default function App() {
     setScreen(s);
   };
 
+  // Зміна кількості позиції в кошику. Додатна/від'ємна дельта; при <=0 — видалення.
   const handleAddToOrder = (product, qty) => {
     setOrderItems(prev => {
-      const existing = prev.findIndex(i => i.product.id === product.id);
-      if (existing >= 0) { const n = [...prev]; n[existing] = { ...n[existing], qty: n[existing].qty + qty }; return n; }
+      const i = prev.findIndex(it => it.product.id === product.id);
+      if (i >= 0) {
+        const nq = prev[i].qty + qty;
+        if (nq <= 0) return prev.filter((_, j) => j !== i);
+        const n = [...prev]; n[i] = { ...n[i], qty: nq }; return n;
+      }
+      if (qty <= 0) return prev;
       return [...prev, { product, qty }];
     });
   };
@@ -152,13 +180,12 @@ export default function App() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
-        button { -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; font-family: 'Nunito', sans-serif; background: ${t.bg}; color: ${t.text}; }
+        button { -webkit-tap-highlight-color: transparent; color: inherit; }
+        body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; background: ${t.bg}; color: ${t.ink}; }
       `}</style>
 
       {/* Головний контейнер (з повноцінною висотою і нативним прокручуванням для Capacitor) */}
@@ -167,9 +194,9 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} refreshOrders={loadData} onLogout={handleLogout} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItemsCount={orderItems.length} editOrderId={editOrderId} editCustomer={editCustomer} />}
-          {screen === "customers" && <CustomersScreen t={t} customers={customers} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} />}
+          {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} />}
           {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
@@ -178,15 +205,8 @@ export default function App() {
         {isLoggedIn && <BottomNav active={screen} onNav={handleNav} t={t} />}
       </div>
 
-      {/* Floating dev tools - для тестування в браузері (у продакшн Capacitor можна сховати) */}
-      <div style={{ position: "fixed", top: 10, right: 10, display: "flex", gap: 8, zIndex: 1000, background: "rgba(0,0,0,0.5)", padding: 8, borderRadius: 20 }}>
-        <button onClick={() => setIsDark(!isDark)} style={{ width: 36, height: 36, borderRadius: 18, background: "rgba(255,255,255,0.2)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name={isDark ? "sun" : "moon"} size={18} color="#fff" />
-        </button>
-        <button onClick={() => setIsOnline(!isOnline)} style={{ height: 36, padding: "0 12px", borderRadius: 18, background: isOnline ? "rgba(0,137,123,0.5)" : "rgba(192,57,43,0.5)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-          <Icon name={isOnline ? "wifi" : "wifiOff"} size={14} color="#fff" />
-        </button>
-      </div>
+      {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
+      {isLoggedIn && <OnlineIndicator t={t} online={isOnline} floating />}
     </>
   );
 }

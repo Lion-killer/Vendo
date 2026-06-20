@@ -1,53 +1,89 @@
-export const LIGHT = {
-    bg: "#F4F6FB",
+// Дизайн-система Vendo (редизайн).
+// Нова мова: нейтральне полотно, один акцент (індиго), семантичні статуси,
+// крупніша типографіка, мінімум градієнтів. Inter (UI) + IBM Plex Mono (числа).
+//
+// Кожен об'єкт містить НОВІ токени редизайну + АЛІАСИ під старі імена
+// (text/primary/border…), щоб екрани, які ще не переписані, рендерились коректно.
+
+const lightCore = {
+    bg: "#F7F7F5",
     surface: "#FFFFFF",
-    surfaceVariant: "#E8EDF7",
-    primary: "#1A4B8C",
-    primaryDark: "#0D3166",
-    primaryLight: "#2E6BC4",
-    onPrimary: "#FFFFFF",
-    secondary: "#00897B",
-    onSecondary: "#FFFFFF",
-    tertiary: "#FF8F00",
-    text: "#0D1B2E",
-    textSecondary: "#5A6A80",
-    textMuted: "#8FA0B8",
-    border: "#D0DAF0",
-    error: "#C0392B",
-    success: "#1B8B5E",
-    warning: "#D4860A",
-    cardShadow: "0 2px 12px rgba(26,75,140,0.10)",
-    navBg: "#FFFFFF",
-    navBorder: "#E0E8F5",
-    statusBar: "#0D3166",
-    chip: "#E3EAF8",
-    chipText: "#1A4B8C",
-    overlay: "rgba(13,27,46,0.45)",
+    surfaceMuted: "#EFEEE9",
+    ink: "#15161B",
+    inkSoft: "#5A5C66",
+    inkMuted: "#9A9CA6",
+    line: "#E5E4DE",
+    lineSoft: "#EFEEE9",
+    accent: "#3A4FE0",
+    accentSoft: "#EAEDFC",
+    accentInk: "#1F2BA3",
+    ok: "#1F8F58",
+    okSoft: "#E2F1E8",
+    warn: "#B5610A",
+    warnSoft: "#FBEED8",
+    err: "#C0392B",
+    errSoft: "#FBE5E0",
+    vip: "#8B5A00",
+    vipSoft: "#F6E9D3",
+    invBg: "#15161B",   // інверсний контейнер (hero / плаваючі смуги)
+    btnBg: "#15161B",   // основні залиті кнопки
+    statusInk: "#000000",
 };
 
-export const DARK = {
-    bg: "#0A1628",
-    surface: "#141E32",
-    surfaceVariant: "#1C2A42",
-    primary: "#4A90D9",
-    primaryDark: "#2E6BC4",
-    primaryLight: "#6BAAE8",
-    onPrimary: "#FFFFFF",
-    secondary: "#26C6B6",
-    onSecondary: "#001F1C",
-    tertiary: "#FFB300",
-    text: "#E8EDF8",
-    textSecondary: "#8FA8CE",
-    textMuted: "#4A6080",
-    border: "#243048",
-    error: "#FF6B6B",
-    success: "#4ECDA4",
-    warning: "#FFB300",
-    cardShadow: "0 2px 16px rgba(0,0,0,0.40)",
-    navBg: "#0F1C30",
-    navBorder: "#1E2E48",
-    statusBar: "#060F1E",
-    chip: "#1C2A42",
-    chipText: "#6BAAE8",
-    overlay: "rgba(0,0,0,0.65)",
+const darkCore = {
+    bg: "#121317",
+    surface: "#1C1D24",
+    surfaceMuted: "#262732",
+    ink: "#F3F3F1",
+    inkSoft: "#A6A8B2",
+    inkMuted: "#73757F",
+    line: "#2D2E38",
+    lineSoft: "#24252D",
+    accent: "#7B88FF",
+    accentSoft: "#23264A",
+    accentInk: "#AEB6FF",
+    ok: "#3DC982",
+    okSoft: "#16301F",
+    warn: "#E59A38",
+    warnSoft: "#33270F",
+    err: "#EE6B57",
+    errSoft: "#341A16",
+    vip: "#E0AC4A",
+    vipSoft: "#322811",
+    invBg: "#262834",
+    btnBg: "#7B88FF",
+    statusInk: "#F3F3F1",
 };
+
+// Аліаси під старі імена токенів (для ще не переписаних екранів).
+const aliases = (c) => ({
+    surfaceVariant: c.surfaceMuted,
+    primary: c.accent,
+    primaryDark: c.accentInk,
+    primaryLight: c.accent,
+    onPrimary: "#FFFFFF",
+    secondary: c.accent,
+    onSecondary: "#FFFFFF",
+    tertiary: c.warn,
+    text: c.ink,
+    textSecondary: c.inkSoft,
+    textMuted: c.inkMuted,
+    border: c.line,
+    error: c.err,
+    success: c.ok,
+    warning: c.warn,
+    cardShadow: "none",
+    navBg: c.surface,
+    navBorder: c.line,
+    statusBar: c.invBg,
+    chip: c.accentSoft,
+    chipText: c.accentInk,
+    overlay: "rgba(0,0,0,0.45)",
+});
+
+export const LIGHT = { ...lightCore, ...aliases(lightCore) };
+export const DARK = { ...darkCore, ...aliases(darkCore) };
+
+// Шрифти
+export const F_UI = `'Inter', -apple-system, system-ui, sans-serif`;
+export const F_NUM = `'IBM Plex Mono', ui-monospace, monospace`;

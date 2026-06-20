@@ -144,10 +144,6 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
             <div style={{ background: t.surface, padding: "16px 16px 12px", borderBottom: `1px solid ${t.border}`, paddingTop: "max(16px, env(safe-area-inset-top))" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <h2 style={{ color: t.text, fontSize: 20, fontWeight: 800, margin: 0 }}>Замовлення</h2>
-                    {!isOnline && <div style={{ background: t.warning + "22", borderRadius: 8, padding: "3px 10px", display: "flex", alignItems: "center", gap: 5 }}>
-                        <Icon name="wifiOff" size={13} color={t.warning} />
-                        <span style={{ color: t.warning, fontSize: 11, fontWeight: 700 }}>Офлайн</span>
-                    </div>}
                 </div>
 
                 {/* Filters */}

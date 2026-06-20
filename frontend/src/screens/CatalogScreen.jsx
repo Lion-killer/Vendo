@@ -1,174 +1,234 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Icon } from '../components/Icon';
-import { Badge, Snackbar } from '../components/Shared';
+import React, { useState, useMemo } from 'react';
+import { MIcon, Card, F_NUM, ProductImage } from '../components/ui';
 
-export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItemsCount = 0, editOrderId, editCustomer }) => {
-    const [search, setSearch] = useState("");
-    const [expanded, setExpanded] = useState(new Set([1]));
-    const [selected, setSelected] = useState(null);
-    const [snack, setSnack] = useState("");
-    const snackTimeoutRef = useRef(null);
+// ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
+function buildTree(categories, products) {
+    const byId = new Map();
+    (categories || []).forEach(c => byId.set(c.id, { id: c.id, name: c.name, parentId: c.parentId || "", children: [], products: [] }));
+    const roots = [];
+    byId.forEach(node => {
+        if (node.parentId && byId.has(node.parentId)) byId.get(node.parentId).children.push(node);
+        else roots.push(node);
+    });
+    const orphans = [];
+    (products || []).forEach(p => {
+        const node = p.categoryId && byId.has(p.categoryId) ? byId.get(p.categoryId) : null;
+        if (node) node.products.push(p); else orphans.push(p);
+    });
+    return { id: "", name: "Каталог", children: roots, products: orphans };
+}
+const countProducts = (node) => {
+    let n = node.products ? node.products.length : 0;
+    if (node.children) node.children.forEach(c => { n += countProducts(c); });
+    return n;
+};
+const getNode = (root, path) => {
+    let node = root;
+    for (const id of path) {
+        const next = (node.children || []).find(c => c.id === id);
+        if (!next) break; node = next;
+    }
+    return node;
+};
+const flattenProducts = (node, trail = []) => {
+    let out = [];
+    if (node.products) node.products.forEach(p => out.push({ ...p, trail }));
+    if (node.children) node.children.forEach(c => { out = out.concat(flattenProducts(c, [...trail, c.name])); });
+    return out;
+};
+const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    useEffect(() => {
-        return () => {
-            if (snackTimeoutRef.current) {
-                clearTimeout(snackTimeoutRef.current);
-            }
-        };
-    }, []);
-
-    const toggle = (id) => {
-        const s = new Set(expanded);
-        s.has(id) ? s.delete(id) : s.add(id);
-        setExpanded(s);
-    };
-
-    const filtered = search ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) : null;
-
-    if (selected) return <ProductDetailScreen t={t} product={selected} onBack={() => setSelected(null)} onAdd={(p, q) => {
-        onAddToOrder(p, q);
-        setSelected(null);
-        onNav("orders");
-    }} />;
-
+// ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
+const ProductRow = ({ t, p, qty, onAdd }) => {
+    const out = Number(p.stock) <= 0;
+    const low = !out && Number(p.stock) < 5;
+    const stockColor = out ? t.err : low ? t.warn : t.ok;
+    const stockLabel = out ? "немає" : `${p.stock}`;
     return (
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingTop: "env(safe-area-inset-top)", overflow: "hidden" }}>
-            {/* Header */}
-            <div style={{ background: t.surface, padding: "16px 16px 0", borderBottom: `1px solid ${t.border}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <h2 style={{ color: t.text, fontSize: 18, fontWeight: 800, margin: 0 }}>Номенклатура</h2>
-                    {orderItemsCount > 0 && (
-                        <button onClick={() => onNav("orders")} style={{ background: t.primary + "15", border: "none", padding: "6px 12px", borderRadius: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: t.primary }}>
-                            <Icon name="cart" size={18} color={t.primary} />
-                            <span style={{ fontSize: 12, fontWeight: 800 }}>{orderItemsCount}</span>
-                        </button>
+        <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <ProductImage t={t} img={p.img} sku={p.sku} size={56} radius={10} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
+                    {p.trail && p.trail.length > 0 && (
+                        <div style={{ fontSize: 10.5, color: t.inkMuted, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.trail.join(" › ")}</div>
                     )}
-                </div>
-                <div style={{ background: t.surfaceVariant, borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <Icon name="search" size={18} color={t.textMuted} />
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Пошук товару..." style={{ flex: 1, border: "none", background: "none", outline: "none", color: t.text, fontSize: 14, fontFamily: "inherit", fontWeight: 500 }} />
-                    {search && <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, fontSize: 18, lineHeight: 1 }}>×</button>}
-                </div>
-                {/* Current order info */}
-                <div style={{ paddingBottom: 12, display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: t.textSecondary, whiteSpace: "nowrap" }}>Додаємо в:</span>
-                    <span style={{ background: t.chip, color: t.primary, padding: "6px 14px", borderRadius: 14, fontSize: 13, fontWeight: 800, flex: 1, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
-                        {editOrderId ? `Зам. №${editOrderId} - ${editCustomer?.name || 'Клієнт'}` : (editCustomer ? `Нове зам. - ${editCustomer.name}` : `Нове замовлення`)}
-                    </span>
-                </div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-                {filtered ? (
-                    <div style={{ padding: "0 12px" }}>
-                        {filtered.map(p => <ProductRow key={p.id} p={p} t={t} onSelect={() => setSelected(p)} />)}
-                        {filtered.length === 0 && <div style={{ textAlign: "center", padding: "40px 20px", color: t.textMuted }}>
-                            <Icon name="search" size={40} color={t.border} />
-                            <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Нічого не знайдено</p>
-                        </div>}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                        <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(p.price)}</span>
+                        <span style={{ fontSize: 11, color: t.inkMuted }}>₴{p.unit ? ` / ${p.unit}` : ""}</span>
+                        <span style={{ fontFamily: F_NUM, fontSize: 11, color: stockColor, fontWeight: 600, marginLeft: "auto" }}>{stockLabel}</span>
                     </div>
-                ) : (
-                    categories.map(cat => (
-                        <div key={cat.id}>
-                            <button onClick={() => toggle(cat.id)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, fontFamily: "inherit" }}>
-                                <span style={{ fontSize: 24 }}>{cat.icon}</span>
-                                <span style={{ flex: 1, color: t.text, fontSize: 15, fontWeight: 700, textAlign: "left" }}>{cat.name}</span>
-                                <span style={{ background: t.chip, color: t.chipText, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, marginRight: 6 }}>{cat.count}</span>
-                                <Icon name={expanded.has(cat.id) ? "chevronDown" : "chevronRight"} size={18} color={t.textMuted} />
-                            </button>
-                            {expanded.has(cat.id) && (
-                                <div style={{ padding: "0 12px 8px" }}>
-                                    {products.filter(p => p.category === cat.name).map(p => <ProductRow key={p.id} p={p} t={t} onSelect={() => setSelected(p)} />)}
-                                </div>
-                            )}
-                        </div>
-                    ))
-                )}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", border: `1px solid ${qty > 0 ? t.ink : t.line}`, borderRadius: 10, height: 36, flexShrink: 0, opacity: out ? 0.4 : 1 }}>
+                    <button disabled={out || qty <= 0} onClick={() => onAdd(p, -1)} style={{ width: 32, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: qty > 0 ? "pointer" : "default" }}>
+                        <MIcon name="minus" size={15} color={qty > 0 ? t.ink : t.inkMuted} w={2} />
+                    </button>
+                    <div style={{ width: 28, textAlign: "center", fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: qty > 0 ? t.ink : t.inkMuted }}>{qty}</div>
+                    <button disabled={out} onClick={() => onAdd(p, 1)} style={{ width: 32, height: 36, background: t.btnBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 9px 9px 0", border: "none", cursor: out ? "default" : "pointer" }}>
+                        <MIcon name="plus" size={15} color="#fff" w={2} />
+                    </button>
+                </div>
             </div>
-            <Snackbar msg={snack} t={t} />
-        </div>
+        </Card>
     );
 };
 
-const ProductRow = ({ p, t, onSelect }) => (
-    <div onClick={onSelect} style={{ background: t.surface, borderRadius: 16, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", border: `1px solid ${t.border}`, boxShadow: t.cardShadow }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: t.surfaceVariant, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>{p.img}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ color: t.text, fontSize: 13, fontWeight: 700, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-            <p style={{ color: t.textMuted, fontSize: 11, margin: "0 0 5px", fontWeight: 500 }}>Арт: {p.sku}</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: t.primary, fontSize: 14, fontWeight: 800 }}>{p.price.toFixed(2)} ₴</span>
-                <Badge stock={p.stock} t={t} />
+const GroupRow = ({ t, node, onOpen }) => {
+    const subCount = node.children ? node.children.length : 0;
+    const prodCount = countProducts(node);
+    return (
+        <Card t={t} style={{ padding: 12, marginBottom: 8, cursor: "pointer" }}>
+            <div onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 11, background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <MIcon name="folder" size={22} color={t.accentInk} w={1.7} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{node.name}</div>
+                    <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 2 }}>
+                        {subCount > 0 && <span>{subCount} підгруп · </span>}
+                        <span style={{ fontFamily: F_NUM }}>{prodCount}</span> товарів
+                    </div>
+                </div>
+                <MIcon name="chevron" size={18} color={t.inkMuted} />
             </div>
-        </div>
-        <Icon name="chevronRight" size={18} color={t.textMuted} />
-    </div>
-);
+        </Card>
+    );
+};
 
-const ProductDetailScreen = ({ t, product, onBack, onAdd }) => {
-    const [qty, setQty] = useState(1);
-    const [priceType, setPriceType] = useState(0);
-    const prices = ["Роздрібна", "Дрібнооптова", "Оптова"];
-    const priceVals = [product.price, product.price * 0.92, product.price * 0.85];
+export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline }) => {
+    const [path, setPath] = useState([]);
+    const [query, setQuery] = useState("");
+
+    const root = useMemo(() => buildTree(categories, products), [categories, products]);
+    const node = getNode(root, path);
+    const subgroups = node.children || [];
+    const levelProducts = node.products || [];
+
+    const crumbs = [{ name: "Каталог", path: [] }];
+    let acc = root;
+    for (let i = 0; i < path.length; i++) {
+        const next = (acc.children || []).find(c => c.id === path[i]);
+        if (!next) break; acc = next;
+        crumbs.push({ name: acc.name, path: path.slice(0, i + 1) });
+    }
+
+    const searching = query.trim().length > 0;
+    const results = useMemo(() => searching
+        ? flattenProducts(root).filter(p =>
+            p.name.toLowerCase().includes(query.toLowerCase()) ||
+            (p.sku || "").toLowerCase().includes(query.toLowerCase()))
+        : [], [searching, query, root]);
+
+    const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
+    const cartCount = orderItems.length;
+    const cartTotal = orderItems.reduce((s, it) => s + (Number(it.product.price) || 0) * it.qty, 0);
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingTop: "env(safe-area-inset-top)", overflow: "hidden" }}>
-            {/* Header image area */}
-            <div style={{ background: `linear-gradient(160deg, ${t.primary}22 0%, ${t.surfaceVariant} 100%)`, padding: "16px 20px 0", position: "relative" }}>
-                <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: 12, background: t.surface, border: `1px solid ${t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                    <Icon name="chevronLeft" size={20} color={t.text} />
-                </button>
-                <div style={{ width: "100%", height: 180, background: t.surface, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 80, marginBottom: 0, border: `1px solid ${t.border}`, boxShadow: t.cardShadow }}>
-                    {product.img}
-                </div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 0", paddingBottom: "20px" }}>
-                {/* Title */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <h2 style={{ color: t.text, fontSize: 18, fontWeight: 800, margin: 0, flex: 1, lineHeight: 1.3 }}>{product.name}</h2>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                    <span style={{ background: t.chip, color: t.chipText, fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 10 }}>Арт: {product.sku}</span>
-                    <Badge stock={product.stock} t={t} />
-                </div>
-
-                {/* Price type selector */}
-                <p style={{ color: t.textSecondary, fontSize: 12, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", marginBottom: 8 }}>Тип ціни</p>
-                <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-                    {prices.map((p, i) => (
-                        <button key={i} onClick={() => setPriceType(i)} style={{ flex: 1, padding: "8px 4px", borderRadius: 12, border: `1.5px solid ${priceType === i ? t.primary : t.border}`, background: priceType === i ? t.chip : "none", cursor: "pointer", fontFamily: "inherit", transition: "all .2s" }}>
-                            <p style={{ color: priceType === i ? t.primary : t.textSecondary, fontSize: 10, fontWeight: 700, margin: "0 0 3px" }}>{p}</p>
-                            <p style={{ color: priceType === i ? t.primary : t.text, fontSize: 13, fontWeight: 800, margin: 0 }}>{priceVals[i].toFixed(2)} ₴</p>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
+            {/* Шапка */}
+            <div style={{ padding: "max(8px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Каталог</div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 44 }}>
+                        <div style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <MIcon name="barcode" size={18} color={t.ink} />
+                        </div>
+                        <button onClick={() => onNav("orders", { keepOrder: true })} style={{ padding: "0 12px", height: 38, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                            <MIcon name="cart" size={16} color="#fff" /> {cartCount}
                         </button>
-                    ))}
+                    </div>
                 </div>
 
-                {/* Qty */}
-                <p style={{ color: t.textSecondary, fontSize: 12, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", marginBottom: 8 }}>Кількість</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 0, background: t.surfaceVariant, borderRadius: 16, padding: 4, marginBottom: 20 }}>
-                    <button onClick={() => setQty(Math.max(1, qty - 1))} style={{ width: 48, height: 48, borderRadius: 13, background: qty === 1 ? t.border : t.surface, border: "none", cursor: qty === 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: qty > 1 ? t.cardShadow : "none", transition: "all .2s" }}>
-                        <Icon name="minus" size={20} color={qty === 1 ? t.textMuted : t.primary} />
-                    </button>
-                    <span style={{ flex: 1, textAlign: "center", color: t.text, fontSize: 24, fontWeight: 800 }}>{qty}</span>
-                    <button onClick={() => setQty(qty + 1)} style={{ width: 48, height: 48, borderRadius: 13, background: t.primary, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${t.primary}44` }}>
-                        <Icon name="plus" size={20} color="#fff" />
-                    </button>
+                {/* Пошук по всьому дереву */}
+                <div style={{ background: t.surface, border: `1px solid ${searching ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
+                    <MIcon name="search" size={18} color={searching ? t.accent : t.inkMuted} />
+                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Пошук по всьому каталогу…"
+                        style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
+                    {searching && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                 </div>
 
-                {/* Summary */}
-                <div style={{ background: t.surfaceVariant, borderRadius: 16, padding: "14px 16px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ color: t.textSecondary, fontSize: 13, fontWeight: 600 }}>Сума:</span>
-                    <span style={{ color: t.primary, fontSize: 22, fontWeight: 900 }}>{(priceVals[priceType] * qty).toFixed(2)} ₴</span>
-                </div>
+                {/* Контекст замовлення */}
+                {(editCustomer || editOrderId) && (
+                    <div onClick={() => onNav("orders", { keepOrder: true })} style={{ marginTop: 10, background: t.accentSoft, border: `1px solid ${t.accent}22`, borderRadius: 12, padding: "9px 12px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                        <MIcon name="cart" size={16} color={t.accentInk} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editOrderId ? `Замовлення ${editOrderId} (Чернетка)` : "Нове замовлення (Чернетка)"}</div>
+                            {editCustomer?.name && <div style={{ fontSize: 11.5, color: t.accentInk, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{editCustomer.name}</div>}
+                        </div>
+                    </div>
+                )}
+
+                {/* Хлібні крихти */}
+                {!searching && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 12, overflowX: "auto", whiteSpace: "nowrap", paddingBottom: 2 }}>
+                        {crumbs.map((c, i) => {
+                            const isLast = i === crumbs.length - 1;
+                            return (
+                                <div key={i} style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                                    {i > 0 && <div style={{ color: t.inkMuted, padding: "0 2px", display: "flex" }}><MIcon name="chevron" size={13} color={t.inkMuted} /></div>}
+                                    <div onClick={() => !isLast && setPath(c.path)} style={{ display: "flex", alignItems: "center", gap: 4, cursor: isLast ? "default" : "pointer", padding: "4px 8px", borderRadius: 8, background: isLast ? t.btnBg : "transparent", color: isLast ? "#fff" : t.accent, fontSize: 12.5, fontWeight: isLast ? 700 : 600 }}>
+                                        {i === 0 && <MIcon name="home" size={13} color={isLast ? "#fff" : t.accent} />}
+                                        {c.name}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
-            <div style={{ padding: "12px 20px 20px", background: t.bg, borderTop: `1px solid ${t.border}` }}>
-                <button onClick={() => onAdd(product, qty)} style={{ width: "100%", height: 54, borderRadius: 16, background: `linear-gradient(135deg, ${t.primary}, ${t.primaryLight})`, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: `0 4px 20px ${t.primary}44`, fontFamily: "inherit" }}>
-                    <Icon name="cart" size={20} color="#fff" />
-                    <span style={{ color: "#fff", fontSize: 15, fontWeight: 800, letterSpacing: .3 }}>Додати до замовлення</span>
-                </button>
+            {/* Тіло */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
+                {searching ? (
+                    <>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "4px 4px 8px" }}>Знайдено: {results.length}</div>
+                        {results.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
+                                <MIcon name="search" size={36} color={t.line} />
+                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>Нічого не знайдено</div>
+                            </div>
+                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
+                    </>
+                ) : (
+                    <>
+                        {subgroups.length > 0 && (
+                            <>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "2px 4px 8px" }}>Підгрупи · {subgroups.length}</div>
+                                {subgroups.map(g => <GroupRow key={g.id} t={t} node={g} onOpen={() => setPath([...path, g.id])} />)}
+                            </>
+                        )}
+                        {levelProducts.length > 0 && (
+                            <>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>Товари · {levelProducts.length}</div>
+                                {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
+                            </>
+                        )}
+                        {subgroups.length === 0 && levelProducts.length === 0 && (
+                            <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
+                                <MIcon name="grid" size={36} color={t.line} />
+                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>Порожньо</div>
+                            </div>
+                        )}
+                    </>
+                )}
+                <div style={{ height: cartCount > 0 ? 96 : 16 }} />
             </div>
+
+            {/* Плаваюча смуга «До замовлення» */}
+            {cartCount > 0 && (
+                <div style={{ position: "absolute", bottom: 12, left: 16, right: 16 }}>
+                    <button onClick={() => onNav("orders", { keepOrder: true })} style={{ width: "100%", background: t.invBg, color: "#fff", borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <MIcon name="cart" size={18} color="#fff" />
+                            <div style={{ textAlign: "left" }}>
+                                <div style={{ fontSize: 11, opacity: 0.6 }}>{cartCount} {cartCount === 1 ? "позиція" : "позицій"}</div>
+                                <div style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(cartTotal)} ₴</div>
+                            </div>
+                        </div>
+                        <div style={{ background: "rgba(255,255,255,0.12)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700 }}>До замовлення →</div>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
