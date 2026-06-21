@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '../components/Icon';
 import { auth } from '../api/client';
+import { scanQr, parseQr } from '../api/scanner';
 
 export const LoginScreen = ({ t, onLogin }) => {
     const [loading, setLoading] = useState(false);
@@ -9,19 +10,36 @@ export const LoginScreen = ({ t, onLogin }) => {
 
     const handleScan = async () => {
         setError(""); setLoading(true); setScanned(false);
+
+        // 1) Відкриваємо камеру й читаємо QR
+        let raw;
         try {
-            // Симуляція очікування сканування
-            await new Promise(r => setTimeout(r, 1500));
-            const res = await auth();
+            raw = await scanQr();
+        } catch (e) {
+            setLoading(false);
+            setError("Не вдалося відкрити сканер. Дозвольте доступ до камери.");
+            return;
+        }
+        if (!raw) { setLoading(false); return; } // скасовано користувачем
+
+        // 2) Парсимо вміст: GUID пристрою + (опційно) адреса бекенду
+        const { deviceId, apiUrl } = parseQr(raw);
+        if (apiUrl) localStorage.setItem('vendo_api_url', apiUrl);
+        if (deviceId) localStorage.setItem('vendo_device_id', deviceId);
+
+        // 3) Автентифікація за пристроєм
+        try {
+            const res = await auth(deviceId);
             if (res.success) {
                 setLoading(false); setScanned(true);
-                setTimeout(() => onLogin(res.user.name, res.token), 800);
+                setTimeout(() => onLogin(res.user?.name || deviceId || "Користувач", res.token), 700);
             } else {
-                throw new Error("Invalid token");
+                throw new Error(res.message || "Пристрій не авторизовано");
             }
         } catch (e) {
             setLoading(false);
-            setError("Помилка автентифікації. Перевірте з'єднання.");
+            const netErr = !e.message || /fetch|network|json|failed/i.test(e.message);
+            setError(netErr ? "Помилка автентифікації. Перевірте з'єднання." : e.message);
         }
     };
 

@@ -1,73 +1,75 @@
-const API_URL = 'http://localhost:3000/api';
-// Якщо використовувати Android Емулятор, треба замінити `localhost` на `10.0.2.2`. 
-// Для реального пристрою - IP адреса комп'ютера (напр., `192.168.1.x`).
+// Адреса бекенду й ідентифікатор пристрою беруться з QR-коду (зберігаються в
+// localStorage під час логіну). DEFAULT_API — запасний для dev/емулятора.
+const DEFAULT_API = 'http://10.0.2.2:3000/api';
+// Емулятор Android: хост = 10.0.2.2. Реальний пристрій — адреса з QR-коду.
 
-export const auth = async () => {
-    const res = await fetch(`${API_URL}/auth`, { method: 'POST' });
+const apiUrl = () => localStorage.getItem('vendo_api_url') || DEFAULT_API;
+const deviceId = () => localStorage.getItem('vendo_device_id') || '';
+
+// Заголовки із X-Device-Id (за яким 1С-бекенд фільтрує дані пристрою).
+const h = (extra = {}) => {
+    const headers = { ...extra };
+    const d = deviceId();
+    if (d) headers['X-Device-Id'] = d;
+    return headers;
+};
+
+// fetch із таймаутом — без нього недоступний бекенд висить до системного TCP-таймауту
+// (~30 с) і офлайн виявляється надто пізно.
+const TIMEOUT = 8000;
+const tfetch = (url, opts = {}, timeout = TIMEOUT) => {
+    const ctrl = new AbortController();
+    const id = setTimeout(() => ctrl.abort(), timeout);
+    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
+};
+
+export const auth = async (devId) => {
+    const res = await tfetch(`${apiUrl()}/auth`, {
+        method: 'POST',
+        headers: h({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ deviceId: devId || deviceId() }),
+    });
     return res.json();
 };
 
-export const fetchProducts = async () => {
-    const res = await fetch(`${API_URL}/products`);
-    return res.json();
-};
+export const fetchProducts = async () =>
+    (await tfetch(`${apiUrl()}/products`, { headers: h() })).json();
 
-export const fetchCustomers = async () => {
-    const res = await fetch(`${API_URL}/customers`);
-    return res.json();
-};
+export const fetchCustomers = async () =>
+    (await tfetch(`${apiUrl()}/customers`, { headers: h() })).json();
+
+export const fetchCategories = async () =>
+    (await tfetch(`${apiUrl()}/categories`, { headers: h() })).json();
 
 export const fetchOrders = async (startDate, endDate) => {
-    let url = `${API_URL}/orders`;
+    let url = `${apiUrl()}/orders`;
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-
-    if (params.toString()) {
-        url += `?${params.toString()}`;
-    }
-
-    const res = await fetch(url);
-    return res.json();
+    if (params.toString()) url += `?${params.toString()}`;
+    return (await tfetch(url, { headers: h() })).json();
 };
 
-export const createOrder = async (orderItems, customerId, total, status = "Чернетка") => {
-    const res = await fetch(`${API_URL}/orders`, {
+export const createOrder = async (orderItems, customerId, total, status = "Чернетка") =>
+    (await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ orderItems, customerId, total, status })
-    });
-    return res.json();
-};
+        headers: h({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderItems, customerId, total, status }),
+    })).json();
 
-export const fetchCategories = async () => {
-    const res = await fetch(`${API_URL}/categories`);
-    return res.json();
-};
-
-export const updateOrder = async (num, orderItems, customerId, total, status) => {
-    const res = await fetch(`${API_URL}/orders/${num}`, {
+export const updateOrder = async (num, orderItems, customerId, total, status) =>
+    (await tfetch(`${apiUrl()}/orders/${num}`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ orderItems, customerId, total, status })
-    });
-    return res.json();
-};
+        headers: h({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderItems, customerId, total, status }),
+    })).json();
 
-export const deleteOrder = async (num) => {
-    const res = await fetch(`${API_URL}/orders/${num}`, {
-        method: 'DELETE'
-    });
-    return res.json();
-};
+export const deleteOrder = async (num) =>
+    (await tfetch(`${apiUrl()}/orders/${num}`, { method: 'DELETE', headers: h() })).json();
 
 export const pingServer = async () => {
     try {
-        const res = await fetch(`${API_URL}/products`, { method: 'HEAD' });
+        const res = await tfetch(`${apiUrl()}/products`, { method: 'HEAD', headers: h() }, 5000);
         return res.ok;
     } catch (e) {
         return false;
