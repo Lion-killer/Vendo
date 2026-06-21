@@ -115,17 +115,24 @@ export const ProductImage = ({ t, img, sku, size = 56, radius = 10 }) => {
 
 // ─── Індикатор онлайн/офлайн у стилі іконок-кнопок (bell/sync) ─────────────────
 // floating=true — фіксований у правому верхньому куті (для екранів без шапки з іконками).
-export const OnlineIndicator = ({ t, online, floating }) => (
-  <div aria-label={online ? "Онлайн" : "Офлайн"} style={{
-    position: floating ? "fixed" : "relative",
-    ...(floating ? { top: "max(8px, env(safe-area-inset-top))", right: 12, zIndex: 1500, pointerEvents: "none" } : {}),
-    width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`,
-    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-  }}>
-    <MIcon name={online ? "wifi" : "wifiOff"} size={18} color={online ? t.ink : t.err} />
-    <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: online ? t.ok : t.err, boxShadow: `0 0 0 2px ${t.surface}` }} />
-  </div>
-);
+export const OnlineIndicator = ({ t, online, connecting, floating }) => {
+  // Стан передає сама іконка: connecting (wifi, жовте миготіння-«серцебиття») → online (wifi) → offline (wifiOff).
+  const icon = online || connecting ? "wifi" : "wifiOff";
+  const iconColor = connecting ? t.warn : online ? t.ok : t.err;
+  const label = connecting ? "Підключення…" : online ? "Онлайн" : "Офлайн";
+  return (
+    <div aria-label={label} style={{
+      position: floating ? "fixed" : "relative",
+      ...(floating ? { top: "max(8px, env(safe-area-inset-top))", right: 12, zIndex: 1500, pointerEvents: "none" } : {}),
+      width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`,
+      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+    }}>
+      <div style={{ display: "flex", animation: connecting ? "pulse 1.8s ease-in-out infinite" : "none" }}>
+        <MIcon name={icon} size={18} color={iconColor} />
+      </div>
+    </div>
+  );
+};
 
 // ─── Базова картка ──────────────────────────────────────────────────────────────
 export const Card = ({ children, style = {}, t, ...rest }) => (

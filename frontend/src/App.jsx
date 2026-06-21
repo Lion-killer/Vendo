@@ -23,6 +23,7 @@ export default function App() {
   // Відновлюємо збережену сесію (#24): якщо вона є, пропускаємо екран логіну.
   const [screen, setScreen] = useState(() => getSession() ? "dashboard" : "login");
   const [isOnline, setIsOnline] = useState(true);
+  const [connecting, setConnecting] = useState(false);
   const [userName, setUserName] = useState(() => getSession()?.userName || "");
   const [orderItems, setOrderItems] = useState([]);
   const [editOrderId, setEditOrderId] = useState(null);
@@ -49,49 +50,52 @@ export default function App() {
     return next;
   });
 
-  const loadData = async () => {
+  // 1) Миттєво показуємо кеш (offline-first), щоб UI не чекав мережі.
+  const loadFromCache = () => {
     try {
-      if (!navigator.onLine) {
-        throw new Error("Offline mode detected via navigator");
-      }
+      const cached = localStorage.getItem('cached_data');
+      if (!cached) return false;
+      const data = JSON.parse(cached);
+      setProducts(data.products || []);
+      setCategories(data.categories || []);
+      setCustomers(data.customers || []);
+      setOrders(data.orders || []);
+      return true;
+    } catch (e) {
+      console.error("Помилка відновлення кешу", e);
+      return false;
+    }
+  };
 
+  // 2) Тягнемо мережу у фоні; на успіх — оновлюємо стан і кеш.
+  const fetchFromNetwork = async () => {
+    setConnecting(true);
+    try {
       const [prodRes, catRes, custRes, ordRes] = await Promise.all([
-        fetchProducts(),
-        fetchCategories(),
-        fetchCustomers(),
-        fetchOrders()
+        fetchProducts(), fetchCategories(), fetchCustomers(), fetchOrders()
       ]);
       setProducts(prodRes);
       setCategories(catRes);
       setCustomers(custRes);
       setOrders(ordRes);
-
-      // Save to cache for offline usage
       localStorage.setItem('cached_data', JSON.stringify({
-        products: prodRes,
-        categories: catRes,
-        customers: custRes,
-        orders: ordRes
+        products: prodRes, categories: catRes, customers: custRes, orders: ordRes
       }));
-
       setIsOnline(true);
+      return true;
     } catch (e) {
-      console.warn("Помилка завантаження (можливо офлайн). Завантажуємо кеш...", e);
+      console.warn("Мережа недоступна — лишаємось на кеші.", e);
       setIsOnline(false);
-
-      try {
-        const cached = localStorage.getItem('cached_data');
-        if (cached) {
-          const data = JSON.parse(cached);
-          setProducts(data.products || []);
-          setCategories(data.categories || []);
-          setCustomers(data.customers || []);
-          setOrders(data.orders || []);
-        }
-      } catch (cacheErr) {
-        console.error("Помилка відновлення кешу", cacheErr);
-      }
+      return false;
+    } finally {
+      setConnecting(false);
     }
+  };
+
+  // Запуск: спершу кеш (одразу), далі мережа у фоні (не блокує UI).
+  const loadData = async () => {
+    loadFromCache();
+    await fetchFromNetwork();
   };
 
   useEffect(() => {
@@ -109,8 +113,8 @@ export default function App() {
       const isUp = await pingServer();
       setIsOnline(prev => {
         if (prev !== isUp) {
-          // Якщо сервер став доступним, можна опціонально перезавантажити дані
-          if (isUp) loadData();
+          // Сервер знову доступний — тягнемо свіжі дані (без миготіння кешем)
+          if (isUp) fetchFromNetwork();
           return isUp;
         }
         return prev;
@@ -183,6 +187,7 @@ export default function App() {
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
         button { -webkit-tap-highlight-color: transparent; color: inherit; }
         body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; background: ${t.bg}; color: ${t.ink}; }
@@ -206,7 +211,7 @@ export default function App() {
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
-      {isLoggedIn && <OnlineIndicator t={t} online={isOnline} floating />}
+      {isLoggedIn && <OnlineIndicator t={t} online={isOnline} connecting={connecting} floating />}
     </>
   );
 }
