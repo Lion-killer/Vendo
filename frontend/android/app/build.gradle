@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+task buildFrontend(type: Exec) {
+    workingDir '../../'
+    // cap COPY (не sync): копіює веб-asset'и без перегенерації нативних плагінів —
+    // інакше зміна модулів під час збірки спричиняє гонку (manifest/aar помилки).
+    // Після додавання/видалення нативного плагіна один раз виконати `npx cap sync` вручну.
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        commandLine 'cmd', '/c', 'npm run build && npx cap copy android'
+    } else {
+        commandLine 'sh', '-c', 'npm run build && npx cap copy android'
+    }
+}
+
 android {
     namespace = "com.vendo.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -19,7 +31,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -52,3 +64,5 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+
+preBuild.dependsOn buildFrontend
