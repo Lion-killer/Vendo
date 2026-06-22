@@ -48,3 +48,6 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Робочі вихідники іконки (генеруються у android/res через @capacitor/assets)
+frontend/assets/
