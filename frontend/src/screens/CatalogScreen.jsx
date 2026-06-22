@@ -126,7 +126,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
             {/* Шапка */}
-            <div style={{ padding: "max(8px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
+            <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                     <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Каталог</div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 44 }}>

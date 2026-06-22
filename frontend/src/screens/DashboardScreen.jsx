@@ -72,7 +72,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflowY: "auto", paddingBottom: 24 }}>
             {/* Верхня панель */}
-            <div style={{ padding: "max(8px, env(safe-area-inset-top)) 22px 4px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
                     <div style={{ width: 36, height: 36, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{initials(userName)}</div>
                     <div>
@@ -80,7 +80,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         <div style={{ fontSize: 15, fontWeight: 700, color: t.ink }}>{userName || "Користувач"}</div>
                     </div>
                 </button>
-                <div style={{ display: "flex", gap: 8, marginRight: 44 }}>
+                <div style={{ display: "flex", gap: 8, marginRight: 46 }}>
                     <div style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                         <MIcon name="bell" size={18} color={t.ink} />
                         {draftsCount > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}

@@ -87,7 +87,7 @@ export const OrderScreen = ({ t, isOnline, orderItems, setOrderItems, customers,
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
             {/* Шапка */}
-            <div style={{ padding: "max(8px, env(safe-area-inset-top)) 16px 12px" }}>
+            <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                     <button onClick={goToOrdersList} style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                         <MIcon name="back" size={18} color={t.ink} />

@@ -49,7 +49,7 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
             {/* Шапка */}
-            <div style={{ padding: "max(8px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
+            <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                     <div>
                         <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Клієнти</div>

@@ -123,7 +123,7 @@ export const OnlineIndicator = ({ t, online, connecting, floating }) => {
   return (
     <div aria-label={label} style={{
       position: floating ? "fixed" : "relative",
-      ...(floating ? { top: "max(8px, env(safe-area-inset-top))", right: 12, zIndex: 1500, pointerEvents: "none" } : {}),
+      ...(floating ? { top: "max(16px, env(safe-area-inset-top))", right: 16, zIndex: 1500, pointerEvents: "none" } : {}),
       width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
     }}>
@@ -156,7 +156,7 @@ const TABS = [
 ];
 
 export const BottomNav = ({ active, onNav, t }) => (
-  <div style={{ height: 84, background: t.surface, borderTop: `1px solid ${t.line}`, display: "flex", paddingBottom: 22, flexShrink: 0 }}>
+  <div style={{ height: "calc(58px + env(safe-area-inset-bottom))", background: t.surface, borderTop: `1px solid ${t.line}`, display: "flex", paddingBottom: "env(safe-area-inset-bottom)", flexShrink: 0 }}>
     {TABS.map(tab => {
       const on = active === tab.id;
       return (
