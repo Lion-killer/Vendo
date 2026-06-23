@@ -7,7 +7,7 @@ import { idSet } from '../api/refs';
 const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseUpdatedAt = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     // Лейбл: номер документа, якщо є; інакше короткий №<id>.
     const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
     // Набір GUID наявних товарів — для позначення «зниклих» позицій (видалених на бекенді).
@@ -66,7 +66,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 total: `${money(total)} ₴`,
                 status: queueStatus,
                 sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
-                baseUpdatedAt: queueStatus === "Відправлено" ? baseUpdatedAt : undefined,
+                baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
             };
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
@@ -82,7 +82,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 id: editOrderId || undefined, num: num || undefined, customer: customer || null, customerId: customer?.id || null,
                 client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
                 total: `${money(total)} ₴`, status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
-                baseUpdatedAt: queueStatus === "Відправлено" ? baseUpdatedAt : undefined,
+                baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
             notify?.(`Збережено ${orderLabel({ num, id: savedId })} · ${orderDate.split("-").reverse().join(".")}`);
@@ -147,7 +147,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // Розв'язання конфлікту: «перезаписати моє» — гасимо базу версії й помилку, наступна
     // синхронізація перезапише сервер (force); «взяти серверне» — викидаємо локальну правку.
     const resolveOverwrite = () => {
-        saveLocalOrder({ id: editOrderId, baseUpdatedAt: null, conflict: false, syncError: "" });
+        saveLocalOrder({ id: editOrderId, baseVersion: null, conflict: false, syncError: "" });
         markHandled?.();
         notify?.("Ваша версія перезапише сервер при наступній синхронізації");
         if (goToOrdersList) goToOrdersList();

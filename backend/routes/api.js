@@ -11,14 +11,14 @@ const q = {
     customers: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers'),
     customerById: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
     categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
-    orders: db.prepare('SELECT id, num, customerId, date, status, deletionMark, updatedAt FROM orders ORDER BY date DESC, num DESC'),
-    orderById: db.prepare('SELECT id, num, customerId, date, status, deletionMark, updatedAt FROM orders WHERE id = ?'),
+    orders: db.prepare('SELECT id, num, customerId, date, status, deletionMark, version FROM orders ORDER BY date DESC, num DESC'),
+    orderById: db.prepare('SELECT id, num, customerId, date, status, deletionMark, version FROM orders WHERE id = ?'),
     itemsByOrder: db.prepare('SELECT productId, qty, price FROM order_items WHERE orderId = ? ORDER BY id'),
-    insertOrder: db.prepare('INSERT INTO orders (id, num, customerId, date, status, updatedAt) VALUES (@id, @num, @customerId, @date, @status, @updatedAt)'),
-    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status, date = @date, updatedAt = @updatedAt WHERE id = @id'),
+    insertOrder: db.prepare('INSERT INTO orders (id, num, customerId, date, status, version) VALUES (@id, @num, @customerId, @date, @status, @version)'),
+    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status, date = @date, version = @version WHERE id = @id'),
     deleteOrder: db.prepare('DELETE FROM orders WHERE id = ?'),
-    markOrderDeletion: db.prepare('UPDATE orders SET deletionMark = 1, updatedAt = @updatedAt WHERE id = @id'),
-    setOrderDeletion: db.prepare('UPDATE orders SET deletionMark = @mark, updatedAt = @updatedAt WHERE id = @id'),
+    markOrderDeletion: db.prepare('UPDATE orders SET deletionMark = 1, version = @version WHERE id = @id'),
+    setOrderDeletion: db.prepare('UPDATE orders SET deletionMark = @mark, version = @version WHERE id = @id'),
     insertItem: db.prepare('INSERT INTO order_items (orderId, productId, qty, price) VALUES (@orderId, @productId, @qty, @price)'),
     deleteItems: db.prepare('DELETE FROM order_items WHERE orderId = ?'),
     getMeta: db.prepare('SELECT value FROM meta WHERE key = ?'),
@@ -75,7 +75,7 @@ const hydrateOrder = (order) => {
         date: order.date,
         status: displayStatus,
         deletionMark: !!order.deletionMark,
-        updatedAt: order.updatedAt, // версія для оптимістичної конкуренції (виявлення конфліктів)
+        version: order.version, // токен версії (як ВерсияДанных у 1С) — для виявлення конфліктів
         client: customer ? customer.name : "Невідомий клієнт",
         customer,
         items,
@@ -130,15 +130,15 @@ router.get('/orders', (req, res) => {
 });
 
 router.post('/orders', (req, res) => {
-    const { id: clientId, orderItems, customerId, status, date, baseUpdatedAt } = req.body;
+    const { id: clientId, orderItems, customerId, status, date, baseVersion } = req.body;
 
     const id = clientId || randomUUID();
     const existing = q.orderById.get(id);
 
     // Виявлення конфлікту (оптимістична конкуренція): якщо клієнт редагував від певної
-    // версії (baseUpdatedAt), а на сервері запис відтоді змінився — НЕ перезаписуємо мовчки.
-    // Відсутній baseUpdatedAt = «перезаписати» (нове замовлення або свідомий force).
-    if (existing && baseUpdatedAt != null && Number(existing.updatedAt) !== Number(baseUpdatedAt)) {
+    // версії (baseVersion — як ВерсияДанных у 1С), а на сервері запис відтоді змінився —
+    // НЕ перезаписуємо мовчки. Відсутній baseVersion = «перезаписати» (нове/свідомий force).
+    if (existing && baseVersion != null && String(existing.version) !== String(baseVersion)) {
         return res.status(409).json({
             success: false, conflict: true,
             message: "Замовлення змінили на сервері після ваших правок",
@@ -149,14 +149,14 @@ router.post('/orders', (req, res) => {
     // Upsert за GUID: повторна відправка тієї ж чернетки (той самий id) не дублює
     // (ідемпотентність offline-черги, #6). num присвоюється раз і не змінюється.
     const upsert = db.transaction(() => {
-        const now = Date.now();
+        const version = randomUUID(); // новий токен версії при кожному записі (імітує ВерсияДанных)
         if (existing) {
             q.updateOrder.run({
                 id,
                 customerId: customerId ?? existing.customerId,
                 status: status || existing.status,
                 date: date || existing.date,
-                updatedAt: now
+                version
             });
             q.deleteItems.run(id);
         } else {
@@ -166,7 +166,7 @@ router.post('/orders', (req, res) => {
                 customerId: customerId ?? null,
                 date: date || new Date().toISOString().split('T')[0],
                 status: status || "Відправлено",
-                updatedAt: now
+                version
             });
         }
         normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderId: id, ...it }));
@@ -186,13 +186,13 @@ router.put('/orders/:id', (req, res) => {
     }
 
     const update = db.transaction(() => {
-        const now = Date.now();
+        const version = randomUUID();
         q.updateOrder.run({
             id,
             customerId: customerId ?? existing.customerId,
             status: status || existing.status,
             date: date || existing.date,
-            updatedAt: now
+            version
         });
         if (orderItems) {
             q.deleteItems.run(id);
@@ -200,7 +200,7 @@ router.put('/orders/:id', (req, res) => {
         }
         // Зняття/встановлення помітки на видалення (напр. "Зняти помітку").
         if (deletionMark !== undefined) {
-            q.setOrderDeletion.run({ id, mark: deletionMark ? 1 : 0, updatedAt: now });
+            q.setOrderDeletion.run({ id, mark: deletionMark ? 1 : 0, version });
         }
     });
 
@@ -229,7 +229,7 @@ router.delete('/orders/:id', (req, res) => {
     }
 
     // Відправлене — помітка на видалення (як ПометкаУдаления в 1С).
-    q.markOrderDeletion.run({ id, updatedAt: Date.now() });
+    q.markOrderDeletion.run({ id, version: randomUUID() });
     res.json({ success: true, marked: true, order: hydrateOrder(q.orderById.get(id)), message: "Помічено на видалення" });
 });
 

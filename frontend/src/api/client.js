@@ -60,13 +60,13 @@ export const fetchOrders = async (startDate, endDate) => {
 };
 
 // id — клієнтський GUID замовлення; сервер робить upsert за ним (ідемпотентно).
-// baseUpdatedAt — версія, від якої редагували: сервер виявляє конфлікт (409), якщо
-// запис відтоді змінився. Відсутній baseUpdatedAt = перезаписати (нове/свідомий force).
-export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date, baseUpdatedAt) =>
+// baseVersion — токен версії (як ВерсияДанных у 1С), від якої редагували: сервер виявляє
+// конфлікт (409), якщо запис відтоді змінився. Відсутній baseVersion = перезаписати.
+export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date, baseVersion) =>
     (await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id, orderItems, customerId, total, status, date, baseUpdatedAt }),
+        body: JSON.stringify({ id, orderItems, customerId, total, status, date, baseVersion }),
     })).json();
 
 export const updateOrder = async (id, orderItems, customerId, total, status, date) =>

@@ -67,8 +67,8 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                     continue;
                 }
                 // Upsert за GUID (o.id) — ідемпотентно; повторна відправка не дублює.
-                // baseUpdatedAt — для виявлення конфлікту (сервер відповість 409, якщо змінили).
-                const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseUpdatedAt);
+                // baseVersion — для виявлення конфлікту (сервер відповість 409, якщо змінили).
+                const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion);
                 if (res && res.conflict) {
                     setLocalOrderError(o.id, res.message || "Конфлікт версій", true); failed++;
                     continue; // лишаємо в черзі — користувач вирішить конфлікт на екрані замовлення

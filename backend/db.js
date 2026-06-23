@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { randomUUID } = require('crypto');
 const Database = require('better-sqlite3');
 
 const DB_FILE = path.join(__dirname, 'data', 'vendo.db');
@@ -51,7 +52,7 @@ db.exec(`
         date TEXT NOT NULL,
         status TEXT NOT NULL,
         deletionMark INTEGER NOT NULL DEFAULT 0,
-        updatedAt INTEGER NOT NULL DEFAULT 0
+        version TEXT
     );
 
     CREATE TABLE IF NOT EXISTS order_items (
@@ -72,7 +73,7 @@ db.exec(`
 
 // Міграція наявних баз: додаємо deletionMark, якщо колонки ще немає.
 try { db.exec("ALTER TABLE orders ADD COLUMN deletionMark INTEGER NOT NULL DEFAULT 0"); } catch (e) { /* колонка вже існує */ }
-try { db.exec("ALTER TABLE orders ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0"); } catch (e) { /* колонка вже існує */ }
+try { db.exec("ALTER TABLE orders ADD COLUMN version TEXT"); } catch (e) { /* колонка вже існує */ }
 
 // --- Одноразовий сід із db.json (лише якщо БД порожня) ---
 const seedIfEmpty = () => {
@@ -95,7 +96,7 @@ const seedIfEmpty = () => {
          VALUES (@id, @name, @parentId, @icon, @count, @expanded)`
     );
     const insertOrder = db.prepare(
-        `INSERT INTO orders (id, num, customerId, date, status, updatedAt) VALUES (@id, @num, @customerId, @date, @status, @updatedAt)`
+        `INSERT INTO orders (id, num, customerId, date, status, version) VALUES (@id, @num, @customerId, @date, @status, @version)`
     );
     const insertItem = db.prepare(
         `INSERT INTO order_items (orderId, productId, qty, price) VALUES (@orderId, @productId, @qty, @price)`
@@ -115,7 +116,7 @@ const seedIfEmpty = () => {
         }));
         (seed.categories || []).forEach(c => insertCategory.run({ ...c, parentId: c.parentId ?? null, expanded: c.expanded ? 1 : 0 }));
         (seed.orders || []).forEach(o => {
-            insertOrder.run({ id: o.id, num: o.num ?? null, customerId: o.customerId ?? null, date: o.date, status: o.status, updatedAt: o.updatedAt ?? Date.now() });
+            insertOrder.run({ id: o.id, num: o.num ?? null, customerId: o.customerId ?? null, date: o.date, status: o.status, version: o.version ?? randomUUID() });
             (o.items || []).forEach(it => insertItem.run({
                 orderId: o.id,
                 productId: it.productId ?? it.product?.id ?? null,
