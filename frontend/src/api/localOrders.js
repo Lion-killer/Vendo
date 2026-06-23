@@ -49,6 +49,17 @@ export const updateLocalOrderStatus = (id, status) => {
     }
 };
 
+// Позначити запис помилкою синхронізації (лишається в черзі для повторної спроби).
+export const setLocalOrderError = (id, message) => {
+    const orders = getLocalOrders();
+    const i = orders.findIndex(o => o.id === id);
+    if (i >= 0) {
+        orders[i].syncError = message || "Помилка";
+        orders[i].syncAttempts = (orders[i].syncAttempts || 0) + 1;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    }
+};
+
 export const removeLocalOrder = (id) => {
     const orders = getLocalOrders();
     const newOrders = orders.filter(o => o.id !== id);

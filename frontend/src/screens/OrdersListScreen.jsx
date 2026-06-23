@@ -84,7 +84,10 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             }
 
             const locals = getLocalOrders();
-            const filteredLocals = locals.filter(o => o.date >= startDate && o.date <= endDate);
+            // Локальні позначаємо _pending (очікують синхронізації); syncError — помилка спроби.
+            const filteredLocals = locals
+                .filter(o => o.date >= startDate && o.date <= endDate)
+                .map(o => ({ ...o, _pending: true }));
 
             const merged = [...filteredLocals];
             for (const r of data) {
@@ -239,6 +242,8 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                         <p style={{ color: t.text, fontSize: 14, fontWeight: 800, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{o.num || `№${String(o.id || '').slice(0, 8)}`}</p>
                                         <span style={{ fontSize: 10, color: t.textMuted }}>{o.date}</span>
                                         {!refs.ok && <span title="Посилання на видалені дані" style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>НЕДОСТУПНІ ДАНІ</span>}
+                                        {o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>ПОМИЛКА</span>
+                                            : o._pending && <span title="Очікує синхронізації" style={{ fontSize: 9.5, fontWeight: 800, color: t.textMuted, background: t.textMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>ОЧІКУЄ</span>}
                                     </div>
                                     <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600 }}>{o.client || o.customer?.name || "Невідомий клієнт"}</p>
                                 </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Snackbar } from '../components/Shared';
 import { MIcon, Card, F_NUM } from '../components/ui';
 import { createOrder, deleteOrder } from '../api/client';
-import { getLocalOrders, removeLocalOrder } from '../api/localOrders';
+import { getLocalOrders, removeLocalOrder, setLocalOrderError } from '../api/localOrders';
 import { idSet, checkOrderRefs } from '../api/refs';
 
 // Розбір суми з рядка ("4 280 ₴" / "1 078.00 ₴") або числа → Number.
@@ -45,47 +45,50 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     const doSync = async () => {
         if (!isOnline) { setSnack("Немає підключення"); setTimeout(() => setSnack(""), 2500); return; }
         setSyncing(true);
-        try {
-            const locals = getLocalOrders();
-            // Звірка посилань можлива лише коли довідники завантажені (інакше все
-            // здавалося б «зниклим»). За GUID-ідентичності зіставлення надійне.
-            const canCheck = products.length > 0 && customers.length > 0;
-            const prodIds = idSet(products), custIds = idSet(customers);
-            let skipped = 0;
-            for (const o of locals) {
-                // Черга видалення (офлайн-видалення серверного замовлення): помічаємо на сервері.
+        // Стійка синхронізація: одна помилка не валить усю чергу. Кожен запис має свій
+        // стан — успіх (видаляємо з черги), помилка (лишаємо + syncError, ретрай наступного
+        // разу), пропуск (зниклі посилання). Підсумок показуємо в снеку.
+        const locals = getLocalOrders();
+        const canCheck = products.length > 0 && customers.length > 0;
+        const prodIds = idSet(products), custIds = idSet(customers);
+        let sent = 0, failed = 0, skipped = 0;
+        for (const o of locals) {
+            try {
                 if (o.op === 'delete') {
                     if (o.num) {
                         const r = await deleteOrder(o.id);
                         if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено сервером");
                     }
-                    removeLocalOrder(o.id);
+                    removeLocalOrder(o.id); sent++;
                     continue;
                 }
-                if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { skipped++; continue; }
-                const numericTotal = parseMoney(o.total);
+                if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) {
+                    setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++;
+                    continue;
+                }
                 // Upsert за GUID (o.id) — ідемпотентно; повторна відправка не дублює.
-                const res = await createOrder(o.id, o.items, o.customerId, numericTotal, "Відправлено");
-                // Прибираємо локальний запис ЛИШЕ якщо сервер прийняв замовлення.
+                const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено");
                 if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
-                removeLocalOrder(o.id);
+                removeLocalOrder(o.id); sent++;
+            } catch (e) {
+                console.error("Sync error for", o.id, e);
+                setLocalOrderError(o.id, e.message || "Помилка"); failed++;
             }
-            if (refreshOrders) refreshOrders();
-            setSnack(skipped
-                ? `Синхронізовано; ${skipped} пропущено (посилання на видалені дані)`
-                : "Синхронізацію завершено");
-        } catch (e) {
-            console.error("Sync error:", e);
-            setSnack("Помилка синхронізації");
-        } finally {
-            setSyncing(false);
-            setTimeout(() => setSnack(""), 2500);
         }
+        if (refreshOrders) refreshOrders();
+        const parts = [];
+        if (sent) parts.push(`надіслано ${sent}`);
+        if (failed) parts.push(`помилок ${failed}`);
+        if (skipped) parts.push(`пропущено ${skipped}`);
+        setSnack(parts.length ? `Синхронізація: ${parts.join(", ")}` : "Немає чого синхронізувати");
+        setSyncing(false);
+        setTimeout(() => setSnack(""), 3000);
     };
 
-    // Локальні + серверні замовлення, де-дуп за номером.
+    // Локальні + серверні замовлення, де-дуп за id. Локальні позначаємо _pending
+    // (очікують синхронізації); їхній syncError — помилка останньої спроби.
     const displayOrders = (() => {
-        const locals = getLocalOrders();
+        const locals = getLocalOrders().map(o => ({ ...o, _pending: true }));
         const merged = [...locals];
         for (const r of orders) if (!merged.find(m => m.id === r.id)) merged.push(r);
         return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -192,12 +195,14 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                     ) : (
                     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                         {todayOrders.map((o, i, arr) => (
-                            <div key={o.num} onClick={() => onNav("orders", { order: o })} style={{ display: "flex", alignItems: "center", padding: "12px 14px", borderBottom: i < arr.length - 1 ? `1px solid ${t.lineSoft}` : "none", cursor: "pointer", opacity: o.deletionMark ? 0.55 : 1 }}>
+                            <div key={o.id} onClick={() => onNav("orders", { order: o })} style={{ display: "flex", alignItems: "center", padding: "12px 14px", borderBottom: i < arr.length - 1 ? `1px solid ${t.lineSoft}` : "none", cursor: "pointer", opacity: o.deletionMark ? 0.55 : 1 }}>
                                 <div style={{ width: 4, alignSelf: "stretch", background: statusColor(o), borderRadius: 2, marginRight: 12 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                         <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</span>
                                         {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>НОВЕ</span>}
+                                        {o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ПОМИЛКА</span>
+                                            : (o._pending && !isNew(o)) ? <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ОЧІКУЄ</span> : null}
                                     </div>
                                     <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || "Невідомий клієнт"}</div>
                                 </div>
