@@ -1,12 +1,62 @@
 import React, { useState } from 'react';
-import { MIcon, Card, Pill, F_NUM } from '../components/ui';
+import { MIcon, Card, F_NUM } from '../components/ui';
 
 const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { maximumFractionDigits: 0 });
 
-const ClientRow = ({ t, c }) => {
+// Картка клієнта (нижня шторка) — деталі + контактні особи.
+const ClientCard = ({ t, c, onClose }) => {
+    const debt = Number(c.debt) || 0;
+    // Кілька контактних осіб (#11) — поки бекенд віддає одну; підтримуємо й масив c.contacts.
+    const contacts = Array.isArray(c.contacts) ? c.contacts
+        : (c.contact || c.phone) ? [{ name: c.contact || "Контактна особа", phone: c.phone }] : [];
+    const Field = ({ label, value, tel }) => value ? (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: `1px solid ${t.lineSoft}` }}>
+            <span style={{ fontSize: 12.5, color: t.inkMuted, flexShrink: 0 }}>{label}</span>
+            {tel
+                ? <a href={`tel:${value}`} style={{ fontSize: 13.5, fontWeight: 600, color: t.accent, textAlign: "right", fontFamily: F_NUM, textDecoration: "none" }}>{value}</a>
+                : <span style={{ fontSize: 13.5, fontWeight: 600, textAlign: "right", minWidth: 0, wordBreak: "break-word" }}>{value}</span>}
+        </div>
+    ) : null;
+
+    return (
+        <div onClick={onClose} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 120, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "12px 16px max(20px, env(safe-area-inset-bottom))", maxHeight: "85vh", overflowY: "auto" }}>
+                <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "4px auto 16px" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: t.surfaceMuted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <MIcon name="building" size={22} color={t.inkSoft} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>{c.name}</div>
+                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? `Борг ${money(debt)} ₴` : `Переплата ${money(-debt)} ₴`}</div>}
+                    </div>
+                </div>
+
+                <div style={{ marginTop: 8 }}>
+                    <Field label="Код" value={c.code} />
+                    <Field label="Найменування" value={c.name} />
+                    <Field label="Адреса" value={c.address || c.city} />
+                    <Field label="Телефон" value={c.phone} tel />
+                </div>
+
+                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "18px 0 8px" }}>Контактні особи</div>
+                {contacts.length === 0 ? (
+                    <div style={{ fontSize: 13, color: t.inkMuted, paddingBottom: 8 }}>Не вказано</div>
+                ) : contacts.map((p, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: i < contacts.length - 1 ? `1px solid ${t.lineSoft}` : "none" }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name || "Контактна особа"}</span>
+                        {p.phone && <a href={`tel:${p.phone}`} style={{ fontSize: 13, fontWeight: 600, color: t.accent, fontFamily: F_NUM, textDecoration: "none", flexShrink: 0 }}>{p.phone}</a>}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const ClientRow = ({ t, c, onClick }) => {
     const debt = Number(c.debt) || 0;
     return (
-        <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
+        <Card t={t} onClick={onClick} style={{ padding: 12, marginBottom: 8, cursor: "pointer" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 46, height: 46, borderRadius: 12, background: t.surfaceMuted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <MIcon name="building" size={21} color={t.inkSoft} />
@@ -17,15 +67,29 @@ const ClientRow = ({ t, c }) => {
                         <span style={{ fontFamily: F_NUM }}>{c.code}</span>
                         {(c.city || c.address) && <><span style={{ color: t.line }}>·</span><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.city || c.address}</span></>}
                     </div>
-                    {(debt > 0 || c.phone || c.contact) && (
+                    {(c.phone || c.contact) && (
                         <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
-                            {debt > 0 && <Pill bg={t.errSoft} fg={t.err}>Борг {money(debt)} ₴</Pill>}
                             {c.contact && <span style={{ fontSize: 11, color: t.inkSoft }}>{c.contact}</span>}
                             {c.phone && <span style={{ fontSize: 11, color: t.inkSoft, fontFamily: F_NUM }}>{c.phone}</span>}
                         </div>
                     )}
                 </div>
-                <MIcon name="chevron" size={16} color={t.inkMuted} />
+                {/* Колонка боргу/переплати: борг — червоним, переплата (від'ємний борг) — зеленим */}
+                <div style={{ flexShrink: 0, textAlign: "right", marginLeft: 8, minWidth: 72 }}>
+                    {debt > 0 ? (
+                        <>
+                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.err }}>{money(debt)} ₴</div>
+                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>борг</div>
+                        </>
+                    ) : debt < 0 ? (
+                        <>
+                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.ok }}>{money(-debt)} ₴</div>
+                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>переплата</div>
+                        </>
+                    ) : (
+                        <div style={{ fontSize: 13, color: t.inkMuted }}>—</div>
+                    )}
+                </div>
             </div>
         </Card>
     );
@@ -34,6 +98,7 @@ const ClientRow = ({ t, c }) => {
 export const CustomersScreen = ({ t, customers = [], isOnline }) => {
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
+    const [selected, setSelected] = useState(null);
 
     const withDebt = customers.filter(c => (Number(c.debt) || 0) > 0);
     const filters = [
@@ -50,7 +115,7 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
             {/* Шапка */}
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
                     <div>
                         <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Клієнти</div>
                         <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 2 }}>
@@ -88,9 +153,11 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
                         <MIcon name="users" size={36} color={t.line} />
                         <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>Нічого не знайдено</div>
                     </div>
-                ) : list.map(c => <ClientRow key={c.id || c.code} t={t} c={c} />)}
+                ) : list.map(c => <ClientRow key={c.id || c.code} t={t} c={c} onClick={() => setSelected(c)} />)}
                 <div style={{ height: 16 }} />
             </div>
+
+            {selected && <ClientCard t={t} c={selected} onClose={() => setSelected(null)} />}
         </div>
     );
 };
