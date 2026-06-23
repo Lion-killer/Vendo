@@ -177,6 +177,7 @@ export default function App() {
 
   const handleLogout = () => {
     clearSession();
+    localStorage.removeItem('vendo_token'); // bearer-токен; повторний вхід видасть новий
     setUserName("");
     setOrderItems([]);
     setEditOrderId(null);

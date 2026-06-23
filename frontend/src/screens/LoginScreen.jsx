@@ -22,14 +22,14 @@ export const LoginScreen = ({ t, onLogin }) => {
         }
         if (!raw) { setLoading(false); return; } // скасовано користувачем
 
-        // 2) Парсимо вміст: GUID пристрою + (опційно) адреса бекенду
-        const { deviceId, apiUrl } = parseQr(raw);
+        // 2) Парсимо вміст: GUID пристрою + (опційно) адреса бекенду + код прив'язки
+        const { deviceId, apiUrl, pairingCode } = parseQr(raw);
         if (apiUrl) localStorage.setItem('vendo_api_url', apiUrl);
         if (deviceId) localStorage.setItem('vendo_device_id', deviceId);
 
-        // 3) Автентифікація за пристроєм
+        // 3) Обмін коду прив'язки на токен
         try {
-            const res = await auth(deviceId);
+            const res = await auth(deviceId, pairingCode);
             if (res.success) {
                 setLoading(false); setScanned(true);
                 setTimeout(() => onLogin(res.user?.name || deviceId || "Користувач", res.token), 700);

@@ -52,6 +52,17 @@
 					<ContextMenu name="АвтоПроведениеКонтекстноеМеню" id="51" />
 					<ExtendedTooltip name="АвтоПроведениеРасширеннаяПодсказка" id="52" />
 				</CheckBoxField>
+				<CheckBoxField name="Заблокировано" id="53">
+					<DataPath>Объект.Заблокировано</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Заблоковано (відкликати доступ)</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ЗаблокированоКонтекстноеМеню" id="54" />
+					<ExtendedTooltip name="ЗаблокированоРасширеннаяПодсказка" id="55" />
+				</CheckBoxField>
 			</ChildItems>
 		</UsualGroup>
 		<UsualGroup name="ГруппаQR" id="18">
@@ -75,6 +86,27 @@
 					<ContextMenu name="ПодсказкаQRКонтекстноеМеню" id="21" />
 					<ExtendedTooltip name="ПодсказкаQRРасширеннаяПодсказка" id="22" />
 				</LabelDecoration>
+				<InputField name="КодПривязки" id="56">
+					<DataPath>Объект.КодПривязки</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Код прив'язки</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="КодПривязкиКонтекстноеМеню" id="57" />
+					<ExtendedTooltip name="КодПривязкиРасширеннаяПодсказка" id="58" />
+				</InputField>
+				<Button name="КнопкаСгенерироватьКодПривязки" id="59">
+					<CommandName>Form.Command.СгенерироватьКодПривязки</CommandName>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Згенерувати код прив'язки</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="КнопкаСгенерироватьКодПривязкиРасширеннаяПодсказка" id="60" />
+				</Button>
 				<PictureField name="КартинкаQR" id="23">
 					<DataPath>АдресКартинкиQR</DataPath>
 					<Width>25</Width>
@@ -169,4 +201,9 @@
 			</Type>
 		</Attribute>
 	</Attributes>
+	<Commands>
+		<Command name="СгенерироватьКодПривязки" id="1">
+			<Action>СгенерироватьКодПривязки</Action>
+		</Command>
+	</Commands>
 </Form>

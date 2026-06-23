@@ -5,12 +5,16 @@ const DEFAULT_API = 'http://10.0.2.2:3000/api';
 
 const apiUrl = () => localStorage.getItem('vendo_api_url') || DEFAULT_API;
 const deviceId = () => localStorage.getItem('vendo_device_id') || '';
+const token = () => localStorage.getItem('vendo_token') || '';
 
-// Заголовки із X-Device-Id (за яким 1С-бекенд фільтрує дані пристрою).
+// Заголовки: X-Device-Id — ідентифікатор пристрою (за ним 1С фільтрує дані),
+// Authorization: Bearer — секретний токен (видається в /auth в обмін на код прив'язки).
 const h = (extra = {}) => {
     const headers = { ...extra };
     const d = deviceId();
     if (d) headers['X-Device-Id'] = d;
+    const tk = token();
+    if (tk) headers['Authorization'] = `Bearer ${tk}`;
     return headers;
 };
 
@@ -23,13 +27,18 @@ const tfetch = (url, opts = {}, timeout = TIMEOUT) => {
     return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
 };
 
-export const auth = async (devId) => {
+// Обмін одноразового коду прив'язки на bearer-токен. Токен зберігаємо локально —
+// далі ним підписуються всі запити (див. h()). На цьому етапі токена ще немає,
+// тому Authorization не шлемо.
+export const auth = async (devId, pairingCode) => {
     const res = await tfetch(`${apiUrl()}/auth`, {
         method: 'POST',
-        headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ deviceId: devId || deviceId() }),
+        headers: { 'Content-Type': 'application/json', ...(devId ? { 'X-Device-Id': devId } : {}) },
+        body: JSON.stringify({ deviceId: devId || deviceId(), pairingCode }),
     });
-    return res.json();
+    const data = await res.json();
+    if (data.success && data.token) localStorage.setItem('vendo_token', data.token);
+    return data;
 };
 
 export const fetchProducts = async () =>

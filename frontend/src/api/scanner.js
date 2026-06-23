@@ -17,23 +17,25 @@ export async function scanQr() {
 }
 
 // Парсинг вмісту QR. Підтримувані формати:
-//   • JSON: {"deviceId":"...","apiUrl":"https://.../hs/vendo"}
-//   • URL із параметрами: https://host/hs/vendo?device=GUID
+//   • JSON: {"deviceId":"...","apiUrl":"https://.../hs/vendo","code":"..."}
+//   • URL із параметрами: https://host/hs/vendo?device=GUID&code=...
 //   • просто URL бекенду  → apiUrl
 //   • просто рядок         → deviceId (GUID пристрою)
+// code — одноразовий код прив'язки; обмінюється на bearer-токен у /auth.
 export function parseQr(raw) {
     if (!raw) return {};
     try {
         const o = JSON.parse(raw);
         if (o && typeof o === 'object' && (o.deviceId || o.device || o.apiUrl || o.url)) {
-            return { deviceId: o.deviceId || o.device, apiUrl: o.apiUrl || o.url };
+            return { deviceId: o.deviceId || o.device, apiUrl: o.apiUrl || o.url, pairingCode: o.code || o.pairingCode };
         }
     } catch (e) { /* не JSON */ }
     try {
         const u = new URL(raw);
         const dev = u.searchParams.get('device') || u.searchParams.get('deviceId');
         const api = u.searchParams.get('url') || u.searchParams.get('api');
-        if (dev || api) return { deviceId: dev || undefined, apiUrl: api || undefined };
+        const code = u.searchParams.get('code') || u.searchParams.get('pairingCode');
+        if (dev || api || code) return { deviceId: dev || undefined, apiUrl: api || undefined, pairingCode: code || undefined };
         return { apiUrl: raw }; // URL без параметрів — адреса бекенду
     } catch (e) { /* не URL */ }
     return { deviceId: raw }; // простий рядок — ідентифікатор пристрою
