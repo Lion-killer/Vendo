@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { MIcon, Card, F_NUM, ProductImage } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow } from '../components/ui';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
 function buildTree(categories, products) {
@@ -127,7 +127,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
             {/* Шапка */}
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
                     <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Каталог</div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 44 }}>
                         <div style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -152,7 +152,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                     <div onClick={() => onNav("orders", { keepOrder: true })} style={{ marginTop: 10, background: t.accentSoft, border: `1px solid ${t.accent}22`, borderRadius: 12, padding: "9px 12px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                         <MIcon name="cart" size={16} color={t.accentInk} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editOrderId ? `Замовлення ${editOrderId} (Чернетка)` : "Нове замовлення (Чернетка)"}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editOrderId ? `Замовлення ${editOrderId}` : "Нове замовлення"}</div>
                             {editCustomer?.name && <div style={{ fontSize: 11.5, color: t.accentInk, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{editCustomer.name}</div>}
                         </div>
                     </div>
@@ -160,7 +160,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
 
                 {/* Хлібні крихти */}
                 {!searching && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 12, overflowX: "auto", whiteSpace: "nowrap", paddingBottom: 2 }}>
+                    <ScrollRow fade={t.bg} gap={2} stickEnd={path} style={{ marginTop: 12, paddingBottom: 2 }}>
                         {crumbs.map((c, i) => {
                             const isLast = i === crumbs.length - 1;
                             return (
@@ -173,7 +173,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                                 </div>
                             );
                         })}
-                    </div>
+                    </ScrollRow>
                 )}
             </div>
 

@@ -1,5 +1,34 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { F_NUM } from '../theme';
+
+// Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
+// тінь зліва/справа зʼявляється лише коли є куди гортати (чіпи фільтра, хлібні крихти).
+// fade — колір фону-підкладки (для коректного згасання в прозорість потрібен 6-знач. hex).
+// stickEnd — прокрутити в кінець при зміні вмісту (актуально для хлібних крихт: видно поточний вузол).
+export const ScrollRow = ({ children, fade, gap = 8, stickEnd = false, style = {} }) => {
+  const ref = useRef(null);
+  const [edge, setEdge] = useState({ l: false, r: false });
+  const update = () => {
+    const el = ref.current; if (!el) return;
+    setEdge({ l: el.scrollLeft > 2, r: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+  };
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    if (stickEnd) el.scrollLeft = el.scrollWidth;
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update); ro.observe(el);
+    return () => { el.removeEventListener('scroll', update); ro.disconnect(); };
+  }, [children, stickEnd]);
+  const mask = (side) => ({ position: 'absolute', top: 0, bottom: 0, [side]: 0, width: 26, pointerEvents: 'none', background: `linear-gradient(to ${side === 'left' ? 'right' : 'left'}, ${fade}, ${fade}00)` });
+  return (
+    <div style={{ position: 'relative', ...style }}>
+      <div ref={ref} style={{ display: 'flex', gap, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>{children}</div>
+      {edge.l && <div style={mask('left')} />}
+      {edge.r && <div style={mask('right')} />}
+    </div>
+  );
+};
 
 // ─── Тонкі stroke-іконки (геометричні) ─────────────────────────────────────────
 export const MIcon = ({ name, size = 20, color = "currentColor", w = 1.6 }) => (

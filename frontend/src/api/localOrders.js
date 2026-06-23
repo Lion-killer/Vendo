@@ -38,7 +38,7 @@ export const updateLocalOrderStatus = (num, status) => {
 
     if (existingIndex >= 0) {
         orders[existingIndex].status = status;
-        const color = status === "Чернетка" ? "#F2994A" : (status === "Очікує відправки" ? "#2D9CDB" : "#F2C94C");
+        const color = status === "Нове" ? "#F2994A" : "#F2C94C";
         orders[existingIndex].sColor = color;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
     }

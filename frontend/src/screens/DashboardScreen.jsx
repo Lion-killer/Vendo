@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Snackbar } from '../components/Shared';
 import { MIcon, Card, F_NUM } from '../components/ui';
 import { createOrder, updateOrder } from '../api/client';
@@ -16,10 +16,30 @@ const fmtMoney = (n) => n.toLocaleString('uk-UA', { maximumFractionDigits: 0 });
 const initials = (name) => (name || "")
     .split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]?.toUpperCase()).join("") || "?";
 
+// Відносний час останньої синхронізації ("щойно", "5 хв тому", "2 год тому", "вчора"…).
+const syncLabel = (ts) => {
+    if (!ts) return "ще не було";
+    const min = Math.floor((Date.now() - ts) / 60000);
+    if (min < 1) return "щойно";
+    if (min < 60) return `${min} хв тому`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h} год тому`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? "вчора" : `${d} дн тому`;
+};
+
 export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, refreshOrders, onLogout, isDark, onToggleTheme }) => {
     const [syncing, setSyncing] = useState(false);
     const [snack, setSnack] = useState("");
     const [showProfile, setShowProfile] = useState(false);
+
+    // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
+    // ("щойно" → "1 хв тому" → …). Хвилинна гранулярність — навантаження мінімальне.
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setTick(t => t + 1), 60000);
+        return () => clearInterval(id);
+    }, []);
 
     const doSync = async () => {
         if (!isOnline) { setSnack("Немає підключення"); setTimeout(() => setSnack(""), 2500); return; }
@@ -29,8 +49,13 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             for (const o of locals) {
                 const isLocal = String(o.num).startsWith("local_");
                 const numericTotal = parseMoney(o.total);
-                if (!isLocal && o.num) await updateOrder(o.num, o.items, o.customerId, numericTotal, "Відправлено");
-                else await createOrder(o.items, o.customerId, numericTotal, "Відправлено");
+                const res = (!isLocal && o.num)
+                    ? await updateOrder(o.num, o.items, o.customerId, numericTotal, "Відправлено")
+                    : await createOrder(o.items, o.customerId, numericTotal, "Відправлено");
+                // Прибираємо локальний запис ЛИШЕ якщо 1С прийняла й провела замовлення.
+                // Інакше (напр. контроль залишків відхилив проведення) лишаємо чернетку
+                // й перериваємо — користувач побачить помилку і повторить пізніше.
+                if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
                 removeLocalOrder(o.num);
             }
             if (refreshOrders) refreshOrders();
@@ -53,24 +78,40 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     })();
 
     const ordersCount = displayOrders.length;
-    const draftsCount = displayOrders.filter(o => o.status === 'Чернетка' || o.status === 'Очікує відправки').length;
+    const draftsCount = displayOrders.filter(o => o.status === 'Нове').length;
     const revenue = displayOrders.reduce((s, o) => s + parseMoney(o.total), 0);
     const avgCheck = ordersCount ? Math.round(revenue / ordersCount) : 0;
 
     const today = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
 
-    const statusColor = (o) => o.sColor || (o.status === 'Відправлено' ? t.ok : o.status === 'Підтверджено' ? t.accent : t.inkSoft);
-    const isDraft = (o) => o.status === 'Чернетка' || o.status === 'Очікує відправки';
-    const orderNum = (o) => String(o.num).startsWith('local_') ? `Ч-${String(o.num).slice(-4)}` : o.num;
+    const statusColor = (o) => o.sColor || (o.status === 'Видалено' ? t.err : o.status === 'Відправлено' ? t.ok : o.status === 'Нове' ? t.warn : t.inkSoft);
+    const isNew = (o) => o.status === 'Нове';
+    const orderNum = (o) => String(o.num).startsWith('local_') ? `№${String(o.num).slice(-4)}` : o.num;
+
+    // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки на головній.
+    const todayISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+    const todayOrders = displayOrders.filter(o => o.date === todayISO);
+
+    // Стан синхронізації: час останньої вдалої синхронізації + локальна черга на відправку.
+    const lastSync = Number(localStorage.getItem('vendo_last_sync')) || 0;
+    const pendingCount = getLocalOrders().length;
 
     const stats = [
-        { l: "Каталог", v: fmtMoney(productsCount), s: "позицій", icon: "grid", onClick: () => onNav("catalog") },
-        { l: "Клієнти", v: String(customersCount), s: "активні", icon: "users", onClick: () => onNav("customers") },
-        { l: "Чернетки", v: String(draftsCount), s: "не відпр.", icon: "doc", warn: draftsCount > 0, onClick: () => onNav("ordersList") },
+        {
+            l: "Синхронізація",
+            v: lastSync ? new Date(lastSync).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : "—",
+            s: syncLabel(lastSync), icon: "sync", onClick: doSync,
+        },
+        {
+            l: "На відправку",
+            v: String(pendingCount),
+            s: pendingCount ? "очікують" : "надіслано",
+            icon: "send", warn: pendingCount > 0, onClick: () => onNav("ordersList"),
+        },
     ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, overflowY: "auto", paddingBottom: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
             {/* Верхня панель */}
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <button onClick={() => setShowProfile(true)} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
@@ -115,7 +156,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             </div>
 
             {/* Швидка статистика */}
-            <div style={{ margin: "16px 16px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <div style={{ margin: "16px 16px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {stats.map(s => (
                     <button key={s.l} onClick={s.onClick} style={{ textAlign: "left", cursor: "pointer", padding: "12px", background: t.surface, border: `1px solid ${t.line}`, borderRadius: 16, fontFamily: "inherit" }}>
                         <div style={{ marginBottom: 6, display: "flex" }}><MIcon name={s.icon} size={16} color={s.warn ? t.warn : t.inkMuted} /></div>
@@ -125,32 +166,35 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                 ))}
             </div>
 
-            {/* Останні замовлення */}
-            <div style={{ margin: "16px 16px 0" }}>
+            {/* Сьогоднішні замовлення — займають усю нижню область, скрол усередині */}
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 16px 12px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 4px 8px" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>Останні замовлення</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>Сьогоднішні замовлення</div>
                     <div onClick={() => onNav("ordersList")} style={{ fontSize: 12, color: t.accent, fontWeight: 600, cursor: "pointer" }}>Усі →</div>
                 </div>
-                <Card t={t}>
-                    {displayOrders.length === 0 && (
-                        <div style={{ padding: "24px 14px", textAlign: "center", color: t.inkMuted, fontSize: 13 }}>Замовлень ще немає</div>
-                    )}
-                    {displayOrders.slice(0, 3).map((o, i, arr) => (
-                        <div key={o.num} onClick={() => onNav("orders", { order: o })} style={{ display: "flex", alignItems: "center", padding: "12px 14px", borderBottom: i < arr.length - 1 ? `1px solid ${t.lineSoft}` : "none", cursor: "pointer" }}>
-                            <div style={{ width: 4, alignSelf: "stretch", background: statusColor(o), borderRadius: 2, marginRight: 12 }} />
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600 }}>{orderNum(o)}</span>
-                                    {isDraft(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkSoft, background: t.surfaceMuted, padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ЧЕРНЕТКА</span>}
+                <Card t={t} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                    {todayOrders.length === 0 ? (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", color: t.inkMuted, fontSize: 13, padding: 24 }}>Сьогодні замовлень ще немає</div>
+                    ) : (
+                    <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+                        {todayOrders.map((o, i, arr) => (
+                            <div key={o.num} onClick={() => onNav("orders", { order: o })} style={{ display: "flex", alignItems: "center", padding: "12px 14px", borderBottom: i < arr.length - 1 ? `1px solid ${t.lineSoft}` : "none", cursor: "pointer", opacity: o.deletionMark ? 0.55 : 1 }}>
+                                <div style={{ width: 4, alignSelf: "stretch", background: statusColor(o), borderRadius: 2, marginRight: 12 }} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                        <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</span>
+                                        {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>НОВЕ</span>}
+                                    </div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || "Невідомий клієнт"}</div>
                                 </div>
-                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || "Невідомий клієнт"}</div>
+                                <div style={{ textAlign: "right", marginLeft: 10 }}>
+                                    <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{o.total}</div>
+                                    <div style={{ fontSize: 10.5, color: statusColor(o), fontWeight: 600, marginTop: 1 }}>{o.status}</div>
+                                </div>
                             </div>
-                            <div style={{ textAlign: "right", marginLeft: 10 }}>
-                                <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{o.total}</div>
-                                <div style={{ fontSize: 10.5, color: statusColor(o), fontWeight: 600, marginTop: 1 }}>{o.status}</div>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                    )}
                 </Card>
             </div>
 
