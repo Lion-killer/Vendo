@@ -28,8 +28,10 @@ db.exec(`
         name TEXT NOT NULL,
         code TEXT,
         city TEXT,
+        address TEXT,
         contact TEXT,
         phone TEXT,
+        contacts TEXT,
         debt REAL NOT NULL DEFAULT 0,
         status TEXT
     );
@@ -83,8 +85,8 @@ const seedIfEmpty = () => {
          VALUES (@id, @name, @sku, @price, @stock, @unit, @category, @categoryId, @img)`
     );
     const insertCustomer = db.prepare(
-        `INSERT INTO customers (id, name, code, city, contact, phone, debt, status)
-         VALUES (@id, @name, @code, @city, @contact, @phone, @debt, @status)`
+        `INSERT INTO customers (id, name, code, city, address, contact, phone, contacts, debt, status)
+         VALUES (@id, @name, @code, @city, @address, @contact, @phone, @contacts, @debt, @status)`
     );
     const insertCategory = db.prepare(
         `INSERT INTO categories (id, name, parentId, icon, count, expanded)
@@ -100,7 +102,15 @@ const seedIfEmpty = () => {
 
     const seedAll = db.transaction(() => {
         (seed.products || []).forEach(p => insertProduct.run({ ...p, categoryId: p.categoryId ?? null }));
-        (seed.customers || []).forEach(c => insertCustomer.run(c));
+        (seed.customers || []).forEach(c => insertCustomer.run({
+            ...c,
+            address: c.address ?? null,
+            contact: c.contact ?? null,
+            phone: c.phone ?? null,
+            // contacts зберігаємо як JSON-рядок (SQLite не біндить масиви)
+            contacts: c.contacts ? JSON.stringify(c.contacts) : null,
+            status: c.status ?? null
+        }));
         (seed.categories || []).forEach(c => insertCategory.run({ ...c, parentId: c.parentId ?? null, expanded: c.expanded ? 1 : 0 }));
         (seed.orders || []).forEach(o => {
             insertOrder.run({ num: o.num, customerId: o.customerId ?? null, date: o.date, status: o.status });

@@ -7,8 +7,8 @@ const router = express.Router();
 const q = {
     products: db.prepare('SELECT id, name, sku, price, stock, unit, category, categoryId, img FROM products'),
     productById: db.prepare('SELECT id, name, sku, price, stock, unit, category, categoryId, img FROM products WHERE id = ?'),
-    customers: db.prepare('SELECT id, name, code, city, contact, phone, debt, status FROM customers'),
-    customerById: db.prepare('SELECT id, name, code, city, contact, phone, debt, status FROM customers WHERE id = ?'),
+    customers: db.prepare('SELECT id, name, code, city, address, contact, phone, contacts, debt, status FROM customers'),
+    customerById: db.prepare('SELECT id, name, code, city, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
     categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
     orders: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders ORDER BY date DESC, num DESC'),
     orderByNum: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders WHERE num = ?'),
@@ -106,7 +106,10 @@ router.get('/categories', (req, res) => {
 });
 
 router.get('/customers', (req, res) => {
-    res.json(q.customers.all());
+    res.json(q.customers.all().map(c => ({
+        ...c,
+        contacts: c.contacts ? JSON.parse(c.contacts) : undefined
+    })));
 });
 
 router.get('/orders', (req, res) => {
