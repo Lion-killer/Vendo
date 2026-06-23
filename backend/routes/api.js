@@ -7,8 +7,8 @@ const router = express.Router();
 const q = {
     products: db.prepare('SELECT id, name, sku, price, stock, unit, category, categoryId, img FROM products'),
     productById: db.prepare('SELECT id, name, sku, price, stock, unit, category, categoryId, img FROM products WHERE id = ?'),
-    customers: db.prepare('SELECT id, name, code, city, address, contact, phone, contacts, debt, status FROM customers'),
-    customerById: db.prepare('SELECT id, name, code, city, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
+    customers: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers'),
+    customerById: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
     categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
     orders: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders ORDER BY date DESC, num DESC'),
     orderByNum: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders WHERE num = ?'),

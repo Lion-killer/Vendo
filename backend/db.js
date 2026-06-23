@@ -27,7 +27,6 @@ db.exec(`
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         code TEXT,
-        city TEXT,
         address TEXT,
         contact TEXT,
         phone TEXT,
@@ -85,8 +84,8 @@ const seedIfEmpty = () => {
          VALUES (@id, @name, @sku, @price, @stock, @unit, @category, @categoryId, @img)`
     );
     const insertCustomer = db.prepare(
-        `INSERT INTO customers (id, name, code, city, address, contact, phone, contacts, debt, status)
-         VALUES (@id, @name, @code, @city, @address, @contact, @phone, @contacts, @debt, @status)`
+        `INSERT INTO customers (id, name, code, address, contact, phone, contacts, debt, status)
+         VALUES (@id, @name, @code, @address, @contact, @phone, @contacts, @debt, @status)`
     );
     const insertCategory = db.prepare(
         `INSERT INTO categories (id, name, parentId, icon, count, expanded)

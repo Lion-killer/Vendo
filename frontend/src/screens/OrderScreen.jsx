@@ -18,7 +18,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // Пошук контрагента по назві / адресі / телефону / коду (для великих списків).
     const custQ = custQuery.trim().toLowerCase();
     const filteredCustomers = custQ
-        ? customers.filter(c => [c.name, c.city, c.address, c.phone, c.code].filter(Boolean).join(" ").toLowerCase().includes(custQ))
+        ? customers.filter(c => [c.name, c.address, c.phone, c.code].filter(Boolean).join(" ").toLowerCase().includes(custQ))
         : customers;
     const closeCustPicker = () => { setShowCustPicker(false); setCustQuery(""); };
     const [isDirty, setIsDirty] = useState(false);
@@ -187,7 +187,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <div style={{ fontSize: 14.5, fontWeight: 700 }}>{customer?.name || "Оберіть контрагента"}</div>
                             <div style={{ fontSize: 11.5, color: t.inkSoft, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap" }}>
                                 {customer?.code && <span style={{ fontFamily: F_NUM }}>{customer.code}</span>}
-                                {(customer?.city || customer?.address) && <><span style={{ color: t.line }}>·</span><span>{customer.city || customer.address}</span></>}
+                                {customer?.address && <><span style={{ color: t.line }}>·</span><span>{customer.address}</span></>}
                                 {debt > 0 && <><span style={{ color: t.line }}>·</span><span style={{ color: t.err, fontWeight: 600 }}>борг {money(debt)} ₴</span></>}
                             </div>
                         </div>
@@ -295,7 +295,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             )}
                             {filteredCustomers.map(c => {
                                 const on = customer?.id === c.id;
-                                const sub = [c.code, c.city || c.address, c.phone].filter(Boolean).join(" · ");
+                                const sub = [c.code, c.address, c.phone].filter(Boolean).join(" · ");
                                 return (
                                     <div key={c.id} onClick={() => { setCustomer(c); setIsDirty(true); closeCustPicker(); }} style={{ padding: "11px 8px", borderBottom: `1px solid ${t.lineSoft}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
                                         <MIcon name="building" size={18} color={on ? t.accent : t.inkMuted} />

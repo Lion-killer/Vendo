@@ -35,7 +35,7 @@ const ClientCard = ({ t, c, onClose }) => {
                 <div style={{ marginTop: 8 }}>
                     <Field label="Код" value={c.code} />
                     <Field label="Найменування" value={c.name} />
-                    <Field label="Адреса" value={c.address || c.city} />
+                    <Field label="Адреса" value={c.address} />
                     <Field label="Телефон" value={c.phone} tel />
                 </div>
 
@@ -65,7 +65,7 @@ const ClientRow = ({ t, c, onClick }) => {
                     <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
                     <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 3, display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
                         <span style={{ fontFamily: F_NUM }}>{c.code}</span>
-                        {(c.city || c.address) && <><span style={{ color: t.line }}>·</span><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.city || c.address}</span></>}
+                        {c.address && <><span style={{ color: t.line }}>·</span><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.address}</span></>}
                     </div>
                     {(c.phone || c.contact) && (
                         <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
