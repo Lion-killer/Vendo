@@ -51,7 +51,7 @@
 							<v8:content>Order</v8:content>
 						</v8:item>
 					</Synonym>
-					<Template>/orders/{num}</Template>
+					<Template>/orders/{id}</Template>
 				</Properties>
 				<ChildObjects>
 					<Method uuid="d0c3047d-ee64-491a-a752-99962f12119a">
