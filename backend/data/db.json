@@ -1,7 +1,7 @@
 {
   "products": [
     {
-      "id": 1,
+      "id": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
       "name": "Сир твердий Едам 45%",
       "sku": "CH-003",
       "price": 189,
@@ -12,7 +12,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
     },
     {
-      "id": 2,
+      "id": "d185824c-974b-44b9-94a9-387d63f5bfee",
       "name": "Сир Гауда 48%",
       "sku": "CH-008",
       "price": 212,
@@ -23,7 +23,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
     },
     {
-      "id": 3,
+      "id": "94f6311a-da8d-4bab-9a69-7f0d14c83f8c",
       "name": "Сир Пармезан витриманий",
       "sku": "CH-021",
       "price": 498,
@@ -34,7 +34,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Parmesan.png"
     },
     {
-      "id": 4,
+      "id": "0a9ef117-0635-47fa-92ff-d1241c0fe582",
       "name": "Сир Моцарела 45%",
       "sku": "CH-014",
       "price": 164,
@@ -45,7 +45,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Mozzarella.png"
     },
     {
-      "id": 5,
+      "id": "4b5ba09c-1804-45ff-ba0f-5bdf9817766a",
       "name": "Сир Фета 50%",
       "sku": "CH-017",
       "price": 178,
@@ -56,7 +56,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Feta.png"
     },
     {
-      "id": 6,
+      "id": "d985cdce-7542-44a1-9cf3-1b7ee62c951f",
       "name": "Сир плавлений Вершковий",
       "sku": "CH-030",
       "price": 44,
@@ -67,7 +67,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
     },
     {
-      "id": 7,
+      "id": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
       "name": "Молоко ультрапастеризоване 2.5%",
       "sku": "ML-001",
       "price": 42.5,
@@ -78,7 +78,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Milk.png"
     },
     {
-      "id": 8,
+      "id": "0a4619f7-1d64-4f85-be4e-b33f5e0addc9",
       "name": "Вершки 10% 500мл",
       "sku": "ML-031",
       "price": 63,
@@ -89,7 +89,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cream.png"
     },
     {
-      "id": 9,
+      "id": "f423e1f0-34cf-4511-818a-510c613bfac9",
       "name": "Масло вершкове 82%",
       "sku": "MB-002",
       "price": 98,
@@ -100,7 +100,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Butter.png"
     },
     {
-      "id": 10,
+      "id": "220d63c2-d26d-4a56-85c2-7c8c799f044a",
       "name": "Масло селянське 73%",
       "sku": "MB-005",
       "price": 72,
@@ -111,7 +111,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Butter.png"
     },
     {
-      "id": 11,
+      "id": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
       "name": "Рис довгозернистий 1кг",
       "sku": "GR-001",
       "price": 54,
@@ -122,7 +122,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Rice.png"
     },
     {
-      "id": 12,
+      "id": "8e1e0b5d-7bfd-400c-9708-68742f0dbbad",
       "name": "Гречка ядриця 800г",
       "sku": "GR-006",
       "price": 61,
@@ -133,7 +133,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Buckwheat.png"
     },
     {
-      "id": 13,
+      "id": "41729af8-d8f5-4b5a-8554-48517afaa955",
       "name": "Олія соняшникова 1л",
       "sku": "OL-001",
       "price": 76,
@@ -144,7 +144,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Sunflower%20Oil.png"
     },
     {
-      "id": 14,
+      "id": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
       "name": "Вода мінеральна газ. 1.5л",
       "sku": "WA-001",
       "price": 18,
@@ -155,7 +155,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Water.png"
     },
     {
-      "id": 15,
+      "id": "f4b3654f-ca3d-4e7a-acb2-d2527aaf33bd",
       "name": "Вода негаз. 1.5л",
       "sku": "WA-004",
       "price": 17,
@@ -166,7 +166,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Water.png"
     },
     {
-      "id": 16,
+      "id": "ec13e915-ee8f-44fe-b548-af00c89bff76",
       "name": "Сік яблучний 1л",
       "sku": "JU-001",
       "price": 52,
@@ -177,7 +177,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Apple%20Juice.png"
     },
     {
-      "id": 17,
+      "id": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
       "name": "Сир Чедер 50%",
       "sku": "CH-040",
       "price": 234,
@@ -188,7 +188,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cheddar%20Cheese.png"
     },
     {
-      "id": 18,
+      "id": "58bc3dbc-1608-494c-8118-3096e759c2e3",
       "name": "Сир Сулугуні",
       "sku": "CH-052",
       "price": 196,
@@ -199,7 +199,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
     },
     {
-      "id": 19,
+      "id": "af7f8838-8550-454e-a990-28ef01df090a",
       "name": "Сир Брі",
       "sku": "CH-061",
       "price": 320,
@@ -210,7 +210,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Brie.png"
     },
     {
-      "id": 20,
+      "id": "e63939fe-6e79-451d-a244-35692464bdc5",
       "name": "Йогурт натуральний 2% 350г",
       "sku": "ML-045",
       "price": 38,
@@ -221,7 +221,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Greek%20Yogurt.png"
     },
     {
-      "id": 21,
+      "id": "77ff8c9a-e95e-4f32-aea2-b3c2e9b09f17",
       "name": "Кефір 2.5% 900мл",
       "sku": "ML-050",
       "price": 46,
@@ -232,7 +232,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Milk.png"
     },
     {
-      "id": 22,
+      "id": "8c904785-e842-4575-8a93-98490767b2ba",
       "name": "Сметана 20% 350г",
       "sku": "ML-061",
       "price": 58,
@@ -243,7 +243,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Sour%20Cream.png"
     },
     {
-      "id": 23,
+      "id": "ca030bd6-9dd9-41b1-aeb5-5f6f3794de34",
       "name": "Сир кисломолочний 9% 300г",
       "sku": "ML-070",
       "price": 69,
@@ -254,7 +254,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Cream%20Cheese.png"
     },
     {
-      "id": 24,
+      "id": "339394cd-8c18-43d3-b334-d53bb2065ca9",
       "name": "Спред рослинно-вершковий 60%",
       "sku": "MB-010",
       "price": 54,
@@ -265,7 +265,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Butter.png"
     },
     {
-      "id": 25,
+      "id": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
       "name": "Борошно пшеничне в/ґ 2кг",
       "sku": "BK-002",
       "price": 48,
@@ -276,7 +276,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Flour.png"
     },
     {
-      "id": 26,
+      "id": "f354ca1f-b044-42c8-901a-91dcf6f468d4",
       "name": "Цукор білий 1кг",
       "sku": "BK-008",
       "price": 39,
@@ -287,7 +287,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Sugar.png"
     },
     {
-      "id": 27,
+      "id": "64c8360f-a9bb-478f-8a82-06660f20b445",
       "name": "Сіль кухонна 1кг",
       "sku": "BK-014",
       "price": 16,
@@ -298,7 +298,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Salt.png"
     },
     {
-      "id": 28,
+      "id": "5fae87b8-e217-4d03-aa25-b87df056fac8",
       "name": "Макарони спагеті 500г",
       "sku": "BK-021",
       "price": 33,
@@ -309,7 +309,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Spaghetti.png"
     },
     {
-      "id": 29,
+      "id": "dd33800d-8300-4154-b931-8906f17adb8e",
       "name": "Сік апельсиновий 1л",
       "sku": "JU-006",
       "price": 56,
@@ -320,7 +320,7 @@
       "img": "https://www.themealdb.com/images/ingredients/Orange%20Juice.png"
     },
     {
-      "id": 30,
+      "id": "07c801c2-f62f-4196-abf6-069efd6e94e3",
       "name": "Напій Кола 1л",
       "sku": "NP-001",
       "price": 34,
@@ -333,7 +333,7 @@
   ],
   "customers": [
     {
-      "id": 1,
+      "id": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "name": "ТОВ «Фуршет Плюс»",
       "code": "К-00142",
       "address": "м. Київ, вул. Хрещатик, 22",
@@ -343,7 +343,7 @@
       "status": "active"
     },
     {
-      "id": 2,
+      "id": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "name": "АТБ-Маркет",
       "code": "К-00098",
       "address": "м. Дніпро, просп. Дмитра Яворницького, 75",
@@ -353,7 +353,7 @@
       "status": "active"
     },
     {
-      "id": 3,
+      "id": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "name": "Сільпо №14",
       "code": "К-00076",
       "address": "м. Львів, вул. Личаківська, 12",
@@ -363,7 +363,7 @@
       "status": "active"
     },
     {
-      "id": 4,
+      "id": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "name": "ФОП Петренко В.М.",
       "code": "К-00211",
       "address": "м. Ірпінь, вул. Соборна, 105",
@@ -373,7 +373,7 @@
       "status": "active"
     },
     {
-      "id": 5,
+      "id": "d26e839a-ddfe-4e10-ab3d-a44eb02159ba",
       "name": "ТОВ «АТБ-маркет №207»",
       "code": "К-00305",
       "address": "м. Харків, просп. Науки, 14",
@@ -393,7 +393,7 @@
       "status": "active"
     },
     {
-      "id": 6,
+      "id": "9b5c2ac8-160b-46b6-856a-6cb4393421d6",
       "name": "Сільпо №88",
       "code": "К-00312",
       "address": "м. Одеса, вул. Дерибасівська, 21",
@@ -413,7 +413,7 @@
       "status": "active"
     },
     {
-      "id": 7,
+      "id": "bea5959f-275e-4623-9f04-5d096019e9f0",
       "name": "ТОВ «Новус Україна»",
       "code": "К-00318",
       "address": "м. Київ, вул. Кільцева дорога, 1",
@@ -437,7 +437,7 @@
       "status": "active"
     },
     {
-      "id": 8,
+      "id": "b67b4aa6-3820-40b7-a4da-a2400b823856",
       "name": "ФОП Гнатюк Л.П.",
       "code": "К-00324",
       "address": "м. Тернопіль, вул. Руська, 7",
@@ -447,7 +447,7 @@
       "status": "active"
     },
     {
-      "id": 9,
+      "id": "fb30e7cb-7d47-44e9-a56b-e5c9d27cec08",
       "name": "Ашан Рів'єра",
       "code": "К-00331",
       "address": "с. Фонтанка, Південна дорога, 1",
@@ -467,7 +467,7 @@
       "status": "active"
     },
     {
-      "id": 10,
+      "id": "e4bae8b6-69a8-46e0-a811-d2646a818c8c",
       "name": "Магазин «Близенько»",
       "code": "К-00337",
       "address": "м. Львів, вул. Городоцька, 179",
@@ -477,7 +477,7 @@
       "status": "active"
     },
     {
-      "id": 11,
+      "id": "00fa9282-8ab2-4674-9b31-3c1675951cb3",
       "name": "ТОВ «Таврія В»",
       "code": "К-00342",
       "address": "м. Херсон, просп. Ушакова, 50",
@@ -497,7 +497,7 @@
       "status": "active"
     },
     {
-      "id": 12,
+      "id": "9f460317-852a-4d0a-9ab5-a0ce9192f205",
       "name": "Кафе «Пузата Хата»",
       "code": "К-00349",
       "address": "м. Київ, вул. Хрещатик, 15",
@@ -507,7 +507,7 @@
       "status": "active"
     },
     {
-      "id": 13,
+      "id": "764ada25-530c-4b42-9bbd-16b6e45dadbb",
       "name": "Ресторан «Канапа»",
       "code": "К-00353",
       "address": "м. Київ, Андріївський узвіз, 19",
@@ -527,7 +527,7 @@
       "status": "active"
     },
     {
-      "id": 14,
+      "id": "bf869a1b-a724-4b81-8ea8-5797abbf3111",
       "name": "ФОП Шевчук О.І.",
       "code": "К-00358",
       "address": "м. Вінниця, вул. Соборна, 89",
@@ -537,7 +537,7 @@
       "status": "active"
     },
     {
-      "id": 15,
+      "id": "c7e5141c-391e-4255-81f6-dc6287ec9a2d",
       "name": "ТОВ «Фора»",
       "code": "К-00361",
       "address": "м. Бориспіль, вул. Київський Шлях, 2",
@@ -547,7 +547,7 @@
       "status": "active"
     },
     {
-      "id": 16,
+      "id": "c3658f9a-417b-4b25-b109-6f157f511152",
       "name": "Готель «Опера»",
       "code": "К-00366",
       "address": "м. Львів, просп. Свободи, 45",
@@ -567,7 +567,7 @@
       "status": "active"
     },
     {
-      "id": 17,
+      "id": "e33e5fbd-9f12-477b-95f2-1cb621a6a5d9",
       "name": "Маркет «Велмарт»",
       "code": "К-00372",
       "address": "м. Запоріжжя, просп. Соборний, 160",
@@ -577,7 +577,7 @@
       "status": "active"
     },
     {
-      "id": 18,
+      "id": "2ba57a01-ce0a-4da2-85e0-4abbbe4d1200",
       "name": "ТОВ «Делві»",
       "code": "К-00378",
       "address": "м. Кривий Ріг, просп. Миру, 22",
@@ -587,7 +587,7 @@
       "status": "inactive"
     },
     {
-      "id": 19,
+      "id": "f0a3ebec-e4e0-46d3-84f9-4e4e1e3adde3",
       "name": "Кав'ярня «Світ кави»",
       "code": "К-00383",
       "address": "м. Івано-Франківськ, вул. Незалежності, 30",
@@ -597,7 +597,7 @@
       "status": "active"
     },
     {
-      "id": 20,
+      "id": "460eb0ee-5e83-4fe6-83c1-5af789a6d6de",
       "name": "ТОВ «Метро Кеш енд Кері»",
       "code": "К-00389",
       "address": "м. Київ, просп. Степана Бандери, 21",
@@ -621,7 +621,7 @@
       "status": "active"
     },
     {
-      "id": 21,
+      "id": "6801b00a-c67d-43e2-b79a-1d6ff3442545",
       "name": "ФОП Бондаренко Н.С.",
       "code": "К-00394",
       "address": "м. Полтава, вул. Соборності, 40",
@@ -631,7 +631,7 @@
       "status": "active"
     },
     {
-      "id": 22,
+      "id": "d9be991b-6168-4c45-9b93-7dd1eb0fb462",
       "name": "Супермаркет «Космос»",
       "code": "К-00398",
       "address": "м. Чернівці, вул. Головна, 122",
@@ -641,7 +641,7 @@
       "status": "active"
     },
     {
-      "id": 23,
+      "id": "6975bc93-3bf4-4317-a73f-59e7634f4945",
       "name": "ТОВ «Епіцентр К»",
       "code": "К-00403",
       "address": "м. Київ, вул. Полярна, 20",
@@ -661,7 +661,7 @@
       "status": "active"
     },
     {
-      "id": 24,
+      "id": "2fee10e3-33ce-48ff-85fb-a091d0a64ab3",
       "name": "Піцерія «Mafia»",
       "code": "К-00409",
       "address": "м. Дніпро, просп. Дмитра Яворницького, 50",
@@ -755,785 +755,805 @@
   ],
   "orders": [
     {
+      "id": "37e40f5b-8361-4045-8a2f-785b037cb17a",
       "num": "ЗМ-2039",
-      "customerId": 2,
+      "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 8,
           "price": 42.5
         },
         {
-          "productId": 8,
+          "productId": "0a4619f7-1d64-4f85-be4e-b33f5e0addc9",
           "qty": 6,
           "price": 63
         },
         {
-          "productId": 21,
+          "productId": "77ff8c9a-e95e-4f32-aea2-b3c2e9b09f17",
           "qty": 10,
           "price": 46
         }
       ]
     },
     {
+      "id": "374373a0-52ae-4400-8205-bd5e7ca2a133",
       "num": "ЗМ-2040",
-      "customerId": 3,
+      "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-23",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 17,
+          "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
           "qty": 2,
           "price": 234
         },
         {
-          "productId": 18,
+          "productId": "58bc3dbc-1608-494c-8118-3096e759c2e3",
           "qty": 3,
           "price": 196
         },
         {
-          "productId": 23,
+          "productId": "ca030bd6-9dd9-41b1-aeb5-5f6f3794de34",
           "qty": 6,
           "price": 69
         },
         {
-          "productId": 29,
+          "productId": "dd33800d-8300-4154-b931-8906f17adb8e",
           "qty": 9,
           "price": 56
         }
       ]
     },
     {
+      "id": "82a7d60b-ae8b-4a37-879c-805d2c4c2c6e",
       "num": "ЗМ-2041",
-      "customerId": 4,
+      "customerId": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 25,
+          "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
           "qty": 5,
           "price": 48
         },
         {
-          "productId": 28,
+          "productId": "5fae87b8-e217-4d03-aa25-b87df056fac8",
           "qty": 8,
           "price": 33
         }
       ]
     },
     {
+      "id": "50a9c4d4-0197-43ca-929f-26339e431866",
       "num": "ЗМ-2042",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 1,
+          "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
           "qty": 2,
           "price": 189
         },
         {
-          "productId": 3,
+          "productId": "94f6311a-da8d-4bab-9a69-7f0d14c83f8c",
           "qty": 1,
           "price": 498
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 4,
           "price": 98
         },
         {
-          "productId": 13,
+          "productId": "41729af8-d8f5-4b5a-8554-48517afaa955",
           "qty": 7,
           "price": 76
         },
         {
-          "productId": 16,
+          "productId": "ec13e915-ee8f-44fe-b548-af00c89bff76",
           "qty": 10,
           "price": 52
         }
       ]
     },
     {
+      "id": "ee89092f-d457-497b-8bec-697baa958eaa",
       "num": "ЗМ-2038",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 1,
+          "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
           "qty": 4,
           "price": 189
         },
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 12,
           "price": 42.5
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 3,
           "price": 98
         }
       ]
     },
     {
+      "id": "9b5062f5-216e-403b-b7b6-6527f151ec02",
       "num": "ЗМ-2037",
-      "customerId": 2,
+      "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 14,
+          "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
           "qty": 30,
           "price": 18
         },
         {
-          "productId": 15,
+          "productId": "f4b3654f-ca3d-4e7a-acb2-d2527aaf33bd",
           "qty": 20,
           "price": 17
         },
         {
-          "productId": 30,
+          "productId": "07c801c2-f62f-4196-abf6-069efd6e94e3",
           "qty": 12,
           "price": 34
         }
       ]
     },
     {
+      "id": "02d70e07-0950-450e-8396-3a5b7247ebcf",
       "num": "ЗМ-2036",
-      "customerId": 3,
+      "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 17,
+          "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
           "qty": 3,
           "price": 234
         },
         {
-          "productId": 19,
+          "productId": "af7f8838-8550-454e-a990-28ef01df090a",
           "qty": 2,
           "price": 320
         },
         {
-          "productId": 22,
+          "productId": "8c904785-e842-4575-8a93-98490767b2ba",
           "qty": 8,
           "price": 58
         },
         {
-          "productId": 20,
+          "productId": "e63939fe-6e79-451d-a244-35692464bdc5",
           "qty": 15,
           "price": 38
         }
       ]
     },
     {
+      "id": "f4d65ee9-6db2-4b75-8e74-26aec76c2275",
       "num": "ЗМ-2035",
-      "customerId": 4,
+      "customerId": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 25,
+          "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
           "qty": 6,
           "price": 48
         },
         {
-          "productId": 26,
+          "productId": "f354ca1f-b044-42c8-901a-91dcf6f468d4",
           "qty": 8,
           "price": 39
         },
         {
-          "productId": 27,
+          "productId": "64c8360f-a9bb-478f-8a82-06660f20b445",
           "qty": 5,
           "price": 16
         },
         {
-          "productId": 28,
+          "productId": "5fae87b8-e217-4d03-aa25-b87df056fac8",
           "qty": 10,
           "price": 33
         }
       ]
     },
     {
+      "id": "695f72b0-e32f-4281-8540-c2ae84832833",
       "num": "ЗМ-2034",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
       "status": "Проведено",
       "items": [
         {
-          "productId": 11,
+          "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
           "qty": 8,
           "price": 54
         },
         {
-          "productId": 12,
+          "productId": "8e1e0b5d-7bfd-400c-9708-68742f0dbbad",
           "qty": 6,
           "price": 61
         },
         {
-          "productId": 13,
+          "productId": "41729af8-d8f5-4b5a-8554-48517afaa955",
           "qty": 10,
           "price": 76
         },
         {
-          "productId": 16,
+          "productId": "ec13e915-ee8f-44fe-b548-af00c89bff76",
           "qty": 12,
           "price": 52
         }
       ]
     },
     {
+      "id": "8082b0b4-35c2-4665-82c6-73a44db1de58",
       "num": "ЗМ-2033",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 1,
+          "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
           "qty": 9,
           "price": 189
         },
         {
-          "productId": 2,
+          "productId": "d185824c-974b-44b9-94a9-387d63f5bfee",
           "qty": 7,
           "price": 212
         },
         {
-          "productId": 3,
+          "productId": "94f6311a-da8d-4bab-9a69-7f0d14c83f8c",
           "qty": 5,
           "price": 498
         },
         {
-          "productId": 4,
+          "productId": "0a9ef117-0635-47fa-92ff-d1241c0fe582",
           "qty": 3,
           "price": 164
         },
         {
-          "productId": 5,
+          "productId": "4b5ba09c-1804-45ff-ba0f-5bdf9817766a",
           "qty": 10,
           "price": 178
         },
         {
-          "productId": 6,
+          "productId": "d985cdce-7542-44a1-9cf3-1b7ee62c951f",
           "qty": 8,
           "price": 44
         },
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 6,
           "price": 42.5
         },
         {
-          "productId": 8,
+          "productId": "0a4619f7-1d64-4f85-be4e-b33f5e0addc9",
           "qty": 4,
           "price": 63
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 2,
           "price": 98
         },
         {
-          "productId": 10,
+          "productId": "220d63c2-d26d-4a56-85c2-7c8c799f044a",
           "qty": 9,
           "price": 72
         },
         {
-          "productId": 11,
+          "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
           "qty": 7,
           "price": 54
         },
         {
-          "productId": 12,
+          "productId": "8e1e0b5d-7bfd-400c-9708-68742f0dbbad",
           "qty": 5,
           "price": 61
         },
         {
-          "productId": 13,
+          "productId": "41729af8-d8f5-4b5a-8554-48517afaa955",
           "qty": 3,
           "price": 76
         },
         {
-          "productId": 14,
+          "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
           "qty": 10,
           "price": 18
         },
         {
-          "productId": 15,
+          "productId": "f4b3654f-ca3d-4e7a-acb2-d2527aaf33bd",
           "qty": 8,
           "price": 17
         },
         {
-          "productId": 16,
+          "productId": "ec13e915-ee8f-44fe-b548-af00c89bff76",
           "qty": 6,
           "price": 52
         },
         {
-          "productId": 17,
+          "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
           "qty": 4,
           "price": 234
         },
         {
-          "productId": 18,
+          "productId": "58bc3dbc-1608-494c-8118-3096e759c2e3",
           "qty": 2,
           "price": 196
         },
         {
-          "productId": 19,
+          "productId": "af7f8838-8550-454e-a990-28ef01df090a",
           "qty": 9,
           "price": 320
         },
         {
-          "productId": 20,
+          "productId": "e63939fe-6e79-451d-a244-35692464bdc5",
           "qty": 7,
           "price": 38
         },
         {
-          "productId": 21,
+          "productId": "77ff8c9a-e95e-4f32-aea2-b3c2e9b09f17",
           "qty": 5,
           "price": 46
         },
         {
-          "productId": 22,
+          "productId": "8c904785-e842-4575-8a93-98490767b2ba",
           "qty": 3,
           "price": 58
         },
         {
-          "productId": 23,
+          "productId": "ca030bd6-9dd9-41b1-aeb5-5f6f3794de34",
           "qty": 10,
           "price": 69
         },
         {
-          "productId": 24,
+          "productId": "339394cd-8c18-43d3-b334-d53bb2065ca9",
           "qty": 8,
           "price": 54
         },
         {
-          "productId": 25,
+          "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
           "qty": 6,
           "price": 48
         }
       ]
     },
     {
+      "id": "9d64f1c1-ccf2-4e3f-9d3a-5e2c2678a81b",
       "num": "ЗМ-2032",
-      "customerId": 2,
+      "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-19",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 6,
+          "productId": "d985cdce-7542-44a1-9cf3-1b7ee62c951f",
           "qty": 8,
           "price": 44
         },
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 6,
           "price": 42.5
         },
         {
-          "productId": 8,
+          "productId": "0a4619f7-1d64-4f85-be4e-b33f5e0addc9",
           "qty": 4,
           "price": 63
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 2,
           "price": 98
         },
         {
-          "productId": 10,
+          "productId": "220d63c2-d26d-4a56-85c2-7c8c799f044a",
           "qty": 9,
           "price": 72
         },
         {
-          "productId": 11,
+          "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
           "qty": 7,
           "price": 54
         },
         {
-          "productId": 12,
+          "productId": "8e1e0b5d-7bfd-400c-9708-68742f0dbbad",
           "qty": 5,
           "price": 61
         },
         {
-          "productId": 13,
+          "productId": "41729af8-d8f5-4b5a-8554-48517afaa955",
           "qty": 3,
           "price": 76
         },
         {
-          "productId": 14,
+          "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
           "qty": 10,
           "price": 18
         },
         {
-          "productId": 15,
+          "productId": "f4b3654f-ca3d-4e7a-acb2-d2527aaf33bd",
           "qty": 8,
           "price": 17
         },
         {
-          "productId": 16,
+          "productId": "ec13e915-ee8f-44fe-b548-af00c89bff76",
           "qty": 6,
           "price": 52
         },
         {
-          "productId": 17,
+          "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
           "qty": 4,
           "price": 234
         },
         {
-          "productId": 18,
+          "productId": "58bc3dbc-1608-494c-8118-3096e759c2e3",
           "qty": 2,
           "price": 196
         },
         {
-          "productId": 19,
+          "productId": "af7f8838-8550-454e-a990-28ef01df090a",
           "qty": 9,
           "price": 320
         },
         {
-          "productId": 20,
+          "productId": "e63939fe-6e79-451d-a244-35692464bdc5",
           "qty": 7,
           "price": 38
         },
         {
-          "productId": 21,
+          "productId": "77ff8c9a-e95e-4f32-aea2-b3c2e9b09f17",
           "qty": 5,
           "price": 46
         },
         {
-          "productId": 22,
+          "productId": "8c904785-e842-4575-8a93-98490767b2ba",
           "qty": 3,
           "price": 58
         },
         {
-          "productId": 23,
+          "productId": "ca030bd6-9dd9-41b1-aeb5-5f6f3794de34",
           "qty": 10,
           "price": 69
         },
         {
-          "productId": 24,
+          "productId": "339394cd-8c18-43d3-b334-d53bb2065ca9",
           "qty": 8,
           "price": 54
         },
         {
-          "productId": 25,
+          "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
           "qty": 6,
           "price": 48
         },
         {
-          "productId": 26,
+          "productId": "f354ca1f-b044-42c8-901a-91dcf6f468d4",
           "qty": 4,
           "price": 39
         },
         {
-          "productId": 27,
+          "productId": "64c8360f-a9bb-478f-8a82-06660f20b445",
           "qty": 2,
           "price": 16
         },
         {
-          "productId": 28,
+          "productId": "5fae87b8-e217-4d03-aa25-b87df056fac8",
           "qty": 9,
           "price": 33
         },
         {
-          "productId": 29,
+          "productId": "dd33800d-8300-4154-b931-8906f17adb8e",
           "qty": 7,
           "price": 56
         },
         {
-          "productId": 30,
+          "productId": "07c801c2-f62f-4196-abf6-069efd6e94e3",
           "qty": 5,
           "price": 34
         }
       ]
     },
     {
+      "id": "1a98240a-eb77-45b9-932a-2d1baa588824",
       "num": "ЗМ-2031",
-      "customerId": 3,
+      "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-16",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 4,
+          "productId": "0a9ef117-0635-47fa-92ff-d1241c0fe582",
           "qty": 3,
           "price": 164
         },
         {
-          "productId": 5,
+          "productId": "4b5ba09c-1804-45ff-ba0f-5bdf9817766a",
           "qty": 10,
           "price": 178
         },
         {
-          "productId": 6,
+          "productId": "d985cdce-7542-44a1-9cf3-1b7ee62c951f",
           "qty": 8,
           "price": 44
         },
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 6,
           "price": 42.5
         },
         {
-          "productId": 8,
+          "productId": "0a4619f7-1d64-4f85-be4e-b33f5e0addc9",
           "qty": 4,
           "price": 63
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 2,
           "price": 98
         },
         {
-          "productId": 10,
+          "productId": "220d63c2-d26d-4a56-85c2-7c8c799f044a",
           "qty": 9,
           "price": 72
         },
         {
-          "productId": 11,
+          "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
           "qty": 7,
           "price": 54
         },
         {
-          "productId": 12,
+          "productId": "8e1e0b5d-7bfd-400c-9708-68742f0dbbad",
           "qty": 5,
           "price": 61
         },
         {
-          "productId": 13,
+          "productId": "41729af8-d8f5-4b5a-8554-48517afaa955",
           "qty": 3,
           "price": 76
         },
         {
-          "productId": 14,
+          "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
           "qty": 10,
           "price": 18
         },
         {
-          "productId": 15,
+          "productId": "f4b3654f-ca3d-4e7a-acb2-d2527aaf33bd",
           "qty": 8,
           "price": 17
         },
         {
-          "productId": 16,
+          "productId": "ec13e915-ee8f-44fe-b548-af00c89bff76",
           "qty": 6,
           "price": 52
         },
         {
-          "productId": 17,
+          "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
           "qty": 4,
           "price": 234
         },
         {
-          "productId": 18,
+          "productId": "58bc3dbc-1608-494c-8118-3096e759c2e3",
           "qty": 2,
           "price": 196
         },
         {
-          "productId": 19,
+          "productId": "af7f8838-8550-454e-a990-28ef01df090a",
           "qty": 9,
           "price": 320
         },
         {
-          "productId": 20,
+          "productId": "e63939fe-6e79-451d-a244-35692464bdc5",
           "qty": 7,
           "price": 38
         },
         {
-          "productId": 21,
+          "productId": "77ff8c9a-e95e-4f32-aea2-b3c2e9b09f17",
           "qty": 5,
           "price": 46
         },
         {
-          "productId": 22,
+          "productId": "8c904785-e842-4575-8a93-98490767b2ba",
           "qty": 3,
           "price": 58
         },
         {
-          "productId": 23,
+          "productId": "ca030bd6-9dd9-41b1-aeb5-5f6f3794de34",
           "qty": 10,
           "price": 69
         },
         {
-          "productId": 24,
+          "productId": "339394cd-8c18-43d3-b334-d53bb2065ca9",
           "qty": 8,
           "price": 54
         },
         {
-          "productId": 25,
+          "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
           "qty": 6,
           "price": 48
         },
         {
-          "productId": 26,
+          "productId": "f354ca1f-b044-42c8-901a-91dcf6f468d4",
           "qty": 4,
           "price": 39
         },
         {
-          "productId": 27,
+          "productId": "64c8360f-a9bb-478f-8a82-06660f20b445",
           "qty": 2,
           "price": 16
         }
       ]
     },
     {
+      "id": "42075f10-08c5-4016-9d86-683d9e6673bf",
       "num": "ЗМ-2030",
-      "customerId": 3,
+      "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-21",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 17,
+          "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
           "qty": 5,
           "price": 234
         },
         {
-          "productId": 20,
+          "productId": "e63939fe-6e79-451d-a244-35692464bdc5",
           "qty": 12,
           "price": 38
         },
         {
-          "productId": 22,
+          "productId": "8c904785-e842-4575-8a93-98490767b2ba",
           "qty": 8,
           "price": 58
         }
       ]
     },
     {
+      "id": "cd34c5bf-43a3-4413-867f-9212e8e13bfd",
       "num": "ЗМ-2029",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-20",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 20,
           "price": 42.5
         },
         {
-          "productId": 8,
+          "productId": "0a4619f7-1d64-4f85-be4e-b33f5e0addc9",
           "qty": 10,
           "price": 63
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 6,
           "price": 98
         }
       ]
     },
     {
+      "id": "3284b0bd-f7e1-498e-96ff-a149812d8c61",
       "num": "ЗМ-2028",
-      "customerId": 4,
+      "customerId": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "date": "2026-06-17",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 25,
+          "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
           "qty": 8,
           "price": 48
         },
         {
-          "productId": 26,
+          "productId": "f354ca1f-b044-42c8-901a-91dcf6f468d4",
           "qty": 10,
           "price": 39
         },
         {
-          "productId": 27,
+          "productId": "64c8360f-a9bb-478f-8a82-06660f20b445",
           "qty": 6,
           "price": 16
         }
       ]
     },
     {
+      "id": "7f573e42-1d15-41d8-b72e-a6a161800544",
       "num": "ЗМ-2027",
-      "customerId": 2,
+      "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-14",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 14,
+          "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
           "qty": 48,
           "price": 18
         },
         {
-          "productId": 15,
+          "productId": "f4b3654f-ca3d-4e7a-acb2-d2527aaf33bd",
           "qty": 36,
           "price": 17
         }
       ]
     },
     {
+      "id": "637dd804-c2b9-4d5e-88f7-292316022335",
       "num": "ЗМ-2026",
-      "customerId": 3,
+      "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-09",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 1,
+          "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
           "qty": 3,
           "price": 189
         },
         {
-          "productId": 3,
+          "productId": "94f6311a-da8d-4bab-9a69-7f0d14c83f8c",
           "qty": 2,
           "price": 498
         }
       ]
     },
     {
+      "id": "cffe1184-0579-44ea-9ec2-fd69ddad02a9",
       "num": "ЗМ-2025",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-03",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 11,
+          "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
           "qty": 15,
           "price": 54
         },
         {
-          "productId": 12,
+          "productId": "8e1e0b5d-7bfd-400c-9708-68742f0dbbad",
           "qty": 10,
           "price": 61
         },
         {
-          "productId": 13,
+          "productId": "41729af8-d8f5-4b5a-8554-48517afaa955",
           "qty": 12,
           "price": 76
         }
       ]
     },
     {
+      "id": "269951f7-b18b-44f7-9324-d0ae3c107bf4",
       "num": "ЗМ-2024",
-      "customerId": 1,
+      "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-05-28",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 7,
+          "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
           "qty": 10,
           "price": 42.5
         },
         {
-          "productId": 9,
+          "productId": "f423e1f0-34cf-4511-818a-510c613bfac9",
           "qty": 4,
           "price": 98
         }
       ]
     },
     {
+      "id": "676facda-7655-44a0-9391-5aff9a99f07d",
       "num": "ЗМ-2022",
-      "customerId": 2,
+      "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-05-20",
       "status": "Відправлено",
       "items": [
         {
-          "productId": 14,
+          "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
           "qty": 24,
           "price": 18
         }

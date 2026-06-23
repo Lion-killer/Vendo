@@ -1,4 +1,5 @@
 const express = require('express');
+const { randomUUID } = require('crypto');
 const db = require('../db');
 
 const router = express.Router();
@@ -10,16 +11,16 @@ const q = {
     customers: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers'),
     customerById: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
     categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
-    orders: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders ORDER BY date DESC, num DESC'),
-    orderByNum: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders WHERE num = ?'),
-    itemsByOrder: db.prepare('SELECT productId, qty, price FROM order_items WHERE orderNum = ? ORDER BY id'),
-    insertOrder: db.prepare('INSERT INTO orders (num, customerId, date, status) VALUES (@num, @customerId, @date, @status)'),
-    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status, date = @date WHERE num = @num'),
-    deleteOrder: db.prepare('DELETE FROM orders WHERE num = ?'),
-    markOrderDeletion: db.prepare('UPDATE orders SET deletionMark = 1 WHERE num = @num'),
-    setOrderDeletion: db.prepare('UPDATE orders SET deletionMark = @mark WHERE num = @num'),
-    insertItem: db.prepare('INSERT INTO order_items (orderNum, productId, qty, price) VALUES (@orderNum, @productId, @qty, @price)'),
-    deleteItems: db.prepare('DELETE FROM order_items WHERE orderNum = ?'),
+    orders: db.prepare('SELECT id, num, customerId, date, status, deletionMark FROM orders ORDER BY date DESC, num DESC'),
+    orderById: db.prepare('SELECT id, num, customerId, date, status, deletionMark FROM orders WHERE id = ?'),
+    itemsByOrder: db.prepare('SELECT productId, qty, price FROM order_items WHERE orderId = ? ORDER BY id'),
+    insertOrder: db.prepare('INSERT INTO orders (id, num, customerId, date, status) VALUES (@id, @num, @customerId, @date, @status)'),
+    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status, date = @date WHERE id = @id'),
+    deleteOrder: db.prepare('DELETE FROM orders WHERE id = ?'),
+    markOrderDeletion: db.prepare('UPDATE orders SET deletionMark = 1 WHERE id = @id'),
+    setOrderDeletion: db.prepare('UPDATE orders SET deletionMark = @mark WHERE id = @id'),
+    insertItem: db.prepare('INSERT INTO order_items (orderId, productId, qty, price) VALUES (@orderId, @productId, @qty, @price)'),
+    deleteItems: db.prepare('DELETE FROM order_items WHERE orderId = ?'),
     getMeta: db.prepare('SELECT value FROM meta WHERE key = ?'),
     setMeta: db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)')
 };
@@ -56,7 +57,7 @@ const computeTotal = (items) => items.reduce((sum, it) => sum + (it.price || 0) 
 // ціна — snapshot із замовлення.
 const hydrateOrder = (order) => {
     const customer = order.customerId != null ? q.customerById.get(order.customerId) || null : null;
-    const rows = q.itemsByOrder.all(order.num);
+    const rows = q.itemsByOrder.all(order.id);
     const items = rows.map(it => {
         const current = q.productById.get(it.productId);
         const product = current
@@ -68,6 +69,7 @@ const hydrateOrder = (order) => {
     // лишається в БД для логіки; deletionMark теж віддаємо).
     const displayStatus = order.deletionMark ? "Видалено" : order.status;
     return {
+        id: order.id,
         num: order.num,
         customerId: order.customerId,
         date: order.date,
@@ -127,61 +129,75 @@ router.get('/orders', (req, res) => {
 });
 
 router.post('/orders', (req, res) => {
-    const { orderItems, customerId, status, date } = req.body;
+    const { id: clientId, orderItems, customerId, status, date } = req.body;
 
-    const create = db.transaction(() => {
-        const num = nextOrderNum();
-        const order = {
-            num,
-            customerId: customerId ?? null,
-            date: date || new Date().toISOString().split('T')[0],
-            status: status || "Відправлено"
-        };
-        q.insertOrder.run(order);
-        normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderNum: num, ...it }));
-        return order;
+    // Upsert за GUID: повторна відправка тієї ж локальної чернетки (той самий id)
+    // не створює дубль (ідемпотентність offline-черги, #6). num присвоюється раз
+    // і не змінюється; клієнтський id (UUID) лишається ідентичністю.
+    const upsert = db.transaction(() => {
+        const id = clientId || randomUUID();
+        const existing = q.orderById.get(id);
+        if (existing) {
+            q.updateOrder.run({
+                id,
+                customerId: customerId ?? existing.customerId,
+                status: status || existing.status,
+                date: date || existing.date
+            });
+            q.deleteItems.run(id);
+        } else {
+            q.insertOrder.run({
+                id,
+                num: nextOrderNum(),
+                customerId: customerId ?? null,
+                date: date || new Date().toISOString().split('T')[0],
+                status: status || "Відправлено"
+            });
+        }
+        normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderId: id, ...it }));
+        return id;
     });
 
-    const order = create();
-    res.json({ success: true, order: hydrateOrder(order) });
+    const id = upsert();
+    res.json({ success: true, order: hydrateOrder(q.orderById.get(id)) });
 });
 
-router.put('/orders/:num', (req, res) => {
-    const { num } = req.params;
+router.put('/orders/:id', (req, res) => {
+    const { id } = req.params;
     const { orderItems, customerId, status, date, deletionMark } = req.body;
 
-    const existing = q.orderByNum.get(num);
+    const existing = q.orderById.get(id);
     if (!existing) {
         return res.status(404).json({ success: false, message: "Замовлення не знайдено" });
     }
 
     const update = db.transaction(() => {
         q.updateOrder.run({
-            num,
+            id,
             customerId: customerId ?? existing.customerId,
             status: status || existing.status,
             date: date || existing.date
         });
         if (orderItems) {
-            q.deleteItems.run(num);
-            normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderNum: num, ...it }));
+            q.deleteItems.run(id);
+            normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderId: id, ...it }));
         }
         // Зняття/встановлення помітки на видалення (напр. "Зняти помітку").
         if (deletionMark !== undefined) {
-            q.setOrderDeletion.run({ num, mark: deletionMark ? 1 : 0 });
+            q.setOrderDeletion.run({ id, mark: deletionMark ? 1 : 0 });
         }
     });
 
     update();
-    res.json({ success: true, order: hydrateOrder(q.orderByNum.get(num)) });
+    res.json({ success: true, order: hydrateOrder(q.orderById.get(id)) });
 });
 
 // Видалити повністю можна лише нове (невідправлене) замовлення. Відправлене/проведене
 // НЕ видаляємо, а ставимо помітку на видалення (як ПометкаУдаления в 1С) — лишається
 // в списку до фізичного вилучення в обліковій системі.
-router.delete('/orders/:num', (req, res) => {
-    const { num } = req.params;
-    const existing = q.orderByNum.get(num);
+router.delete('/orders/:id', (req, res) => {
+    const { id } = req.params;
+    const existing = q.orderById.get(id);
     if (!existing) {
         return res.status(404).json({ success: false, message: "Замовлення не знайдено" });
     }
@@ -192,13 +208,13 @@ router.delete('/orders/:num', (req, res) => {
     }
 
     if (existing.status === "Нове") {
-        q.deleteOrder.run(num);   // order_items видаляються каскадно
+        q.deleteOrder.run(id);   // order_items видаляються каскадно
         return res.json({ success: true, deleted: true, message: "Замовлення видалено" });
     }
 
     // Відправлене — помітка на видалення (як ПометкаУдаления в 1С).
-    q.markOrderDeletion.run({ num });
-    res.json({ success: true, marked: true, order: hydrateOrder(q.orderByNum.get(num)), message: "Помічено на видалення" });
+    q.markOrderDeletion.run({ id });
+    res.json({ success: true, marked: true, order: hydrateOrder(q.orderById.get(id)), message: "Помічено на видалення" });
 });
 
 module.exports = router;

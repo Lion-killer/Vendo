@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { MIcon, Card, F_NUM, ProductImage } from '../components/ui';
 import { saveLocalOrder, removeLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
+import { idSet } from '../api/refs';
 
 const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
-    const orderLabel = (num) => String(num).startsWith("local_") ? `№${String(num).slice(-4)}` : String(num);
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+    // Лейбл: номер документа, якщо є; інакше короткий №<id>.
+    const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
+    // Набір GUID наявних товарів — для позначення «зниклих» позицій (видалених на бекенді).
+    const prodIds = idSet(products);
+    const productMissing = (p) => products.length > 0 && p?.id != null && !prodIds.has(p.id);
+    const customerMissing = !!(customers.length > 0 && editCustomer?.id && !idSet(customers).has(editCustomer.id));
     const statusColor = status === "Видалено" ? t.err : status === "Проведено" ? t.inkSoft : status === "Відправлено" ? t.ok : t.warn;
     const customer = editCustomer; // без фолбеку: не вибрано — показуємо плейсхолдер
     const setCustomer = setEditCustomer;
@@ -45,7 +51,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         if (locked || orderItems.length === 0 || !isDirty) return;
         try {
             const orderData = {
-                num: editOrderId || undefined,
+                id: editOrderId || undefined,
                 customer: customer || null,
                 customerId: customer?.id || null,
                 client: customer?.name || "Невідомий клієнт",
@@ -64,13 +70,13 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // і коли товари додані з каталогу (минаючи зміни безпосередньо в цьому екрані).
     const saveDraft = () => {
         if (!locked && orderItems.length > 0) {
-            const num = saveLocalOrder({
-                num: editOrderId || undefined, customer: customer || null, customerId: customer?.id || null,
+            const savedId = saveLocalOrder({
+                id: editOrderId || undefined, customer: customer || null, customerId: customer?.id || null,
                 client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
                 total: `${money(total)} ₴`, status: "Нове", sColor: t.warn,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
-            notify?.(`Збережено ${orderLabel(num)} · ${orderDate.split("-").reverse().join(".")}`);
+            notify?.(`Збережено ${orderLabel({ num, id: savedId })} · ${orderDate.split("-").reverse().join(".")}`);
         }
         if (isMounted.current) setOrderItems([]);
         if (goToOrdersList) goToOrdersList();
@@ -97,7 +103,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             markHandled?.();
             if (isMounted.current) setOrderItems([]);
             refreshOrders?.();
-            notify?.(isNew ? `Видалено ${orderLabel(editOrderId)}` : `Помічено на видалення ${orderLabel(editOrderId)}`);
+            notify?.(isNew ? `Видалено ${orderLabel({ num, id: editOrderId })}` : `Помічено на видалення ${orderLabel({ num, id: editOrderId })}`);
             if (goToOrdersList) goToOrdersList();
         } catch (e) {
             notify?.("Не вдалося видалити");
@@ -112,16 +118,16 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             await restoreOrder(editOrderId);
             markHandled?.();
             refreshOrders?.();
-            notify?.(`Помітку знято · ${orderLabel(editOrderId)}`);
+            notify?.(`Помітку знято · ${orderLabel({ num, id: editOrderId })}`);
             if (goToOrdersList) goToOrdersList();
         } catch (e) {
             notify?.("Не вдалося зняти помітку");
         }
     };
 
-    const draftLabel = editOrderId
-        ? (String(editOrderId).startsWith("local_") ? `№${String(editOrderId).slice(-4)} · автозбережено` : editOrderId)
-        : "Нове замовлення";
+    const draftLabel = num
+        ? num
+        : (editOrderId ? `№${String(editOrderId).slice(0, 8)} · автозбережено` : "Нове замовлення");
 
     // Дата замовлення (YYYY-MM-DD → DD.MM.YYYY) для режиму перегляду.
     const displayDate = orderDate.split("-").reverse().join(".");
@@ -184,8 +190,9 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <MIcon name="building" size={20} color={t.ink} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14.5, fontWeight: 700 }}>{customer?.name || "Оберіть контрагента"}</div>
+                            <div style={{ fontSize: 14.5, fontWeight: 700, color: customerMissing ? t.err : t.ink }}>{customer?.name || "Оберіть контрагента"}</div>
                             <div style={{ fontSize: 11.5, color: t.inkSoft, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {customerMissing && <span style={{ color: t.err, fontWeight: 700 }}>клієнта видалено на сервері</span>}
                                 {customer?.code && <span style={{ fontFamily: F_NUM }}>{customer.code}</span>}
                                 {customer?.address && <><span style={{ color: t.line }}>·</span><span>{customer.address}</span></>}
                                 {debt > 0 && <><span style={{ color: t.line }}>·</span><span style={{ color: t.err, fontWeight: 600 }}>борг {money(debt)} ₴</span></>}
@@ -221,7 +228,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <div key={idx} style={{ padding: "8px 12px", borderBottom: idx < orderItems.length - 1 ? `1px solid ${t.lineSoft}` : "none", display: "flex", alignItems: "center", gap: 8 }}>
                                 <ProductImage t={t} img={it.product.img} sku={it.product.sku} size={32} radius={7} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.name}</div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: productMissing(it.product) ? t.err : t.ink }}>{it.product.name}{productMissing(it.product) ? " · недоступний" : ""}</div>
                                     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 1 }}>
                                         <div style={{ flex: 1, minWidth: 0, fontFamily: F_NUM, fontSize: 10.5, color: t.inkMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.sku} · {money(it.product.price)} ₴{it.product.unit ? `/${it.product.unit}` : ""}</div>
                                         <div style={{ flexShrink: 0, fontFamily: F_NUM, fontSize: 11, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{money(it.product.price * it.qty)} ₴</div>

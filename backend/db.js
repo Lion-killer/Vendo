@@ -12,7 +12,7 @@ db.pragma('foreign_keys = ON');
 // --- Схема ---
 db.exec(`
     CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         sku TEXT,
         price REAL NOT NULL DEFAULT 0,
@@ -24,7 +24,7 @@ db.exec(`
     );
 
     CREATE TABLE IF NOT EXISTS customers (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         code TEXT,
         address TEXT,
@@ -45,8 +45,9 @@ db.exec(`
     );
 
     CREATE TABLE IF NOT EXISTS orders (
-        num TEXT PRIMARY KEY,
-        customerId INTEGER,
+        id TEXT PRIMARY KEY,
+        num TEXT UNIQUE,
+        customerId TEXT,
         date TEXT NOT NULL,
         status TEXT NOT NULL,
         deletionMark INTEGER NOT NULL DEFAULT 0
@@ -54,13 +55,13 @@ db.exec(`
 
     CREATE TABLE IF NOT EXISTS order_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        orderNum TEXT NOT NULL,
-        productId INTEGER,
+        orderId TEXT NOT NULL,
+        productId TEXT,
         qty INTEGER NOT NULL,
         price REAL NOT NULL DEFAULT 0,
-        FOREIGN KEY (orderNum) REFERENCES orders(num) ON DELETE CASCADE
+        FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE
     );
-    CREATE INDEX IF NOT EXISTS idx_order_items_orderNum ON order_items(orderNum);
+    CREATE INDEX IF NOT EXISTS idx_order_items_orderId ON order_items(orderId);
 
     CREATE TABLE IF NOT EXISTS meta (
         key TEXT PRIMARY KEY,
@@ -92,10 +93,10 @@ const seedIfEmpty = () => {
          VALUES (@id, @name, @parentId, @icon, @count, @expanded)`
     );
     const insertOrder = db.prepare(
-        `INSERT INTO orders (num, customerId, date, status) VALUES (@num, @customerId, @date, @status)`
+        `INSERT INTO orders (id, num, customerId, date, status) VALUES (@id, @num, @customerId, @date, @status)`
     );
     const insertItem = db.prepare(
-        `INSERT INTO order_items (orderNum, productId, qty, price) VALUES (@orderNum, @productId, @qty, @price)`
+        `INSERT INTO order_items (orderId, productId, qty, price) VALUES (@orderId, @productId, @qty, @price)`
     );
     const setMeta = db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`);
 
@@ -112,9 +113,9 @@ const seedIfEmpty = () => {
         }));
         (seed.categories || []).forEach(c => insertCategory.run({ ...c, parentId: c.parentId ?? null, expanded: c.expanded ? 1 : 0 }));
         (seed.orders || []).forEach(o => {
-            insertOrder.run({ num: o.num, customerId: o.customerId ?? null, date: o.date, status: o.status });
+            insertOrder.run({ id: o.id, num: o.num ?? null, customerId: o.customerId ?? null, date: o.date, status: o.status });
             (o.items || []).forEach(it => insertItem.run({
-                orderNum: o.num,
+                orderId: o.id,
                 productId: it.productId ?? it.product?.id ?? null,
                 qty: it.qty,
                 price: it.price ?? it.product?.price ?? 0

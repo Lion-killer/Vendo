@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Snackbar } from '../components/Shared';
 import { MIcon, Card, F_NUM } from '../components/ui';
-import { createOrder, updateOrder } from '../api/client';
+import { createOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder } from '../api/localOrders';
+import { idSet, checkOrderRefs } from '../api/refs';
 
 // Розбір суми з рядка ("4 280 ₴" / "1 078.00 ₴") або числа → Number.
 const parseMoney = (v) => {
@@ -28,7 +29,7 @@ const syncLabel = (ts) => {
     return d === 1 ? "вчора" : `${d} дн тому`;
 };
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, refreshOrders, onLogout, isDark, onToggleTheme }) => {
+export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products = [], customers = [], productsCount = 0, customersCount = 0, refreshOrders, onLogout, isDark, onToggleTheme }) => {
     const [syncing, setSyncing] = useState(false);
     const [snack, setSnack] = useState("");
     const [showProfile, setShowProfile] = useState(false);
@@ -46,20 +47,24 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
         setSyncing(true);
         try {
             const locals = getLocalOrders();
+            // Звірка посилань можлива лише коли довідники завантажені (інакше все
+            // здавалося б «зниклим»). За GUID-ідентичності зіставлення надійне.
+            const canCheck = products.length > 0 && customers.length > 0;
+            const prodIds = idSet(products), custIds = idSet(customers);
+            let skipped = 0;
             for (const o of locals) {
-                const isLocal = String(o.num).startsWith("local_");
+                if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { skipped++; continue; }
                 const numericTotal = parseMoney(o.total);
-                const res = (!isLocal && o.num)
-                    ? await updateOrder(o.num, o.items, o.customerId, numericTotal, "Відправлено")
-                    : await createOrder(o.items, o.customerId, numericTotal, "Відправлено");
-                // Прибираємо локальний запис ЛИШЕ якщо 1С прийняла й провела замовлення.
-                // Інакше (напр. контроль залишків відхилив проведення) лишаємо чернетку
-                // й перериваємо — користувач побачить помилку і повторить пізніше.
+                // Upsert за GUID (o.id) — ідемпотентно; повторна відправка не дублює.
+                const res = await createOrder(o.id, o.items, o.customerId, numericTotal, "Відправлено");
+                // Прибираємо локальний запис ЛИШЕ якщо сервер прийняв замовлення.
                 if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
-                removeLocalOrder(o.num);
+                removeLocalOrder(o.id);
             }
             if (refreshOrders) refreshOrders();
-            setSnack("Синхронізацію завершено");
+            setSnack(skipped
+                ? `Синхронізовано; ${skipped} пропущено (посилання на видалені дані)`
+                : "Синхронізацію завершено");
         } catch (e) {
             console.error("Sync error:", e);
             setSnack("Помилка синхронізації");
@@ -73,7 +78,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     const displayOrders = (() => {
         const locals = getLocalOrders();
         const merged = [...locals];
-        for (const r of orders) if (!merged.find(m => m.num === r.num)) merged.push(r);
+        for (const r of orders) if (!merged.find(m => m.id === r.id)) merged.push(r);
         return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
     })();
 
@@ -86,7 +91,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
 
     const statusColor = (o) => o.sColor || (o.status === 'Видалено' ? t.err : o.status === 'Відправлено' ? t.ok : o.status === 'Нове' ? t.warn : t.inkSoft);
     const isNew = (o) => o.status === 'Нове';
-    const orderNum = (o) => String(o.num).startsWith('local_') ? `№${String(o.num).slice(-4)}` : o.num;
+    const orderNum = (o) => o.num || `№${String(o.id || '').slice(0, 8)}`;
 
     // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки на головній.
     const todayISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();

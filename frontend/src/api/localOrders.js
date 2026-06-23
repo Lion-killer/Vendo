@@ -1,5 +1,15 @@
 const STORAGE_KEY = 'vendo_local_orders';
 
+// GUID для локальної ідентичності замовлення (узгоджено з 1С/бекендом, ідемпотентна
+// синхронізація). Фолбек — якщо crypto.randomUUID недоступний (старий Android WebView).
+export const newId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+};
+
 export const getLocalOrders = () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
@@ -12,29 +22,24 @@ export const getLocalOrders = () => {
 
 export const saveLocalOrder = (order) => {
     const orders = getLocalOrders();
-    const existingIndex = orders.findIndex(o => o.num === order.num);
+    // Нове локальне замовлення отримує GUID; num присвоїть сервер при синхронізації.
+    if (!order.id) order.id = newId();
+    if (!order.date) order.date = new Date().toISOString().split('T')[0];
 
+    const existingIndex = orders.findIndex(o => o.id === order.id);
     if (existingIndex >= 0) {
         orders[existingIndex] = { ...orders[existingIndex], ...order };
     } else {
-        // Якщо це нове локальне замовлення і немає num, генеруємо його
-        if (!order.num) {
-            order.num = `local_${Date.now()}`;
-        }
-        // За замовчуванням дата - сьогодні, якщо не вказано
-        if (!order.date) {
-            order.date = new Date().toISOString().split('T')[0];
-        }
         orders.unshift(order);
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-    return order.num; // Повертаємо ID для подальшого використання
+    return order.id;
 };
 
-export const updateLocalOrderStatus = (num, status) => {
+export const updateLocalOrderStatus = (id, status) => {
     const orders = getLocalOrders();
-    const existingIndex = orders.findIndex(o => o.num === num);
+    const existingIndex = orders.findIndex(o => o.id === id);
 
     if (existingIndex >= 0) {
         orders[existingIndex].status = status;
@@ -44,13 +49,13 @@ export const updateLocalOrderStatus = (num, status) => {
     }
 };
 
-export const removeLocalOrder = (num) => {
+export const removeLocalOrder = (id) => {
     const orders = getLocalOrders();
-    const newOrders = orders.filter(o => o.num !== num);
+    const newOrders = orders.filter(o => o.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrders));
 };
 
-export const getLocalOrder = (num) => {
+export const getLocalOrder = (id) => {
     const orders = getLocalOrders();
-    return orders.find(o => o.num === num) || null;
+    return orders.find(o => o.id === id) || null;
 };

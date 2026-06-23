@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon';
 import { ScrollRow } from '../components/ui';
 import { fetchOrders, deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder } from '../api/localOrders';
+import { idSet, checkOrderRefs } from '../api/refs';
 
 // Форматування дати в YYYY-MM-DD (локальний час, без зсуву UTC).
 const fmtDate = (date) => {
@@ -40,7 +41,7 @@ const matchedPreset = (start, end) => {
     return null; // довільний діапазон
 };
 
-export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
+export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [] }) => {
     const [startDate, setStartDate] = useState(() => localStorage.getItem('orders_startDate') || presetRange('last7').start);
     const [endDate, setEndDate] = useState(() => localStorage.getItem('orders_endDate') || presetRange('last7').end);
     // Поля точного вибору приховані, поки користувач не натисне "Свій період"
@@ -87,7 +88,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
 
             const merged = [...filteredLocals];
             for (const r of data) {
-                if (!merged.find(m => m.num === r.num)) {
+                if (!merged.find(m => m.id === r.id)) {
                     merged.push(r);
                 }
             }
@@ -110,13 +111,14 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
         setLoading(true);
         try {
             if (isDraftStatus(o)) {
-                // Чернетку видаляємо повністю (локальну + серверну, якщо є)
-                removeLocalOrder(o.num);
-                if (!String(o.num).startsWith("local_")) await deleteOrder(o.num);
+                // "Нове" видаляємо повністю: локальну копію завжди; серверну — лише якщо
+                // вже синхронізована (має номер документа).
+                removeLocalOrder(o.id);
+                if (o.num) await deleteOrder(o.id);
             } else {
                 // Відправлене/проведене — помітка на видалення (бекенд/1С ставлять ПометкаУдаления)
-                await deleteOrder(o.num);
-                removeLocalOrder(o.num); // прибрати локальну копію, якщо була
+                await deleteOrder(o.id);
+                removeLocalOrder(o.id); // прибрати локальну копію, якщо була
             }
 
             setOrderToDelete(null);
@@ -216,16 +218,20 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
                         <p style={{ color: t.textMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>За вказаний період замовлень немає</p>
                     </div>
                 ) : (
-                    orders.map(o => (
-                        <div key={o.num} onClick={() => onNav("orders", { order: o })} style={{ background: t.surface, borderRadius: 16, padding: "14px 16px", border: `1px solid ${o.deletionMark ? t.error + "55" : t.border}`, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", boxShadow: t.cardShadow, opacity: o.deletionMark ? 0.6 : 1 }}>
+                    orders.map(o => {
+                      const refs = (products.length > 0 && customers.length > 0)
+                          ? checkOrderRefs(o, idSet(products), idSet(customers)) : { ok: true };
+                      return (
+                        <div key={o.id} onClick={() => onNav("orders", { order: o })} style={{ background: t.surface, borderRadius: 16, padding: "14px 16px", border: `1px solid ${o.deletionMark ? t.error + "55" : t.border}`, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", boxShadow: t.cardShadow, opacity: o.deletionMark ? 0.6 : 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                 <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surfaceVariant, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <Icon name="orders" size={20} color={t.primary} />
                                 </div>
                                 <div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                                        <p style={{ color: t.text, fontSize: 14, fontWeight: 800, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{String(o.num).startsWith('local_') ? `№${String(o.num).slice(-4)}` : o.num}</p>
+                                        <p style={{ color: t.text, fontSize: 14, fontWeight: 800, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{o.num || `№${String(o.id || '').slice(0, 8)}`}</p>
                                         <span style={{ fontSize: 10, color: t.textMuted }}>{o.date}</span>
+                                        {!refs.ok && <span title="Посилання на видалені дані" style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>НЕДОСТУПНІ ДАНІ</span>}
                                     </div>
                                     <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600 }}>{o.client || o.customer?.name || "Невідомий клієнт"}</p>
                                 </div>
@@ -248,7 +254,8 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
                                 })()}
                             </div>
                         </div>
-                    ))
+                      );
+                    })
                 )}
             </div>
 
@@ -270,7 +277,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders }) => {
                             </div>
                         </div>
                         {(() => {
-                            const label = String(orderToDelete.num).startsWith('local_') ? `№${String(orderToDelete.num).slice(-4)}` : orderToDelete.num;
+                            const label = orderToDelete.num || `№${String(orderToDelete.id || '').slice(0, 8)}`;
                             const draft = isDraftStatus(orderToDelete);
                             return (
                                 <>

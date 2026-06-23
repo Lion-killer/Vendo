@@ -59,26 +59,27 @@ export const fetchOrders = async (startDate, endDate) => {
     return (await tfetch(url, { headers: h() })).json();
 };
 
-export const createOrder = async (orderItems, customerId, total, status = "Нове", date) =>
+// id — клієнтський GUID замовлення; сервер робить upsert за ним (ідемпотентно).
+export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date) =>
     (await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ orderItems, customerId, total, status, date }),
+        body: JSON.stringify({ id, orderItems, customerId, total, status, date }),
     })).json();
 
-export const updateOrder = async (num, orderItems, customerId, total, status, date) =>
-    (await tfetch(`${apiUrl()}/orders/${num}`, {
+export const updateOrder = async (id, orderItems, customerId, total, status, date) =>
+    (await tfetch(`${apiUrl()}/orders/${id}`, {
         method: 'PUT',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ orderItems, customerId, total, status, date }),
     })).json();
 
-export const deleteOrder = async (num) =>
-    (await tfetch(`${apiUrl()}/orders/${num}`, { method: 'DELETE', headers: h() })).json();
+export const deleteOrder = async (id) =>
+    (await tfetch(`${apiUrl()}/orders/${id}`, { method: 'DELETE', headers: h() })).json();
 
 // Зняти помітку на видалення (PUT із deletionMark:false; інші поля не чіпаємо).
-export const restoreOrder = async (num) =>
-    (await tfetch(`${apiUrl()}/orders/${num}`, {
+export const restoreOrder = async (id) =>
+    (await tfetch(`${apiUrl()}/orders/${id}`, {
         method: 'PUT',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ deletionMark: false }),

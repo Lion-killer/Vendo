@@ -37,6 +37,7 @@ export default function App() {
   const [editLocked, setEditLocked] = useState(false); // проведене в 1С замовлення — лише перегляд
   const [editDate, setEditDate] = useState(null); // дата редагованого замовлення (null = нове)
   const [editStatus, setEditStatus] = useState("Нове"); // статус замовлення на екрані (Нове/Відправлено/Проведено)
+  const [editNum, setEditNum] = useState(null); // номер документа (null для невідправленого) — лише для показу
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -49,7 +50,8 @@ export default function App() {
 
   // Плаваюче повідомлення, що переживає навігацію (на відміну від снека всередині екрана).
   const notify = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2800); };
-  const orderLabel = (num) => String(num).startsWith("local_") ? `№${String(num).slice(-4)}` : num;
+  // Людський лейбл замовлення: номер документа, якщо присвоєний; інакше короткий №<id>.
+  const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
   const fmtDate = (iso) => iso ? String(iso).split("-").reverse().join(".") : "";
 
   // Зберегти поточне (нове/редаговане) замовлення як чернетку при виході з екрана.
@@ -57,14 +59,14 @@ export default function App() {
   const saveLeavingDraft = () => {
     if (orderHandled.current) { orderHandled.current = false; return; }
     if (editLocked || orderItems.length === 0) return;
-    // Лише нові/локальні чернетки. Наявне серверне замовлення (реальний номер) при
-    // простому перегляді не дублюємо в локальну чергу — його зберігають явно (Відправити).
-    if (editOrderId && !String(editOrderId).startsWith("local_")) return;
+    // Лише локальні невідправлені (статус "Нове"). Серверне замовлення (Відправлено/
+    // Проведено/Видалено) при перегляді не дублюємо в локальну чергу.
+    if (editOrderId && editStatus !== "Нове") return;
     // Нічого не змінилось від моменту відкриття — не зберігаємо й не показуємо повідомлення.
     if (orderSig(orderItems, editCustomer?.id, editDate) === orderBaseline.current) return;
     const total = orderItems.reduce((s, it) => s + it.product.price * it.qty, 0);
-    const num = saveLocalOrder({
-      num: editOrderId || undefined,
+    const id = saveLocalOrder({
+      id: editOrderId || undefined,
       customer: editCustomer || null,
       customerId: editCustomer?.id || null,
       client: editCustomer?.name || "Невідомий клієнт",
@@ -74,7 +76,7 @@ export default function App() {
       status: "Нове",
       sColor: t.warn,
     });
-    notify(`Збережено ${orderLabel(num)} · ${fmtDate(editDate) || "сьогодні"}`);
+    notify(`Збережено ${orderLabel({ id })} · ${fmtDate(editDate) || "сьогодні"}`);
   };
 
   // Поки користувач не обрав тему вручну — слідуємо за системною.
@@ -95,7 +97,7 @@ export default function App() {
   // 1) Миттєво показуємо кеш (offline-first), щоб UI не чекав мережі.
   const loadFromCache = () => {
     try {
-      const cached = localStorage.getItem('cached_data');
+      const cached = localStorage.getItem('cached_data_v2'); // v2: GUID-ідентифікація (старий кеш із цілими id ігноруємо)
       if (!cached) return false;
       const data = JSON.parse(cached);
       setProducts(data.products || []);
@@ -122,7 +124,7 @@ export default function App() {
       setCategories(catRes);
       setCustomers(custRes);
       setOrders(ordRes);
-      localStorage.setItem('cached_data', JSON.stringify({
+      localStorage.setItem('cached_data_v2', JSON.stringify({
         products: prodRes, categories: catRes, customers: custRes, orders: ordRes
       }));
       localStorage.setItem('vendo_last_sync', String(Date.now())); // час останньої успішної синхронізації
@@ -203,13 +205,14 @@ export default function App() {
     }
 
     if (s === "orders" && params.order) {
-      // Редагування існуючого замовлення з дашборду
-      setEditOrderId(params.order.num);
+      // Редагування існуючого замовлення з дашборду (ідентичність — GUID id)
+      setEditOrderId(params.order.id);
       setEditCustomer(params.order.customer || null);
       setOrderItems(params.order.items || []);
       setEditLocked(params.order.status === "Проведено"); // проведене в 1С — лише перегляд
       setEditDate(params.order.date || null);
       setEditStatus(params.order.status || "Нове");
+      setEditNum(params.order.num || null);
       orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date);
     } else if (s === "orders" && params.newOrder) {
       // Явно створюємо нове замовлення (наприклад, кнопка з дашборду)
@@ -219,6 +222,7 @@ export default function App() {
       setEditLocked(false);
       setEditDate(null);
       setEditStatus("Нове");
+      setEditNum(null);
       orderBaseline.current = orderSig([], null, null);
     } else if (s === "catalog" && !params.keepOrder) {
       // Просто перехід в Товари - створюємо нове (скидаємо редаговане замовлення)
@@ -228,6 +232,7 @@ export default function App() {
       setEditLocked(false);
       setEditDate(null);
       setEditStatus("Нове");
+      setEditNum(null);
       orderBaseline.current = orderSig([], null, null);
     }
     // В іншому випадку (наприклад, при переході з Каталогу в Orders) стан кошика зберігається
@@ -268,11 +273,11 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} />}
-          {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
