@@ -107,9 +107,16 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
     ];
 
     let list = filter === "debt" ? withDebt : customers;
-    if (query.trim()) list = list.filter(c =>
-        c.name.toLowerCase().includes(query.toLowerCase()) ||
-        (c.code || "").toLowerCase().includes(query.toLowerCase()));
+    if (query.trim()) {
+        const q = query.toLowerCase();
+        // Пошук за назвою, кодом, адресою, телефоном і контактними особами (#11).
+        list = list.filter(c => {
+            const contacts = Array.isArray(c.contacts)
+                ? c.contacts.map(p => `${p.name || ""} ${p.phone || ""}`).join(" ") : "";
+            return [c.name, c.code, c.address, c.phone, c.contact, contacts]
+                .filter(Boolean).join(" ").toLowerCase().includes(q);
+        });
+    }
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
@@ -127,7 +134,7 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
                 {/* Пошук */}
                 <div style={{ background: t.surface, border: `1px solid ${query ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
                     <MIcon name="search" size={18} color={query ? t.accent : t.inkMuted} />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Пошук клієнта або коду…"
+                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Пошук: назва, код, адреса, телефон…"
                         style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
                     {query && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                 </div>
