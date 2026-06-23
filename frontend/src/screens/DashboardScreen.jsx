@@ -67,7 +67,12 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                     continue;
                 }
                 // Upsert за GUID (o.id) — ідемпотентно; повторна відправка не дублює.
-                const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено");
+                // baseUpdatedAt — для виявлення конфлікту (сервер відповість 409, якщо змінили).
+                const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseUpdatedAt);
+                if (res && res.conflict) {
+                    setLocalOrderError(o.id, res.message || "Конфлікт версій", true); failed++;
+                    continue; // лишаємо в черзі — користувач вирішить конфлікт на екрані замовлення
+                }
                 if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
                 removeLocalOrder(o.id); sent++;
             } catch (e) {
@@ -195,7 +200,8 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                         <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</span>
                                         {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>НОВЕ</span>}
-                                        {o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ПОМИЛКА</span>
+                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>КОНФЛІКТ</span>
+                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ПОМИЛКА</span>
                                             : (o._pending && !isNew(o)) ? <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ОЧІКУЄ</span> : null}
                                     </div>
                                     <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || "Невідомий клієнт"}</div>

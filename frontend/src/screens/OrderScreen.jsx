@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { MIcon, Card, F_NUM, ProductImage } from '../components/ui';
-import { saveLocalOrder, removeLocalOrder } from '../api/localOrders';
+import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
 
 const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseUpdatedAt = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     // Лейбл: номер документа, якщо є; інакше короткий №<id>.
     const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
     // Набір GUID наявних товарів — для позначення «зниклих» позицій (видалених на бекенді).
     const prodIds = idSet(products);
     const productMissing = (p) => products.length > 0 && p?.id != null && !prodIds.has(p.id);
     const customerMissing = !!(customers.length > 0 && editCustomer?.id && !idSet(customers).has(editCustomer.id));
+    // Конфлікт: серверну версію змінили після наших правок (позначено під час doSync).
+    const conflicted = !!(editOrderId && getLocalOrder(editOrderId)?.conflict);
     const statusColor = status === "Видалено" ? t.err : status === "Проведено" ? t.inkSoft : status === "Відправлено" ? t.ok : t.warn;
     const customer = editCustomer; // без фолбеку: не вибрано — показуємо плейсхолдер
     const setCustomer = setEditCustomer;
@@ -64,6 +66,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 total: `${money(total)} ₴`,
                 status: queueStatus,
                 sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
+                baseUpdatedAt: queueStatus === "Відправлено" ? baseUpdatedAt : undefined,
             };
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
@@ -79,6 +82,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 id: editOrderId || undefined, num: num || undefined, customer: customer || null, customerId: customer?.id || null,
                 client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
                 total: `${money(total)} ₴`, status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
+                baseUpdatedAt: queueStatus === "Відправлено" ? baseUpdatedAt : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
             notify?.(`Збережено ${orderLabel({ num, id: savedId })} · ${orderDate.split("-").reverse().join(".")}`);
@@ -140,6 +144,22 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         }
     };
 
+    // Розв'язання конфлікту: «перезаписати моє» — гасимо базу версії й помилку, наступна
+    // синхронізація перезапише сервер (force); «взяти серверне» — викидаємо локальну правку.
+    const resolveOverwrite = () => {
+        saveLocalOrder({ id: editOrderId, baseUpdatedAt: null, conflict: false, syncError: "" });
+        markHandled?.();
+        notify?.("Ваша версія перезапише сервер при наступній синхронізації");
+        if (goToOrdersList) goToOrdersList();
+    };
+    const resolveTakeServer = () => {
+        removeLocalOrder(editOrderId);
+        markHandled?.();
+        refreshOrders?.();
+        notify?.("Взято серверну версію");
+        if (goToOrdersList) goToOrdersList();
+    };
+
     const draftLabel = num
         ? num
         : (editOrderId ? `№${String(editOrderId).slice(0, 8)} · автозбережено` : "Нове замовлення");
@@ -193,6 +213,20 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                 </button>
                             );
                         })()}
+                    </div>
+                </div>
+            )}
+
+            {/* Банер конфлікту синхронізації */}
+            {conflicted && (
+                <div style={{ margin: "0 16px 12px", padding: "12px 14px", background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                        <div style={{ flexShrink: 0, marginTop: 1, display: "flex" }}><MIcon name="bell" size={15} color={t.err} /></div>
+                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>Замовлення змінили на сервері після ваших правок. Оберіть, яку версію лишити.</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                        <button onClick={resolveOverwrite} style={{ flex: 1, height: 38, borderRadius: 10, background: t.err, color: "#fff", border: "none", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>Перезаписати моє</button>
+                        <button onClick={resolveTakeServer} style={{ flex: 1, height: 38, borderRadius: 10, background: t.surface, color: t.ink, border: `1px solid ${t.line}`, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>Взяти серверне</button>
                     </div>
                 </div>
             )}

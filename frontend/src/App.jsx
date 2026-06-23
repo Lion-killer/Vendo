@@ -38,6 +38,7 @@ export default function App() {
   const [editDate, setEditDate] = useState(null); // дата редагованого замовлення (null = нове)
   const [editStatus, setEditStatus] = useState("Нове"); // статус замовлення на екрані (Нове/Відправлено/Проведено)
   const [editNum, setEditNum] = useState(null); // номер документа (null для невідправленого) — лише для показу
+  const [editUpdatedAt, setEditUpdatedAt] = useState(null); // версія замовлення на момент відкриття (для виявлення конфліктів)
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -79,6 +80,8 @@ export default function App() {
       total: `${total.toLocaleString("uk-UA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₴`,
       status: queueStatus,
       sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
+      // База версії лише для правок серверного замовлення (виявлення конфлікту).
+      baseUpdatedAt: queueStatus === "Відправлено" ? editUpdatedAt : undefined,
     });
     notify(`Збережено ${orderLabel({ id, num: editNum })} · ${fmtDate(editDate) || "сьогодні"}`);
   };
@@ -217,6 +220,7 @@ export default function App() {
       setEditDate(params.order.date || null);
       setEditStatus(params.order.status || "Нове");
       setEditNum(params.order.num || null);
+      setEditUpdatedAt(params.order.updatedAt ?? null);
       orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date);
     } else if (s === "orders" && params.newOrder) {
       // Явно створюємо нове замовлення (наприклад, кнопка з дашборду)
@@ -227,6 +231,7 @@ export default function App() {
       setEditDate(null);
       setEditStatus("Нове");
       setEditNum(null);
+      setEditUpdatedAt(null);
       orderBaseline.current = orderSig([], null, null);
     } else if (s === "catalog" && !params.keepOrder) {
       // Просто перехід в Товари - створюємо нове (скидаємо редаговане замовлення)
@@ -237,6 +242,7 @@ export default function App() {
       setEditDate(null);
       setEditStatus("Нове");
       setEditNum(null);
+      setEditUpdatedAt(null);
       orderBaseline.current = orderSig([], null, null);
     }
     // В іншому випадку (наприклад, при переході з Каталогу в Orders) стан кошика зберігається
@@ -281,7 +287,7 @@ export default function App() {
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseUpdatedAt={editUpdatedAt} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
