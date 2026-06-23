@@ -10,12 +10,14 @@ const q = {
     customers: db.prepare('SELECT id, name, code, city, contact, phone, debt, status FROM customers'),
     customerById: db.prepare('SELECT id, name, code, city, contact, phone, debt, status FROM customers WHERE id = ?'),
     categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
-    orders: db.prepare('SELECT num, customerId, date, status FROM orders ORDER BY date DESC, num DESC'),
-    orderByNum: db.prepare('SELECT num, customerId, date, status FROM orders WHERE num = ?'),
+    orders: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders ORDER BY date DESC, num DESC'),
+    orderByNum: db.prepare('SELECT num, customerId, date, status, deletionMark FROM orders WHERE num = ?'),
     itemsByOrder: db.prepare('SELECT productId, qty, price FROM order_items WHERE orderNum = ? ORDER BY id'),
     insertOrder: db.prepare('INSERT INTO orders (num, customerId, date, status) VALUES (@num, @customerId, @date, @status)'),
-    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status WHERE num = @num'),
+    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status, date = @date WHERE num = @num'),
     deleteOrder: db.prepare('DELETE FROM orders WHERE num = ?'),
+    markOrderDeletion: db.prepare('UPDATE orders SET deletionMark = 1 WHERE num = @num'),
+    setOrderDeletion: db.prepare('UPDATE orders SET deletionMark = @mark WHERE num = @num'),
     insertItem: db.prepare('INSERT INTO order_items (orderNum, productId, qty, price) VALUES (@orderNum, @productId, @qty, @price)'),
     deleteItems: db.prepare('DELETE FROM order_items WHERE orderNum = ?'),
     getMeta: db.prepare('SELECT value FROM meta WHERE key = ?'),
@@ -25,9 +27,10 @@ const q = {
 // --- Допоміжні функції для замовлень ---
 
 const STATUS_COLORS = {
+    "Нове": "#F2994A",
     "Відправлено": "#4ECDA4",
-    "Очікує відправки": "#2D9CDB",
-    "Чернетка": "#F2994A"
+    "Проведено": "#8A8C96",
+    "Видалено": "#C0392B"
 };
 const colorFor = (status) => STATUS_COLORS[status] || "#F2C94C";
 
@@ -61,16 +64,20 @@ const hydrateOrder = (order) => {
             : { id: it.productId, name: "Товар недоступний", sku: "", img: "❓", price: it.price };
         return { product, qty: it.qty };
     });
+    // Помічене на видалення показуємо окремим статусом "Видалено" (реальний статус
+    // лишається в БД для логіки; deletionMark теж віддаємо).
+    const displayStatus = order.deletionMark ? "Видалено" : order.status;
     return {
         num: order.num,
         customerId: order.customerId,
         date: order.date,
-        status: order.status,
+        status: displayStatus,
+        deletionMark: !!order.deletionMark,
         client: customer ? customer.name : "Невідомий клієнт",
         customer,
         items,
         total: formatUAH(computeTotal(rows)),
-        sColor: colorFor(order.status)
+        sColor: colorFor(displayStatus)
     };
 };
 
@@ -117,14 +124,14 @@ router.get('/orders', (req, res) => {
 });
 
 router.post('/orders', (req, res) => {
-    const { orderItems, customerId, status } = req.body;
+    const { orderItems, customerId, status, date } = req.body;
 
     const create = db.transaction(() => {
         const num = nextOrderNum();
         const order = {
             num,
             customerId: customerId ?? null,
-            date: new Date().toISOString().split('T')[0],
+            date: date || new Date().toISOString().split('T')[0],
             status: status || "Відправлено"
         };
         q.insertOrder.run(order);
@@ -138,7 +145,7 @@ router.post('/orders', (req, res) => {
 
 router.put('/orders/:num', (req, res) => {
     const { num } = req.params;
-    const { orderItems, customerId, status } = req.body;
+    const { orderItems, customerId, status, date, deletionMark } = req.body;
 
     const existing = q.orderByNum.get(num);
     if (!existing) {
@@ -149,11 +156,16 @@ router.put('/orders/:num', (req, res) => {
         q.updateOrder.run({
             num,
             customerId: customerId ?? existing.customerId,
-            status: status || existing.status
+            status: status || existing.status,
+            date: date || existing.date
         });
         if (orderItems) {
             q.deleteItems.run(num);
             normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderNum: num, ...it }));
+        }
+        // Зняття/встановлення помітки на видалення (напр. "Зняти помітку").
+        if (deletionMark !== undefined) {
+            q.setOrderDeletion.run({ num, mark: deletionMark ? 1 : 0 });
         }
     });
 
@@ -161,15 +173,29 @@ router.put('/orders/:num', (req, res) => {
     res.json({ success: true, order: hydrateOrder(q.orderByNum.get(num)) });
 });
 
+// Видалити повністю можна лише нове (невідправлене) замовлення. Відправлене/проведене
+// НЕ видаляємо, а ставимо помітку на видалення (як ПометкаУдаления в 1С) — лишається
+// в списку до фізичного вилучення в обліковій системі.
 router.delete('/orders/:num', (req, res) => {
     const { num } = req.params;
-    const info = q.deleteOrder.run(num);   // order_items видаляються каскадно
-
-    if (info.changes === 0) {
+    const existing = q.orderByNum.get(num);
+    if (!existing) {
         return res.status(404).json({ success: false, message: "Замовлення не знайдено" });
     }
 
-    res.json({ success: true, message: "Замовлення видалено" });
+    // Проведене замовлення не можна видалити/позначити з додатку (спершу розпроводять у 1С).
+    if (existing.status === "Проведено") {
+        return res.status(409).json({ success: false, message: "Проведене замовлення не можна видалити" });
+    }
+
+    if (existing.status === "Нове") {
+        q.deleteOrder.run(num);   // order_items видаляються каскадно
+        return res.json({ success: true, deleted: true, message: "Замовлення видалено" });
+    }
+
+    // Відправлене — помітка на видалення (як ПометкаУдаления в 1С).
+    q.markOrderDeletion.run({ num });
+    res.json({ success: true, marked: true, order: hydrateOrder(q.orderByNum.get(num)), message: "Помічено на видалення" });
 });
 
 module.exports = router;

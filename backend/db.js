@@ -47,7 +47,8 @@ db.exec(`
         num TEXT PRIMARY KEY,
         customerId INTEGER,
         date TEXT NOT NULL,
-        status TEXT NOT NULL
+        status TEXT NOT NULL,
+        deletionMark INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS order_items (
@@ -65,6 +66,9 @@ db.exec(`
         value TEXT
     );
 `);
+
+// Міграція наявних баз: додаємо deletionMark, якщо колонки ще немає.
+try { db.exec("ALTER TABLE orders ADD COLUMN deletionMark INTEGER NOT NULL DEFAULT 0"); } catch (e) { /* колонка вже існує */ }
 
 // --- Одноразовий сід із db.json (лише якщо БД порожня) ---
 const seedIfEmpty = () => {

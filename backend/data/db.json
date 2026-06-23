@@ -4,7 +4,7 @@
       "id": 1,
       "name": "Сир твердий Едам 45%",
       "sku": "CH-003",
-      "price": 189.0,
+      "price": 189,
       "stock": 12,
       "unit": "кг",
       "category": "Тверді сири",
@@ -15,7 +15,7 @@
       "id": 2,
       "name": "Сир Гауда 48%",
       "sku": "CH-008",
-      "price": 212.0,
+      "price": 212,
       "stock": 34,
       "unit": "кг",
       "category": "Тверді сири",
@@ -26,7 +26,7 @@
       "id": 3,
       "name": "Сир Пармезан витриманий",
       "sku": "CH-021",
-      "price": 498.0,
+      "price": 498,
       "stock": 6,
       "unit": "кг",
       "category": "Тверді сири",
@@ -37,7 +37,7 @@
       "id": 4,
       "name": "Сир Моцарела 45%",
       "sku": "CH-014",
-      "price": 164.0,
+      "price": 164,
       "stock": 48,
       "unit": "кг",
       "category": "М'які та розсольні",
@@ -48,7 +48,7 @@
       "id": 5,
       "name": "Сир Фета 50%",
       "sku": "CH-017",
-      "price": 178.0,
+      "price": 178,
       "stock": 0,
       "unit": "кг",
       "category": "М'які та розсольні",
@@ -59,7 +59,7 @@
       "id": 6,
       "name": "Сир плавлений Вершковий",
       "sku": "CH-030",
-      "price": 44.0,
+      "price": 44,
       "stock": 120,
       "unit": "шт",
       "category": "Сири",
@@ -81,7 +81,7 @@
       "id": 8,
       "name": "Вершки 10% 500мл",
       "sku": "ML-031",
-      "price": 63.0,
+      "price": 63,
       "stock": 92,
       "unit": "пл",
       "category": "Молочні продукти",
@@ -92,7 +92,7 @@
       "id": 9,
       "name": "Масло вершкове 82%",
       "sku": "MB-002",
-      "price": 98.0,
+      "price": 98,
       "stock": 56,
       "unit": "пач",
       "category": "Масло та спреди",
@@ -103,7 +103,7 @@
       "id": 10,
       "name": "Масло селянське 73%",
       "sku": "MB-005",
-      "price": 72.0,
+      "price": 72,
       "stock": 88,
       "unit": "пач",
       "category": "Масло та спреди",
@@ -114,7 +114,7 @@
       "id": 11,
       "name": "Рис довгозернистий 1кг",
       "sku": "GR-001",
-      "price": 54.0,
+      "price": 54,
       "stock": 210,
       "unit": "пач",
       "category": "Крупи",
@@ -125,7 +125,7 @@
       "id": 12,
       "name": "Гречка ядриця 800г",
       "sku": "GR-006",
-      "price": 61.0,
+      "price": 61,
       "stock": 175,
       "unit": "пач",
       "category": "Крупи",
@@ -136,7 +136,7 @@
       "id": 13,
       "name": "Олія соняшникова 1л",
       "sku": "OL-001",
-      "price": 76.0,
+      "price": 76,
       "stock": 240,
       "unit": "пл",
       "category": "Бакалія",
@@ -147,7 +147,7 @@
       "id": 14,
       "name": "Вода мінеральна газ. 1.5л",
       "sku": "WA-001",
-      "price": 18.0,
+      "price": 18,
       "stock": 512,
       "unit": "пл",
       "category": "Вода",
@@ -158,7 +158,7 @@
       "id": 15,
       "name": "Вода негаз. 1.5л",
       "sku": "WA-004",
-      "price": 17.0,
+      "price": 17,
       "stock": 480,
       "unit": "пл",
       "category": "Вода",
@@ -169,12 +169,166 @@
       "id": 16,
       "name": "Сік яблучний 1л",
       "sku": "JU-001",
-      "price": 52.0,
+      "price": 52,
       "stock": 88,
       "unit": "пл",
       "category": "Соки",
       "categoryId": 10,
       "img": "https://www.themealdb.com/images/ingredients/Apple%20Juice.png"
+    },
+    {
+      "id": 17,
+      "name": "Сир Чедер 50%",
+      "sku": "CH-040",
+      "price": 234,
+      "stock": 28,
+      "unit": "кг",
+      "category": "Тверді сири",
+      "categoryId": 3,
+      "img": "https://www.themealdb.com/images/ingredients/Cheddar%20Cheese.png"
+    },
+    {
+      "id": 18,
+      "name": "Сир Сулугуні",
+      "sku": "CH-052",
+      "price": 196,
+      "stock": 40,
+      "unit": "кг",
+      "category": "М'які та розсольні",
+      "categoryId": 4,
+      "img": "https://www.themealdb.com/images/ingredients/Cheese.png"
+    },
+    {
+      "id": 19,
+      "name": "Сир Брі",
+      "sku": "CH-061",
+      "price": 320,
+      "stock": 9,
+      "unit": "кг",
+      "category": "М'які та розсольні",
+      "categoryId": 4,
+      "img": "https://www.themealdb.com/images/ingredients/Brie.png"
+    },
+    {
+      "id": 20,
+      "name": "Йогурт натуральний 2% 350г",
+      "sku": "ML-045",
+      "price": 38,
+      "stock": 160,
+      "unit": "шт",
+      "category": "Молочні продукти",
+      "categoryId": 1,
+      "img": "https://www.themealdb.com/images/ingredients/Greek%20Yogurt.png"
+    },
+    {
+      "id": 21,
+      "name": "Кефір 2.5% 900мл",
+      "sku": "ML-050",
+      "price": 46,
+      "stock": 130,
+      "unit": "пл",
+      "category": "Молочні продукти",
+      "categoryId": 1,
+      "img": "https://www.themealdb.com/images/ingredients/Milk.png"
+    },
+    {
+      "id": 22,
+      "name": "Сметана 20% 350г",
+      "sku": "ML-061",
+      "price": 58,
+      "stock": 110,
+      "unit": "шт",
+      "category": "Молочні продукти",
+      "categoryId": 1,
+      "img": "https://www.themealdb.com/images/ingredients/Sour%20Cream.png"
+    },
+    {
+      "id": 23,
+      "name": "Сир кисломолочний 9% 300г",
+      "sku": "ML-070",
+      "price": 69,
+      "stock": 75,
+      "unit": "шт",
+      "category": "Молочні продукти",
+      "categoryId": 1,
+      "img": "https://www.themealdb.com/images/ingredients/Cream%20Cheese.png"
+    },
+    {
+      "id": 24,
+      "name": "Спред рослинно-вершковий 60%",
+      "sku": "MB-010",
+      "price": 54,
+      "stock": 95,
+      "unit": "пач",
+      "category": "Масло та спреди",
+      "categoryId": 5,
+      "img": "https://www.themealdb.com/images/ingredients/Butter.png"
+    },
+    {
+      "id": 25,
+      "name": "Борошно пшеничне в/ґ 2кг",
+      "sku": "BK-002",
+      "price": 48,
+      "stock": 300,
+      "unit": "пач",
+      "category": "Бакалія",
+      "categoryId": 6,
+      "img": "https://www.themealdb.com/images/ingredients/Flour.png"
+    },
+    {
+      "id": 26,
+      "name": "Цукор білий 1кг",
+      "sku": "BK-008",
+      "price": 39,
+      "stock": 420,
+      "unit": "пач",
+      "category": "Бакалія",
+      "categoryId": 6,
+      "img": "https://www.themealdb.com/images/ingredients/Sugar.png"
+    },
+    {
+      "id": 27,
+      "name": "Сіль кухонна 1кг",
+      "sku": "BK-014",
+      "price": 16,
+      "stock": 380,
+      "unit": "пач",
+      "category": "Бакалія",
+      "categoryId": 6,
+      "img": "https://www.themealdb.com/images/ingredients/Salt.png"
+    },
+    {
+      "id": 28,
+      "name": "Макарони спагеті 500г",
+      "sku": "BK-021",
+      "price": 33,
+      "stock": 260,
+      "unit": "пач",
+      "category": "Бакалія",
+      "categoryId": 6,
+      "img": "https://www.themealdb.com/images/ingredients/Spaghetti.png"
+    },
+    {
+      "id": 29,
+      "name": "Сік апельсиновий 1л",
+      "sku": "JU-006",
+      "price": 56,
+      "stock": 140,
+      "unit": "пл",
+      "category": "Соки",
+      "categoryId": 10,
+      "img": "https://www.themealdb.com/images/ingredients/Orange%20Juice.png"
+    },
+    {
+      "id": 30,
+      "name": "Напій Кола 1л",
+      "sku": "NP-001",
+      "price": 34,
+      "stock": 300,
+      "unit": "пл",
+      "category": "Напої",
+      "categoryId": 8,
+      "img": "https://www.themealdb.com/images/ingredients/Coca-Cola.png"
     }
   ],
   "customers": [
@@ -185,7 +339,7 @@
       "city": "Київ",
       "contact": "Іваненко І.",
       "phone": "+380671112233",
-      "debt": 12500.0,
+      "debt": 12500,
       "status": "active"
     },
     {
@@ -195,7 +349,7 @@
       "city": "Дніпро",
       "contact": "Петренко П.",
       "phone": "+380505556677",
-      "debt": 0.0,
+      "debt": 0,
       "status": "active"
     },
     {
@@ -205,7 +359,7 @@
       "city": "Львів",
       "contact": "Коваль О.",
       "phone": "+380638889900",
-      "debt": 3200.0,
+      "debt": 3200,
       "status": "active"
     },
     {
@@ -215,7 +369,7 @@
       "city": "Ірпінь",
       "contact": "",
       "phone": "",
-      "debt": 0.0,
+      "debt": 0,
       "status": "active"
     }
   ],
@@ -303,9 +457,763 @@
   ],
   "orders": [
     {
+      "num": "ЗМ-2039",
+      "customerId": 2,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 7,
+          "qty": 8,
+          "price": 42.5
+        },
+        {
+          "productId": 8,
+          "qty": 6,
+          "price": 63
+        },
+        {
+          "productId": 21,
+          "qty": 10,
+          "price": 46
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2040",
+      "customerId": 3,
+      "date": "2026-06-23",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 17,
+          "qty": 2,
+          "price": 234
+        },
+        {
+          "productId": 18,
+          "qty": 3,
+          "price": 196
+        },
+        {
+          "productId": 23,
+          "qty": 6,
+          "price": 69
+        },
+        {
+          "productId": 29,
+          "qty": 9,
+          "price": 56
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2041",
+      "customerId": 4,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 25,
+          "qty": 5,
+          "price": 48
+        },
+        {
+          "productId": 28,
+          "qty": 8,
+          "price": 33
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2042",
+      "customerId": 1,
+      "date": "2026-06-23",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 1,
+          "qty": 2,
+          "price": 189
+        },
+        {
+          "productId": 3,
+          "qty": 1,
+          "price": 498
+        },
+        {
+          "productId": 9,
+          "qty": 4,
+          "price": 98
+        },
+        {
+          "productId": 13,
+          "qty": 7,
+          "price": 76
+        },
+        {
+          "productId": 16,
+          "qty": 10,
+          "price": 52
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2038",
+      "customerId": 1,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 1,
+          "qty": 4,
+          "price": 189
+        },
+        {
+          "productId": 7,
+          "qty": 12,
+          "price": 42.5
+        },
+        {
+          "productId": 9,
+          "qty": 3,
+          "price": 98
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2037",
+      "customerId": 2,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 14,
+          "qty": 30,
+          "price": 18
+        },
+        {
+          "productId": 15,
+          "qty": 20,
+          "price": 17
+        },
+        {
+          "productId": 30,
+          "qty": 12,
+          "price": 34
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2036",
+      "customerId": 3,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 17,
+          "qty": 3,
+          "price": 234
+        },
+        {
+          "productId": 19,
+          "qty": 2,
+          "price": 320
+        },
+        {
+          "productId": 22,
+          "qty": 8,
+          "price": 58
+        },
+        {
+          "productId": 20,
+          "qty": 15,
+          "price": 38
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2035",
+      "customerId": 4,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 25,
+          "qty": 6,
+          "price": 48
+        },
+        {
+          "productId": 26,
+          "qty": 8,
+          "price": 39
+        },
+        {
+          "productId": 27,
+          "qty": 5,
+          "price": 16
+        },
+        {
+          "productId": 28,
+          "qty": 10,
+          "price": 33
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2034",
+      "customerId": 1,
+      "date": "2026-06-23",
+      "status": "Проведено",
+      "items": [
+        {
+          "productId": 11,
+          "qty": 8,
+          "price": 54
+        },
+        {
+          "productId": 12,
+          "qty": 6,
+          "price": 61
+        },
+        {
+          "productId": 13,
+          "qty": 10,
+          "price": 76
+        },
+        {
+          "productId": 16,
+          "qty": 12,
+          "price": 52
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2033",
+      "customerId": 1,
+      "date": "2026-06-23",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 1,
+          "qty": 9,
+          "price": 189
+        },
+        {
+          "productId": 2,
+          "qty": 7,
+          "price": 212
+        },
+        {
+          "productId": 3,
+          "qty": 5,
+          "price": 498
+        },
+        {
+          "productId": 4,
+          "qty": 3,
+          "price": 164
+        },
+        {
+          "productId": 5,
+          "qty": 10,
+          "price": 178
+        },
+        {
+          "productId": 6,
+          "qty": 8,
+          "price": 44
+        },
+        {
+          "productId": 7,
+          "qty": 6,
+          "price": 42.5
+        },
+        {
+          "productId": 8,
+          "qty": 4,
+          "price": 63
+        },
+        {
+          "productId": 9,
+          "qty": 2,
+          "price": 98
+        },
+        {
+          "productId": 10,
+          "qty": 9,
+          "price": 72
+        },
+        {
+          "productId": 11,
+          "qty": 7,
+          "price": 54
+        },
+        {
+          "productId": 12,
+          "qty": 5,
+          "price": 61
+        },
+        {
+          "productId": 13,
+          "qty": 3,
+          "price": 76
+        },
+        {
+          "productId": 14,
+          "qty": 10,
+          "price": 18
+        },
+        {
+          "productId": 15,
+          "qty": 8,
+          "price": 17
+        },
+        {
+          "productId": 16,
+          "qty": 6,
+          "price": 52
+        },
+        {
+          "productId": 17,
+          "qty": 4,
+          "price": 234
+        },
+        {
+          "productId": 18,
+          "qty": 2,
+          "price": 196
+        },
+        {
+          "productId": 19,
+          "qty": 9,
+          "price": 320
+        },
+        {
+          "productId": 20,
+          "qty": 7,
+          "price": 38
+        },
+        {
+          "productId": 21,
+          "qty": 5,
+          "price": 46
+        },
+        {
+          "productId": 22,
+          "qty": 3,
+          "price": 58
+        },
+        {
+          "productId": 23,
+          "qty": 10,
+          "price": 69
+        },
+        {
+          "productId": 24,
+          "qty": 8,
+          "price": 54
+        },
+        {
+          "productId": 25,
+          "qty": 6,
+          "price": 48
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2032",
+      "customerId": 2,
+      "date": "2026-06-19",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 6,
+          "qty": 8,
+          "price": 44
+        },
+        {
+          "productId": 7,
+          "qty": 6,
+          "price": 42.5
+        },
+        {
+          "productId": 8,
+          "qty": 4,
+          "price": 63
+        },
+        {
+          "productId": 9,
+          "qty": 2,
+          "price": 98
+        },
+        {
+          "productId": 10,
+          "qty": 9,
+          "price": 72
+        },
+        {
+          "productId": 11,
+          "qty": 7,
+          "price": 54
+        },
+        {
+          "productId": 12,
+          "qty": 5,
+          "price": 61
+        },
+        {
+          "productId": 13,
+          "qty": 3,
+          "price": 76
+        },
+        {
+          "productId": 14,
+          "qty": 10,
+          "price": 18
+        },
+        {
+          "productId": 15,
+          "qty": 8,
+          "price": 17
+        },
+        {
+          "productId": 16,
+          "qty": 6,
+          "price": 52
+        },
+        {
+          "productId": 17,
+          "qty": 4,
+          "price": 234
+        },
+        {
+          "productId": 18,
+          "qty": 2,
+          "price": 196
+        },
+        {
+          "productId": 19,
+          "qty": 9,
+          "price": 320
+        },
+        {
+          "productId": 20,
+          "qty": 7,
+          "price": 38
+        },
+        {
+          "productId": 21,
+          "qty": 5,
+          "price": 46
+        },
+        {
+          "productId": 22,
+          "qty": 3,
+          "price": 58
+        },
+        {
+          "productId": 23,
+          "qty": 10,
+          "price": 69
+        },
+        {
+          "productId": 24,
+          "qty": 8,
+          "price": 54
+        },
+        {
+          "productId": 25,
+          "qty": 6,
+          "price": 48
+        },
+        {
+          "productId": 26,
+          "qty": 4,
+          "price": 39
+        },
+        {
+          "productId": 27,
+          "qty": 2,
+          "price": 16
+        },
+        {
+          "productId": 28,
+          "qty": 9,
+          "price": 33
+        },
+        {
+          "productId": 29,
+          "qty": 7,
+          "price": 56
+        },
+        {
+          "productId": 30,
+          "qty": 5,
+          "price": 34
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2031",
+      "customerId": 3,
+      "date": "2026-06-16",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 4,
+          "qty": 3,
+          "price": 164
+        },
+        {
+          "productId": 5,
+          "qty": 10,
+          "price": 178
+        },
+        {
+          "productId": 6,
+          "qty": 8,
+          "price": 44
+        },
+        {
+          "productId": 7,
+          "qty": 6,
+          "price": 42.5
+        },
+        {
+          "productId": 8,
+          "qty": 4,
+          "price": 63
+        },
+        {
+          "productId": 9,
+          "qty": 2,
+          "price": 98
+        },
+        {
+          "productId": 10,
+          "qty": 9,
+          "price": 72
+        },
+        {
+          "productId": 11,
+          "qty": 7,
+          "price": 54
+        },
+        {
+          "productId": 12,
+          "qty": 5,
+          "price": 61
+        },
+        {
+          "productId": 13,
+          "qty": 3,
+          "price": 76
+        },
+        {
+          "productId": 14,
+          "qty": 10,
+          "price": 18
+        },
+        {
+          "productId": 15,
+          "qty": 8,
+          "price": 17
+        },
+        {
+          "productId": 16,
+          "qty": 6,
+          "price": 52
+        },
+        {
+          "productId": 17,
+          "qty": 4,
+          "price": 234
+        },
+        {
+          "productId": 18,
+          "qty": 2,
+          "price": 196
+        },
+        {
+          "productId": 19,
+          "qty": 9,
+          "price": 320
+        },
+        {
+          "productId": 20,
+          "qty": 7,
+          "price": 38
+        },
+        {
+          "productId": 21,
+          "qty": 5,
+          "price": 46
+        },
+        {
+          "productId": 22,
+          "qty": 3,
+          "price": 58
+        },
+        {
+          "productId": 23,
+          "qty": 10,
+          "price": 69
+        },
+        {
+          "productId": 24,
+          "qty": 8,
+          "price": 54
+        },
+        {
+          "productId": 25,
+          "qty": 6,
+          "price": 48
+        },
+        {
+          "productId": 26,
+          "qty": 4,
+          "price": 39
+        },
+        {
+          "productId": 27,
+          "qty": 2,
+          "price": 16
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2030",
+      "customerId": 3,
+      "date": "2026-06-21",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 17,
+          "qty": 5,
+          "price": 234
+        },
+        {
+          "productId": 20,
+          "qty": 12,
+          "price": 38
+        },
+        {
+          "productId": 22,
+          "qty": 8,
+          "price": 58
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2029",
+      "customerId": 1,
+      "date": "2026-06-20",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 7,
+          "qty": 20,
+          "price": 42.5
+        },
+        {
+          "productId": 8,
+          "qty": 10,
+          "price": 63
+        },
+        {
+          "productId": 9,
+          "qty": 6,
+          "price": 98
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2028",
+      "customerId": 4,
+      "date": "2026-06-17",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 25,
+          "qty": 8,
+          "price": 48
+        },
+        {
+          "productId": 26,
+          "qty": 10,
+          "price": 39
+        },
+        {
+          "productId": 27,
+          "qty": 6,
+          "price": 16
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2027",
+      "customerId": 2,
+      "date": "2026-06-14",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 14,
+          "qty": 48,
+          "price": 18
+        },
+        {
+          "productId": 15,
+          "qty": 36,
+          "price": 17
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2026",
+      "customerId": 3,
+      "date": "2026-06-09",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 1,
+          "qty": 3,
+          "price": 189
+        },
+        {
+          "productId": 3,
+          "qty": 2,
+          "price": 498
+        }
+      ]
+    },
+    {
+      "num": "ЗМ-2025",
+      "customerId": 1,
+      "date": "2026-06-03",
+      "status": "Відправлено",
+      "items": [
+        {
+          "productId": 11,
+          "qty": 15,
+          "price": 54
+        },
+        {
+          "productId": 12,
+          "qty": 10,
+          "price": 61
+        },
+        {
+          "productId": 13,
+          "qty": 12,
+          "price": 76
+        }
+      ]
+    },
+    {
       "num": "ЗМ-2024",
       "customerId": 1,
-      "date": "2026-06-19",
+      "date": "2026-05-28",
       "status": "Відправлено",
       "items": [
         {
@@ -316,25 +1224,25 @@
         {
           "productId": 9,
           "qty": 4,
-          "price": 98.0
+          "price": 98
         }
       ]
     },
     {
       "num": "ЗМ-2022",
       "customerId": 2,
-      "date": "2026-06-18",
-      "status": "Підтверджено",
+      "date": "2026-05-20",
+      "status": "Відправлено",
       "items": [
         {
           "productId": 14,
           "qty": 24,
-          "price": 18.0
+          "price": 18
         }
       ]
     }
   ],
   "meta": {
-    "lastOrderSeq": 2024
+    "lastOrderSeq": 2042
   }
 }
