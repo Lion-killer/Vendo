@@ -50,16 +50,20 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     useEffect(() => {
         if (locked || orderItems.length === 0 || !isDirty) return;
         try {
+            // Правка відправленого замовлення лишається "Відправлено" (черга на оновлення);
+            // нове — "Нове". doSync зробить upsert із цим статусом.
+            const queueStatus = status === "Відправлено" ? "Відправлено" : "Нове";
             const orderData = {
                 id: editOrderId || undefined,
+                num: num || undefined,
                 customer: customer || null,
                 customerId: customer?.id || null,
                 client: customer?.name || "Невідомий клієнт",
                 items: orderItems,
                 date: orderDate,
                 total: `${money(total)} ₴`,
-                status: "Нове",
-                sColor: t.warn,
+                status: queueStatus,
+                sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
             };
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
@@ -70,10 +74,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // і коли товари додані з каталогу (минаючи зміни безпосередньо в цьому екрані).
     const saveDraft = () => {
         if (!locked && orderItems.length > 0) {
+            const queueStatus = status === "Відправлено" ? "Відправлено" : "Нове";
             const savedId = saveLocalOrder({
-                id: editOrderId || undefined, customer: customer || null, customerId: customer?.id || null,
+                id: editOrderId || undefined, num: num || undefined, customer: customer || null, customerId: customer?.id || null,
                 client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
-                total: `${money(total)} ₴`, status: "Нове", sColor: t.warn,
+                total: `${money(total)} ₴`, status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
             notify?.(`Збережено ${orderLabel({ num, id: savedId })} · ${orderDate.split("-").reverse().join(".")}`);
@@ -97,13 +102,23 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         try {
             if (isNew) {
                 if (editOrderId) removeLocalOrder(editOrderId);
+            } else if (!isOnline) {
+                // Офлайн: ставимо видалення в чергу (op:'delete') — doSync виконає при синхронізації.
+                saveLocalOrder({
+                    id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено',
+                    customer: customer || null, customerId: customer?.id || null,
+                    client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
+                    total: `${money(total)} ₴`, sColor: t.err,
+                });
             } else {
                 await deleteOrder(editOrderId); // бекенд/1С ставлять помітку на видалення
             }
             markHandled?.();
             if (isMounted.current) setOrderItems([]);
             refreshOrders?.();
-            notify?.(isNew ? `Видалено ${orderLabel({ num, id: editOrderId })}` : `Помічено на видалення ${orderLabel({ num, id: editOrderId })}`);
+            notify?.(isNew ? `Видалено ${orderLabel({ num, id: editOrderId })}`
+                : !isOnline ? `Видалення в черзі (офлайн) · ${orderLabel({ num, id: editOrderId })}`
+                : `Помічено на видалення ${orderLabel({ num, id: editOrderId })}`);
             if (goToOrdersList) goToOrdersList();
         } catch (e) {
             notify?.("Не вдалося видалити");

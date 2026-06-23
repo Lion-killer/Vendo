@@ -59,24 +59,28 @@ export default function App() {
   const saveLeavingDraft = () => {
     if (orderHandled.current) { orderHandled.current = false; return; }
     if (editLocked || orderItems.length === 0) return;
-    // Лише локальні невідправлені (статус "Нове"). Серверне замовлення (Відправлено/
-    // Проведено/Видалено) при перегляді не дублюємо в локальну чергу.
-    if (editOrderId && editStatus !== "Нове") return;
+    // Черга охоплює нові ("Нове") та правки вже відправлених ("Відправлено") замовлень.
+    // Проведені/видалені редагувати не можна (editLocked) — у чергу не потраплять.
+    if (editOrderId && !["Нове", "Відправлено"].includes(editStatus)) return;
     // Нічого не змінилось від моменту відкриття — не зберігаємо й не показуємо повідомлення.
     if (orderSig(orderItems, editCustomer?.id, editDate) === orderBaseline.current) return;
     const total = orderItems.reduce((s, it) => s + it.product.price * it.qty, 0);
+    // Зберігаємо реальний статус: правка відправленого лишається "Відправлено" (черга
+    // на оновлення), нове — "Нове". Так doSync зробить upsert із правильним статусом.
+    const queueStatus = editStatus === "Відправлено" ? "Відправлено" : "Нове";
     const id = saveLocalOrder({
       id: editOrderId || undefined,
+      num: editNum || undefined,
       customer: editCustomer || null,
       customerId: editCustomer?.id || null,
       client: editCustomer?.name || "Невідомий клієнт",
       items: orderItems,
       date: editDate || undefined,
       total: `${total.toLocaleString("uk-UA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₴`,
-      status: "Нове",
-      sColor: t.warn,
+      status: queueStatus,
+      sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
     });
-    notify(`Збережено ${orderLabel({ id })} · ${fmtDate(editDate) || "сьогодні"}`);
+    notify(`Збережено ${orderLabel({ id, num: editNum })} · ${fmtDate(editDate) || "сьогодні"}`);
   };
 
   // Поки користувач не обрав тему вручну — слідуємо за системною.
@@ -209,7 +213,7 @@ export default function App() {
       setEditOrderId(params.order.id);
       setEditCustomer(params.order.customer || null);
       setOrderItems(params.order.items || []);
-      setEditLocked(params.order.status === "Проведено"); // проведене в 1С — лише перегляд
+      setEditLocked(["Проведено", "Видалено"].includes(params.order.status)); // проведене/видалене — лише перегляд
       setEditDate(params.order.date || null);
       setEditStatus(params.order.status || "Нове");
       setEditNum(params.order.num || null);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { ScrollRow } from '../components/ui';
 import { fetchOrders, deleteOrder } from '../api/client';
-import { getLocalOrders, removeLocalOrder } from '../api/localOrders';
+import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { idSet, checkOrderRefs } from '../api/refs';
 
 // Форматування дати в YYYY-MM-DD (локальний час, без зсуву UTC).
@@ -111,14 +111,21 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
         setLoading(true);
         try {
             if (isDraftStatus(o)) {
-                // "Нове" видаляємо повністю: локальну копію завжди; серверну — лише якщо
-                // вже синхронізована (має номер документа).
+                // "Нове" — лише локальне; видаляємо локально (на сервері його ще немає).
                 removeLocalOrder(o.id);
-                if (o.num) await deleteOrder(o.id);
-            } else {
-                // Відправлене/проведене — помітка на видалення (бекенд/1С ставлять ПометкаУдаления)
+                if (o.num && isOnline) await deleteOrder(o.id);
+            } else if (isOnline) {
+                // Відправлене — помітка на видалення (бекенд/1С ставлять ПометкаУдаления)
                 await deleteOrder(o.id);
                 removeLocalOrder(o.id); // прибрати локальну копію, якщо була
+            } else {
+                // Офлайн: ставимо видалення в чергу (op:'delete') — виконається при синхронізації.
+                saveLocalOrder({
+                    id: o.id, num: o.num, op: 'delete', status: 'Видалено',
+                    customer: o.customer || null, customerId: o.customerId || null,
+                    client: o.client || o.customer?.name || 'Невідомий клієнт',
+                    items: o.items || [], date: o.date, total: o.total, sColor: t.error,
+                });
             }
 
             setOrderToDelete(null);

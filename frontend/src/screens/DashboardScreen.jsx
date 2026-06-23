@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Snackbar } from '../components/Shared';
 import { MIcon, Card, F_NUM } from '../components/ui';
-import { createOrder } from '../api/client';
+import { createOrder, deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder } from '../api/localOrders';
 import { idSet, checkOrderRefs } from '../api/refs';
 
@@ -53,6 +53,15 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             const prodIds = idSet(products), custIds = idSet(customers);
             let skipped = 0;
             for (const o of locals) {
+                // Черга видалення (офлайн-видалення серверного замовлення): помічаємо на сервері.
+                if (o.op === 'delete') {
+                    if (o.num) {
+                        const r = await deleteOrder(o.id);
+                        if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено сервером");
+                    }
+                    removeLocalOrder(o.id);
+                    continue;
+                }
                 if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { skipped++; continue; }
                 const numericTotal = parseMoney(o.total);
                 // Upsert за GUID (o.id) — ідемпотентно; повторна відправка не дублює.
