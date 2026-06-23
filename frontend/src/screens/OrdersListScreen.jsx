@@ -3,7 +3,7 @@ import { Icon } from '../components/Icon';
 import { ScrollRow } from '../components/ui';
 import { fetchOrders, deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
-import { idSet, checkOrderRefs } from '../api/refs';
+import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 
 // Форматування дати в YYYY-MM-DD (локальний час, без зсуву UTC).
 const fmtDate = (date) => {
@@ -83,21 +83,9 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 }
             }
 
-            const locals = getLocalOrders();
-            // Локальні позначаємо _pending (очікують синхронізації); syncError — помилка спроби.
-            const filteredLocals = locals
-                .filter(o => o.date >= startDate && o.date <= endDate)
-                .map(o => ({ ...o, _pending: true }));
-
-            const merged = [...filteredLocals];
-            for (const r of data) {
-                if (!merged.find(m => m.id === r.id)) {
-                    merged.push(r);
-                }
-            }
-            merged.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            setOrders(merged);
+            // Локальні в межах періоду; спільне злиття (локальне виграє за id, _pending).
+            const filteredLocals = getLocalOrders().filter(o => o.date >= startDate && o.date <= endDate);
+            setOrders(mergeOrders(data, filteredLocals));
         } catch (e) {
             console.error("Помилка обробки замовлень", e);
         } finally {

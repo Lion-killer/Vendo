@@ -3,7 +3,7 @@ import { Snackbar } from '../components/Shared';
 import { MIcon, Card, F_NUM } from '../components/ui';
 import { createOrder, deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, setLocalOrderError } from '../api/localOrders';
-import { idSet, checkOrderRefs } from '../api/refs';
+import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 
 // Розбір суми з рядка ("4 280 ₴" / "1 078.00 ₴") або числа → Number.
 const parseMoney = (v) => {
@@ -85,14 +85,8 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
         setTimeout(() => setSnack(""), 3000);
     };
 
-    // Локальні + серверні замовлення, де-дуп за id. Локальні позначаємо _pending
-    // (очікують синхронізації); їхній syncError — помилка останньої спроби.
-    const displayOrders = (() => {
-        const locals = getLocalOrders().map(o => ({ ...o, _pending: true }));
-        const merged = [...locals];
-        for (const r of orders) if (!merged.find(m => m.id === r.id)) merged.push(r);
-        return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
-    })();
+    // Локальні + серверні замовлення (спільне злиття: локальне виграє за id, _pending).
+    const displayOrders = mergeOrders(orders, getLocalOrders());
 
     const ordersCount = displayOrders.length;
     const draftsCount = displayOrders.filter(o => o.status === 'Нове').length;
