@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Політика мережі (#19). Прод: довільні хости — ЛИШЕ HTTPS (відкритий HTTP заборонено),
+  тож токен авторизації, замовлення й борги не ходять відкритим каналом.
+
+  Винятки нижче — ЛИШЕ ДЛЯ РОЗРОБКИ (не лишати у бойовому білді):
+    • localhost / 127.0.0.1 — локальний сервер Capacitor (loopback, сам застосунок);
+    • 10.0.2.2 — хост-машина з Android-емулятора (dev-бекенд http://10.0.2.2:3000).
+  Для тесту на реальному пристрої по LAN — тимчасово додай IP хоста окремим <domain>.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
