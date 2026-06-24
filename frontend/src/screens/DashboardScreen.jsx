@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Snackbar } from '../components/Shared';
 import { MIcon, Card, F_NUM } from '../components/ui';
-import { createOrder, deleteOrder } from '../api/client';
-import { getLocalOrders, removeLocalOrder, setLocalOrderError } from '../api/localOrders';
-import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
+import { getLocalOrders } from '../api/localOrders';
+import { mergeOrders } from '../api/refs';
 
 // Розбір суми з рядка ("4 280 ₴" / "1 078.00 ₴") або числа → Number.
 const parseMoney = (v) => {
@@ -29,9 +27,7 @@ const syncLabel = (ts) => {
     return d === 1 ? "вчора" : `${d} дн тому`;
 };
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products = [], customers = [], productsCount = 0, customersCount = 0, refreshOrders, onLogout, isDark, onToggleTheme }) => {
-    const [syncing, setSyncing] = useState(false);
-    const [snack, setSnack] = useState("");
+export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme }) => {
     const [showProfile, setShowProfile] = useState(false);
 
     // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
@@ -42,59 +38,10 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
         return () => clearInterval(id);
     }, []);
 
-    const doSync = async () => {
-        if (!isOnline) { setSnack("Немає підключення"); setTimeout(() => setSnack(""), 2500); return; }
-        setSyncing(true);
-        // Стійка синхронізація: одна помилка не валить усю чергу. Кожен запис має свій
-        // стан — успіх (видаляємо з черги), помилка (лишаємо + syncError, ретрай наступного
-        // разу), пропуск (зниклі посилання). Підсумок показуємо в снеку.
-        const locals = getLocalOrders();
-        const canCheck = products.length > 0 && customers.length > 0;
-        const prodIds = idSet(products), custIds = idSet(customers);
-        let sent = 0, failed = 0, skipped = 0;
-        for (const o of locals) {
-            try {
-                if (o.op === 'delete') {
-                    if (o.num) {
-                        const r = await deleteOrder(o.id);
-                        if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено сервером");
-                    }
-                    removeLocalOrder(o.id); sent++;
-                    continue;
-                }
-                if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) {
-                    setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++;
-                    continue;
-                }
-                // Upsert за GUID (o.id) — ідемпотентно; повторна відправка не дублює.
-                // baseVersion — для виявлення конфлікту (сервер відповість 409, якщо змінили).
-                const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion);
-                if (res && res.conflict) {
-                    setLocalOrderError(o.id, res.message || "Конфлікт версій", true); failed++;
-                    continue; // лишаємо в черзі — користувач вирішить конфлікт на екрані замовлення
-                }
-                if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
-                removeLocalOrder(o.id); sent++;
-            } catch (e) {
-                console.error("Sync error for", o.id, e);
-                setLocalOrderError(o.id, e.message || "Помилка"); failed++;
-            }
-        }
-        if (refreshOrders) refreshOrders();
-        const parts = [];
-        if (sent) parts.push(`надіслано ${sent}`);
-        if (failed) parts.push(`помилок ${failed}`);
-        if (skipped) parts.push(`пропущено ${skipped}`);
-        setSnack(parts.length ? `Синхронізація: ${parts.join(", ")}` : "Немає чого синхронізувати");
-        setSyncing(false);
-        setTimeout(() => setSnack(""), 3000);
-    };
-
     // Локальні + серверні замовлення (спільне злиття: локальне виграє за id, _pending).
     const displayOrders = mergeOrders(orders, getLocalOrders());
 
     const ordersCount = displayOrders.length;
-    const draftsCount = displayOrders.filter(o => o.status === 'Нове').length;
     const revenue = displayOrders.reduce((s, o) => s + parseMoney(o.total), 0);
     const avgCheck = ordersCount ? Math.round(revenue / ordersCount) : 0;
 
@@ -116,7 +63,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
         {
             l: "Синхронізація",
             v: lastSync ? new Date(lastSync).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : "—",
-            s: syncLabel(lastSync), icon: "sync", onClick: doSync,
+            s: syncLabel(lastSync), icon: "sync", onClick: onSync,
         },
         {
             l: "На відправку",
@@ -137,15 +84,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         <div style={{ fontSize: 15, fontWeight: 700, color: t.ink }}>{userName || "Користувач"}</div>
                     </div>
                 </button>
-                <div style={{ display: "flex", gap: 8, marginRight: 46 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                        <MIcon name="bell" size={18} color={t.ink} />
-                        {draftsCount > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
-                    </div>
-                    <button onClick={doSync} style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                        <div style={{ animation: syncing ? "spin 1s linear infinite" : "none", display: "flex" }}><MIcon name="sync" size={18} color={t.ink} /></div>
-                    </button>
-                </div>
+                {/* Кнопки сповіщень/синхронізації/статусу — у глобальному TopActions (App) */}
             </div>
 
             {/* Hero: KPI дня */}
@@ -243,7 +182,6 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                 </div>
             )}
 
-            <Snackbar msg={snack} t={t} />
         </div>
     );
 };

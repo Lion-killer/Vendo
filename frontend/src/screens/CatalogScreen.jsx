@@ -129,7 +129,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
                     <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Каталог</div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 44 }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 150 }}>{/* лишаємо місце глобальному TopActions (App) */}
                         <div style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <MIcon name="barcode" size={18} color={t.ink} />
                         </div>

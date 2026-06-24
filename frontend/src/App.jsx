@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LIGHT, DARK } from './theme';
-import { BottomNav, OnlineIndicator } from './components/ui';
+import { BottomNav, TopActions } from './components/ui';
 import { Snackbar } from './components/Shared';
 import { LoginScreen } from './screens/LoginScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
@@ -8,9 +8,13 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder } from './api/client';
 import { getSession, saveSession, clearSession } from './api/session';
-import { saveLocalOrder } from './api/localOrders';
+import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError } from './api/localOrders';
+import { idSet, checkOrderRefs } from './api/refs';
+
+// Сума з рядка ("4 280 ₴") або числа → Number.
+const parseMoney = (v) => typeof v === 'number' ? v : (Number(String(v || '').replace(/[^\d.-]/g, '')) || 0);
 
 // Сигнатура замовлення (товари+контрагент+дата) — для порівняння «чи щось змінилось».
 const orderSig = (items, custId, date) =>
@@ -44,6 +48,7 @@ export default function App() {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
+  const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
   const orderBaseline = useRef(""); // знімок замовлення на момент відкриття (щоб зберігати лише за змінами)
 
@@ -150,6 +155,40 @@ export default function App() {
   const loadData = async () => {
     loadFromCache();
     await fetchFromNetwork();
+  };
+
+  // Ручна синхронізація офлайн-черги на сервер (доступна з усіх екранів через TopActions).
+  // Стійка: одна помилка не валить чергу; кожен запис — успіх/конфлікт/помилка/пропуск.
+  const doSync = async () => {
+    if (!isOnline) { notify("Немає підключення"); return; }
+    setSyncing(true);
+    const locals = getLocalOrders();
+    const canCheck = products.length > 0 && customers.length > 0;
+    const prodIds = idSet(products), custIds = idSet(customers);
+    let sent = 0, failed = 0, skipped = 0;
+    for (const o of locals) {
+      try {
+        if (o.op === 'delete') {
+          if (o.num) { const r = await deleteOrder(o.id); if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено"); }
+          removeLocalOrder(o.id); sent++; continue;
+        }
+        if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; continue; }
+        const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion);
+        if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true); failed++; continue; }
+        if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
+        removeLocalOrder(o.id); sent++;
+      } catch (e) {
+        console.error("Sync error", o.id, e);
+        setLocalOrderError(o.id, e.message || "Помилка"); failed++;
+      }
+    }
+    await fetchFromNetwork(true);
+    const parts = [];
+    if (sent) parts.push(`надіслано ${sent}`);
+    if (failed) parts.push(`помилок ${failed}`);
+    if (skipped) parts.push(`пропущено ${skipped}`);
+    notify(parts.length ? `Синхронізація: ${parts.join(", ")}` : "Немає чого синхронізувати");
+    setSyncing(false);
   };
 
   useEffect(() => {
@@ -283,7 +322,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} />}
@@ -295,7 +334,8 @@ export default function App() {
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
-      {isLoggedIn && <OnlineIndicator t={t} online={isOnline} connecting={connecting} floating />}
+      {["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
+        <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} />}
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
       <Snackbar msg={toast} t={t} />
