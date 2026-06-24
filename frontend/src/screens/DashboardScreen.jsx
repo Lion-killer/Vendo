@@ -41,19 +41,22 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     // Локальні + серверні замовлення (спільне злиття: локальне виграє за id, _pending).
     const displayOrders = mergeOrders(orders, getLocalOrders());
 
-    const ordersCount = displayOrders.length;
-    const revenue = displayOrders.reduce((s, o) => s + parseMoney(o.total), 0);
-    const avgCheck = ordersCount ? Math.round(revenue / ordersCount) : 0;
-
     const today = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
 
     const statusColor = (o) => o.sColor || (o.status === 'Видалено' ? t.err : o.status === 'Відправлено' ? t.ok : o.status === 'Нове' ? t.warn : t.inkSoft);
     const isNew = (o) => o.status === 'Нове';
     const orderNum = (o) => o.num || `№${String(o.id || '').slice(0, 8)}`;
 
-    // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки на головній.
+    // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки й KPI «сьогодні».
     const todayISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
     const todayOrders = displayOrders.filter(o => o.date === todayISO);
+
+    // KPI «сьогодні» рахуємо саме з сьогоднішніх (без помічених на видалення) — щоб
+    // виторг/к-сть узгоджувалися зі списком нижче.
+    const liveToday = todayOrders.filter(o => !o.deletionMark && o.status !== 'Видалено');
+    const ordersCount = liveToday.length;
+    const revenue = liveToday.reduce((s, o) => s + parseMoney(o.total), 0);
+    const avgCheck = ordersCount ? Math.round(revenue / ordersCount) : 0;
 
     // Стан синхронізації: час останньої вдалої синхронізації + локальна черга на відправку.
     const lastSync = Number(localStorage.getItem('vendo_last_sync')) || 0;
