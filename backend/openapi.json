@@ -1,0 +1,254 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Vendo — Mobile API",
+    "version": "1.0.0",
+    "description": "Контракт REST API мобільного застосунку торгпреда Vendo. Дві реалізації з однаковим контрактом: демо-бекенд (Node, `backend/`) і HTTP-сервіс 1С (`венд_МобильноеПриложение`). Усі дані фільтруються за пристроєм (заголовок `X-Device-Id`); запити (крім `/auth`) підписуються bearer-токеном."
+  },
+  "servers": [
+    { "url": "http://localhost:3000/api", "description": "Демо-бекенд (Node)" },
+    { "url": "https://{host}/{base}/hs/vendo", "description": "1С HTTP-сервіс (об'єднано з УТ)", "variables": { "host": { "default": "server" }, "base": { "default": "ut" } } }
+  ],
+  "tags": [
+    { "name": "Авторизація" },
+    { "name": "Довідники" },
+    { "name": "Замовлення" }
+  ],
+  "security": [ { "DeviceId": [], "BearerAuth": [] } ],
+  "paths": {
+    "/auth": {
+      "post": {
+        "tags": ["Авторизація"],
+        "summary": "Обмін одноразового коду прив'язки на bearer-токен",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Успіх", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "401": { "description": "Пристрій не зареєстровано / заблоковано / невірний код", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Довідники"], "summary": "Номенклатура пристрою (ціна за типом цін, залишок за складом)",
+        "responses": { "200": { "description": "Список товарів", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["Довідники"], "summary": "Групи номенклатури (повна ієрархія через parentId)",
+        "responses": { "200": { "description": "Список категорій", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/customers": {
+      "get": {
+        "tags": ["Довідники"], "summary": "Контрагенти пристрою з боргом і контактними особами",
+        "responses": { "200": { "description": "Список контрагентів", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["Замовлення"], "summary": "Замовлення менеджера пристрою за період",
+        "parameters": [
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Включно, YYYY-MM-DD" },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Включно, YYYY-MM-DD" }
+        ],
+        "responses": { "200": { "description": "Список замовлень", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      },
+      "post": {
+        "tags": ["Замовлення"],
+        "summary": "Upsert замовлення за клієнтським GUID (ідемпотентно)",
+        "description": "Якщо `id` уже існує — оновлення (з перевіркою конфлікту за `baseVersion`); інакше — створення нового документа, що отримує посилання = клієнтський `id`. `total` ігнорується (сума рахується на сервері за зафіксованими цінами).",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderInput" } } } },
+        "responses": {
+          "200": { "description": "Створено/оновлено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "GUID замовлення" } ],
+      "put": {
+        "tags": ["Замовлення"], "summary": "Оновити замовлення / зняти помітку видалення",
+        "description": "Часткове оновлення. `deletionMark: false` знімає помітку. `baseVersion` — для перевірки конфлікту.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderUpdate" } } } },
+        "responses": {
+          "200": { "description": "Оновлено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "description": "Замовлення не знайдено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "tags": ["Замовлення"], "summary": "Видалити (Нове) / помітити на видалення (Відправлено)",
+        "description": "«Нове» → фізичне видалення; «Відправлено» → помітка на видалення (ПометкаУдаления); «Проведено» → 409 (заборонено).",
+        "responses": {
+          "200": { "description": "Видалено або помічено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeleteResponse" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "description": "Замовлення не знайдено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "409": { "description": "Проведене не можна видалити", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceId": { "type": "apiKey", "in": "header", "name": "X-Device-Id", "description": "GUID мобільного пристрою (фільтрація даних)" },
+      "BearerAuth": { "type": "http", "scheme": "bearer", "description": "Токен, виданий у /auth" }
+    },
+    "responses": {
+      "Unauthorized": { "description": "Не авторизовано (немає/невірний пристрій або токен)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Conflict": { "description": "Конфлікт версій (запис змінили на сервері після ваших правок)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Conflict" } } } }
+    },
+    "schemas": {
+      "AuthRequest": {
+        "type": "object", "required": ["deviceId", "pairingCode"],
+        "properties": {
+          "deviceId": { "type": "string", "description": "GUID пристрою" },
+          "pairingCode": { "type": "string", "description": "Одноразовий код прив'язки з QR" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "user": { "type": "object", "properties": { "name": { "type": "string" }, "role": { "type": "string" } } },
+          "token": { "type": "string", "description": "Bearer-токен для подальших запитів" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "sku": { "type": "string" },
+          "price": { "type": "number" },
+          "stock": { "type": "integer" },
+          "unit": { "type": "string" },
+          "category": { "type": "string" },
+          "categoryId": { "type": "integer", "nullable": true },
+          "img": { "type": "string" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "parentId": { "type": "integer", "nullable": true },
+          "icon": { "type": "string" },
+          "count": { "type": "integer" },
+          "expanded": { "type": "boolean" }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": { "name": { "type": "string" }, "phone": { "type": "string" } }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "code": { "type": "string" },
+          "address": { "type": "string" },
+          "contact": { "type": "string", "description": "Основна контактна особа" },
+          "phone": { "type": "string" },
+          "contacts": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" }, "description": "Кілька контактних осіб (опційно)" },
+          "debt": { "type": "number", "description": "Борг (>0) / переплата (<0)" },
+          "status": { "type": "string" }
+        }
+      },
+      "OrderItemInput": {
+        "type": "object", "required": ["productId", "qty"],
+        "properties": {
+          "productId": { "type": "string", "format": "uuid" },
+          "qty": { "type": "integer", "minimum": 1 },
+          "price": { "type": "number", "description": "Знімок ціни; якщо немає — береться поточна каталожна" }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "product": { "$ref": "#/components/schemas/Product" },
+          "qty": { "type": "integer" }
+        }
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": ["Нове", "Відправлено", "Проведено", "Видалено"],
+        "description": "Нове — лише локальне (невідправлене); Відправлено — непроведене в базі; Проведено — проведене в 1С (лише перегляд); Видалено — помітка на видалення."
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "GUID-ідентичність замовлення" },
+          "num": { "type": "string", "nullable": true, "description": "Номер документа (присвоює сервер)" },
+          "version": { "type": "string", "description": "Токен версії (= ВерсияДанных у 1С) для виявлення конфліктів" },
+          "customerId": { "type": "string", "format": "uuid", "nullable": true },
+          "date": { "type": "string", "format": "date" },
+          "status": { "$ref": "#/components/schemas/OrderStatus" },
+          "deletionMark": { "type": "boolean" },
+          "client": { "type": "string" },
+          "customer": { "allOf": [ { "$ref": "#/components/schemas/Customer" } ], "nullable": true },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
+          "total": { "type": "string", "description": "Сума з валютою, напр. \"3 168.00 ₴\"" },
+          "sColor": { "type": "string", "description": "Колір статусу (hex)" }
+        }
+      },
+      "OrderInput": {
+        "type": "object", "required": ["orderItems"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "Клієнтський GUID (ідемпотентність). Якщо немає — сервер згенерує." },
+          "orderItems": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItemInput" } },
+          "customerId": { "type": "string", "format": "uuid", "nullable": true },
+          "status": { "$ref": "#/components/schemas/OrderStatus" },
+          "date": { "type": "string", "format": "date" },
+          "baseVersion": { "type": "string", "description": "Версія, від якої редагували (виявлення конфлікту). Відсутня = перезаписати." }
+        }
+      },
+      "OrderUpdate": {
+        "type": "object",
+        "properties": {
+          "orderItems": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItemInput" } },
+          "customerId": { "type": "string", "format": "uuid" },
+          "status": { "$ref": "#/components/schemas/OrderStatus" },
+          "date": { "type": "string", "format": "date" },
+          "deletionMark": { "type": "boolean", "description": "false — зняти помітку видалення" },
+          "baseVersion": { "type": "string" }
+        }
+      },
+      "OrderResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "order": { "$ref": "#/components/schemas/Order" } }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "deleted": { "type": "boolean", "description": "Фізично видалено (було «Нове»)" },
+          "marked": { "type": "boolean", "description": "Помічено на видалення (було «Відправлено»)" },
+          "order": { "allOf": [ { "$ref": "#/components/schemas/Order" } ], "nullable": true },
+          "message": { "type": "string" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean", "example": false }, "message": { "type": "string" } }
+      },
+      "Conflict": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "conflict": { "type": "boolean", "example": true },
+          "message": { "type": "string" },
+          "order": { "$ref": "#/components/schemas/Order" }
+        }
+      }
+    }
+  }
+}
