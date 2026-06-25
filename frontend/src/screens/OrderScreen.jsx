@@ -267,7 +267,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         <button onClick={goToCatalog} style={{ marginTop: 18, padding: "10px 22px", borderRadius: 12, background: t.accent, color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: 14 }}>Перейти в каталог</button>
                     </div>
                 ) : (
-                    <Card t={t}>
+                    <Card t={t} style={{ overflow: "hidden" }}>
                         {orderItems.map((it, idx) => (
                             <SwipeToDelete key={it.product?.id || idx} t={t} disabled={locked} onDelete={() => removeItem(idx)}>
                             <div style={{ padding: "8px 12px", borderBottom: idx < orderItems.length - 1 ? `1px solid ${t.lineSoft}` : "none", display: "flex", alignItems: "center", gap: 8 }}>
