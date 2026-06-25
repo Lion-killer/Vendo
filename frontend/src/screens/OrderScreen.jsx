@@ -244,9 +244,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <div style={{ fontSize: 14.5, fontWeight: 700, color: customerMissing ? t.err : t.ink }}>{customer?.name || "Оберіть контрагента"}</div>
                             <div style={{ fontSize: 11.5, color: t.inkSoft, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap" }}>
                                 {customerMissing && <span style={{ color: t.err, fontWeight: 700 }}>клієнта видалено на сервері</span>}
-                                {customer?.code && <span style={{ fontFamily: F_NUM }}>{customer.code}</span>}
-                                {customer?.address && <><span style={{ color: t.line }}>·</span><span>{customer.address}</span></>}
-                                {debt > 0 && <><span style={{ color: t.line }}>·</span><span style={{ color: t.err, fontWeight: 600 }}>борг {money(debt)} ₴</span></>}
+                                {customer?.address && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{customer.address}</span>}
+                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>борг {money(debt)} ₴</span></>}
                             </div>
                         </div>
                         {!locked && <MIcon name="chevron" size={18} color={t.inkMuted} />}
