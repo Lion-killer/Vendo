@@ -160,36 +160,35 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         if (goToOrdersList) goToOrdersList();
     };
 
-    const draftLabel = num
-        ? num
-        : (editOrderId ? `№${String(editOrderId).slice(0, 8)} · автозбережено` : "Нове замовлення");
+    // Підпис біля заголовка: номер документа або №<id> для автозбереженого; для зовсім
+    // нового — порожньо (заголовок «Замовлення» вже все каже).
+    const subLabel = num || (editOrderId ? `№${String(editOrderId).slice(0, 8)}` : "");
 
     // Дата замовлення (YYYY-MM-DD → DD.MM.YYYY) для режиму перегляду.
     const displayDate = orderDate.split("-").reverse().join(".");
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
-            {/* Шапка */}
-            <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-                    <button onClick={goToOrdersList} style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            {/* Шапка — компактна (максимум місця під позиції) */}
+            <div style={{ padding: "max(12px, env(safe-area-inset-top)) 16px 8px" }}>
+                {/* Рядок 1: назад + статус */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <button onClick={goToOrdersList} style={{ width: 36, height: 36, borderRadius: 11, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                         <MIcon name="back" size={18} color={t.ink} />
                     </button>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 44 }}>
-                        <div style={{ background: statusColor + "22", padding: "5px 9px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4 }}>● {String(status).toUpperCase()}</div>
-                    </div>
+                    <div style={{ background: statusColor + "22", padding: "5px 9px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4 }}>● {String(status).toUpperCase()}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontFamily: F_NUM, fontSize: 11, color: t.inkMuted, fontWeight: 500, letterSpacing: 0.4 }}>{draftLabel}</span>
+                {/* Рядок 2: заголовок + номер + дата + меню — в одну стрічку */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>Замовлення</div>
+                    {subLabel && <span style={{ fontFamily: F_NUM, fontSize: 11, color: t.inkMuted, fontWeight: 500, letterSpacing: 0.3 }}>{subLabel}</span>}
+                    <div style={{ flex: 1 }} />
                     {locked
-                        ? <span style={{ fontFamily: F_NUM, fontSize: 11, color: t.inkMuted }}>· {displayDate}</span>
+                        ? <span style={{ fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</span>
                         : <input type="date" value={orderDate} onChange={e => { setOrderDate(e.target.value); pushDate?.(e.target.value); setIsDirty(true); }}
-                            style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 8, padding: "3px 8px", fontSize: 11, color: t.ink, fontFamily: "inherit", outline: "none" }} />}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 6 }}>
-                    <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5 }}>Замовлення</div>
-                    <button onClick={() => setShowMenu(true)} style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                        <MIcon name="more" size={20} color={t.ink} />
+                            style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 8, padding: "4px 8px", fontSize: 11, color: t.ink, fontFamily: "inherit", outline: "none" }} />}
+                    <button onClick={() => setShowMenu(true)} style={{ width: 34, height: 34, borderRadius: 10, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                        <MIcon name="more" size={18} color={t.ink} />
                     </button>
                 </div>
             </div>
@@ -249,17 +248,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         </div>
                         {!locked && <MIcon name="chevron" size={18} color={t.inkMuted} />}
                     </button>
-                    {debt > 0 && (
-                        <div style={{ marginTop: 12, padding: "10px 12px", background: t.warnSoft, borderRadius: 10, display: "flex", gap: 8, alignItems: "flex-start" }}>
-                            <div style={{ flexShrink: 0, marginTop: 1, display: "flex" }}><MIcon name="bell" size={14} color={t.warn} /></div>
-                            <div style={{ fontSize: 11.5, color: t.warn, fontWeight: 500, lineHeight: 1.4 }}>У клієнта є борг {money(debt)} ₴.</div>
-                        </div>
-                    )}
                 </Card>
             </div>
 
             {/* Позиції */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 0" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px 0" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 4px 8px" }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>Позиції · {orderItems.length}</div>
                     {!locked && <div onClick={goToCatalog} style={{ fontSize: 12, color: t.accent, fontWeight: 600, cursor: "pointer" }}>+ Додати</div>}
