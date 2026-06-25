@@ -166,32 +166,33 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
     // Дата замовлення (YYYY-MM-DD → DD.MM.YYYY) для режиму перегляду.
     const displayDate = orderDate.split("-").reverse().join(".");
+    // Єдиний стиль контролів у шапці (номер, дата, «⋮», назад) — однакова висота/радіус/рамка.
+    const ctl = { height: 32, borderRadius: 10, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", boxSizing: "border-box" };
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
             {/* Шапка — компактна (максимум місця під позиції) */}
             <div style={{ padding: "max(12px, env(safe-area-inset-top)) 16px 8px" }}>
                 {/* Рядок 1: назад + статус */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <button onClick={goToOrdersList} style={{ width: 36, height: 36, borderRadius: 11, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <button onClick={goToOrdersList} style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer" }}>
                         <MIcon name="back" size={18} color={t.ink} />
                     </button>
-                    <div style={{ background: statusColor + "22", padding: "5px 9px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4 }}>● {String(status).toUpperCase()}</div>
+                    <div style={{ background: statusColor + "22", height: 26, padding: "0 11px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4, display: "flex", alignItems: "center" }}>● {String(status).toUpperCase()}</div>
                 </div>
-                {/* Рядок 2: заголовок + номер + дата + меню — в одну стрічку */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
-                        <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>Замовлення</div>
-                        {subLabel && <span style={{ fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted, fontWeight: 600, letterSpacing: 0.3 }}>{subLabel}</span>}
+                {/* Рядок 2: заголовок + єдина група контролів (номер · дата · меню) */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Замовлення</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {subLabel && <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, fontWeight: 600, color: t.inkMuted }}>{subLabel}</div>}
+                        {locked
+                            ? <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</div>
+                            : <input type="date" value={orderDate} onChange={e => { setOrderDate(e.target.value); pushDate?.(e.target.value); setIsDirty(true); }}
+                                style={{ ...ctl, padding: "0 10px", fontFamily: "inherit", fontSize: 11.5, color: t.ink, outline: "none" }} />}
+                        <button onClick={() => setShowMenu(true)} style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer" }}>
+                            <MIcon name="more" size={18} color={t.ink} />
+                        </button>
                     </div>
-                    <div style={{ flex: 1 }} />
-                    {locked
-                        ? <span style={{ fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</span>
-                        : <input type="date" value={orderDate} onChange={e => { setOrderDate(e.target.value); pushDate?.(e.target.value); setIsDirty(true); }}
-                            style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 8, padding: "4px 8px", fontSize: 11, color: t.ink, fontFamily: "inherit", outline: "none" }} />}
-                    <button onClick={() => setShowMenu(true)} style={{ width: 34, height: 34, borderRadius: 10, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                        <MIcon name="more" size={18} color={t.ink} />
-                    </button>
                 </div>
             </div>
 
