@@ -18,9 +18,7 @@
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
-        <!-- LAN dev (192.168.50.0/24): впиши точний IP машини з бекендом -->
-        <domain includeSubdomains="false">192.168.50.1</domain>
-        <domain includeSubdomains="false">192.168.50.2</domain>
-        <domain includeSubdomains="false">192.168.50.100</domain>
+        <!-- LAN dev: IP поточної машини з бекендом (мережа 192.168.50.x) -->
+        <domain includeSubdomains="false">192.168.50.37</domain>
     </domain-config>
 </network-security-config>
