@@ -15,6 +15,9 @@ const h = (extra = {}) => {
     if (d) headers['X-Device-Id'] = d;
     const tk = token();
     if (tk) headers['Authorization'] = `Bearer ${tk}`;
+    // #26: мова інтерфейсу → бекенд локалізує message-рядки (uk/ru/en).
+    const lang = localStorage.getItem('vendo_lang');
+    if (lang) headers['Accept-Language'] = lang;
     return headers;
 };
 
