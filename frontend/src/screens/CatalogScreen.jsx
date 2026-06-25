@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow } from '../components/ui';
+import { localeTag } from '../i18n';
 import { scanBarcode } from '../api/scanner';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
@@ -16,7 +18,7 @@ function buildTree(categories, products) {
         const node = p.categoryId && byId.has(p.categoryId) ? byId.get(p.categoryId) : null;
         if (node) node.products.push(p); else orphans.push(p);
     });
-    return { id: "", name: "Каталог", children: roots, products: orphans };
+    return { id: "", name: "", children: roots, products: orphans };
 }
 const countProducts = (node) => {
     let n = node.products ? node.products.length : 0;
@@ -37,18 +39,19 @@ const flattenProducts = (node, trail = []) => {
     if (node.children) node.children.forEach(c => { out = out.concat(flattenProducts(c, [...trail, c.name])); });
     return out;
 };
-const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
 const ProductRow = ({ t, p, qty, onAdd }) => {
+    const { t: tr } = useTranslation();
     const out = Number(p.stock) <= 0;
     const low = !out && Number(p.stock) < 5;
     const stockColor = out ? t.err : low ? t.warn : t.ok;
-    const stockLabel = out ? "немає" : `${p.stock}`;
+    const stockLabel = out ? tr("catalog.outOfStock") : `${p.stock}`;
     return (
         <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <ProductImage t={t} img={p.img} sku={p.sku} size={56} radius={10} />
+                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={p.price} stock={p.stock} unit={p.unit} size={56} radius={10} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
                     {p.trail && p.trail.length > 0 && (
@@ -75,6 +78,7 @@ const ProductRow = ({ t, p, qty, onAdd }) => {
 };
 
 const GroupRow = ({ t, node, onOpen }) => {
+    const { t: tr } = useTranslation();
     const subCount = node.children ? node.children.length : 0;
     const prodCount = countProducts(node);
     return (
@@ -86,8 +90,8 @@ const GroupRow = ({ t, node, onOpen }) => {
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{node.name}</div>
                     <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 2 }}>
-                        {subCount > 0 && <span>{subCount} підгруп · </span>}
-                        <span style={{ fontFamily: F_NUM }}>{prodCount}</span> товарів
+                        {subCount > 0 && <span>{subCount} {tr("catalog.subgroupsWord")} · </span>}
+                        <span style={{ fontFamily: F_NUM }}>{prodCount}</span> {tr("catalog.productsWord")}
                     </div>
                 </div>
                 <MIcon name="chevron" size={18} color={t.inkMuted} />
@@ -97,6 +101,7 @@ const GroupRow = ({ t, node, onOpen }) => {
 };
 
 export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify }) => {
+    const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
 
@@ -105,7 +110,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
     const subgroups = node.children || [];
     const levelProducts = node.products || [];
 
-    const crumbs = [{ name: "Каталог", path: [] }];
+    const crumbs = [{ name: tr("catalog.root"), path: [] }];
     let acc = root;
     for (let i = 0; i < path.length; i++) {
         const next = (acc.children || []).find(c => c.id === path[i]);
@@ -126,13 +131,13 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
     const handleScan = async () => {
         let code;
         try { code = await scanBarcode(); }
-        catch (e) { notify?.("Не вдалося відкрити сканер. Дозвольте доступ до камери."); return; }
+        catch (e) { notify?.(tr("common.scannerError")); return; }
         if (!code) return; // скасовано
         const norm = code.trim().toLowerCase();
         const found = (products || []).find(p =>
             [p.barcode, p.sku, p.id].filter(Boolean).some(v => String(v).toLowerCase() === norm));
-        if (found) { onAddToOrder(found, 1); notify?.(`Додано: ${found.name}`); }
-        else notify?.(`Штрихкод не знайдено: ${code}`);
+        if (found) { onAddToOrder(found, 1); notify?.(tr("catalog.added", { name: found.name })); }
+        else notify?.(tr("catalog.barcodeNotFound", { code }));
     };
 
     const cartCount = orderItems.length;
@@ -143,7 +148,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
             {/* Шапка */}
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Каталог</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>{tr("nav.catalog")}</div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 150 }}>{/* лишаємо місце глобальному TopActions (App) */}
                         <button onClick={handleScan} aria-label="Сканувати штрихкод" style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
                             <MIcon name="barcode" size={18} color={t.ink} />
@@ -157,7 +162,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                 {/* Пошук по всьому дереву */}
                 <div style={{ background: t.surface, border: `1px solid ${searching ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
                     <MIcon name="search" size={18} color={searching ? t.accent : t.inkMuted} />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Пошук по всьому каталогу…"
+                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder={tr("catalog.searchPlaceholder")}
                         style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
                     {searching && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                 </div>
@@ -167,7 +172,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                     <div onClick={() => onNav("orders", { keepOrder: true })} style={{ marginTop: 10, background: t.accentSoft, border: `1px solid ${t.accent}22`, borderRadius: 12, padding: "9px 12px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                         <MIcon name="cart" size={16} color={t.accentInk} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editOrderId ? `Замовлення ${editOrderId}` : "Нове замовлення"}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editOrderId ? tr("catalog.orderCtx", { id: editOrderId }) : tr("dashboard.newOrder")}</div>
                             {editCustomer?.name && <div style={{ fontSize: 11.5, color: t.accentInk, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{editCustomer.name}</div>}
                         </div>
                     </div>
@@ -196,11 +201,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
             <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
                 {searching ? (
                     <>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "4px 4px 8px" }}>Знайдено: {results.length}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "4px 4px 8px" }}>{tr("catalog.found", { count: results.length })}</div>
                         {results.length === 0 ? (
                             <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
                                 <MIcon name="search" size={36} color={t.line} />
-                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>Нічого не знайдено</div>
+                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
                             </div>
                         ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
                     </>
@@ -208,20 +213,20 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                     <>
                         {subgroups.length > 0 && (
                             <>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "2px 4px 8px" }}>Підгрупи · {subgroups.length}</div>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "2px 4px 8px" }}>{tr("catalog.subgroups")} · {subgroups.length}</div>
                                 {subgroups.map(g => <GroupRow key={g.id} t={t} node={g} onOpen={() => setPath([...path, g.id])} />)}
                             </>
                         )}
                         {levelProducts.length > 0 && (
                             <>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>Товари · {levelProducts.length}</div>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {levelProducts.length}</div>
                                 {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
                             </>
                         )}
                         {subgroups.length === 0 && levelProducts.length === 0 && (
                             <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
                                 <MIcon name="grid" size={36} color={t.line} />
-                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>Порожньо</div>
+                                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("catalog.empty")}</div>
                             </div>
                         )}
                     </>
@@ -236,11 +241,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <MIcon name="cart" size={18} color="#fff" />
                             <div style={{ textAlign: "left" }}>
-                                <div style={{ fontSize: 11, opacity: 0.6 }}>{cartCount} {cartCount === 1 ? "позиція" : "позицій"}</div>
+                                <div style={{ fontSize: 11, opacity: 0.6 }}>{tr("catalog.positions", { count: cartCount })}</div>
                                 <div style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(cartTotal)} ₴</div>
                             </div>
                         </div>
-                        <div style={{ background: "rgba(255,255,255,0.12)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700 }}>До замовлення →</div>
+                        <div style={{ background: "rgba(255,255,255,0.12)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{tr("catalog.toOrder")}</div>
                     </button>
                 </div>
             )}

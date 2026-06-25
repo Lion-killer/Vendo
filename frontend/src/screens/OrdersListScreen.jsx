@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '../components/Icon';
 import { ScrollRow } from '../components/ui';
 import { fetchOrders, deleteOrder } from '../api/client';
@@ -15,12 +16,13 @@ const fmtDate = (date) => {
 
 // Швидкі пресети періоду. Орієнтація на історію замовлень + "Весь час" (#25).
 // "Весь час" — навмисно широкий діапазон (бекенд фільтрує рядковим порівнянням YYYY-MM-DD).
+// Підписи локалізуються за id (ordersList.<id>); тут лише ідентифікатори діапазонів.
 const PRESETS = [
-    { id: 'today', label: 'Сьогодні' },
-    { id: 'yesterday', label: 'Вчора' },
-    { id: 'last7', label: 'Останні 7 днів' },
-    { id: 'month', label: 'Цей місяць' },
-    { id: 'all', label: 'Весь час' },
+    { id: 'today' },
+    { id: 'yesterday' },
+    { id: 'last7' },
+    { id: 'month' },
+    { id: 'all' },
 ];
 
 const presetRange = (type) => {
@@ -42,6 +44,7 @@ const matchedPreset = (start, end) => {
 };
 
 export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [] }) => {
+    const { t: tr } = useTranslation();
     const [startDate, setStartDate] = useState(() => localStorage.getItem('orders_startDate') || presetRange('last7').start);
     const [endDate, setEndDate] = useState(() => localStorage.getItem('orders_endDate') || presetRange('last7').end);
     // Поля точного вибору приховані, поки користувач не натисне "Свій період"
@@ -114,7 +117,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 saveLocalOrder({
                     id: o.id, num: o.num, op: 'delete', status: 'Видалено',
                     customer: o.customer || null, customerId: o.customerId || null,
-                    client: o.client || o.customer?.name || 'Невідомий клієнт',
+                    client: o.client || o.customer?.name || tr('common.unknownClient'),
                     items: o.items || [], date: o.date, total: o.total, sColor: t.error,
                 });
             }
@@ -139,7 +142,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             {/* Header */}
             <div style={{ background: t.surface, padding: "16px 16px 12px", borderBottom: `1px solid ${t.border}`, paddingTop: "max(16px, env(safe-area-inset-top))" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
-                    <h2 style={{ color: t.text, fontSize: 20, fontWeight: 800, margin: 0 }}>Замовлення</h2>
+                    <h2 style={{ color: t.text, fontSize: 20, fontWeight: 800, margin: 0 }}>{tr("nav.ordersList")}</h2>
                 </div>
 
                 {/* Розумні пресети + "Свій період" (точний вибір розкриває поля дат) */}
@@ -172,10 +175,10 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                         }
                     `}} />
                     {PRESETS.map(p => (
-                        <button key={p.id} className={`smart-filter-btn ${presetActive(p.id) ? 'active' : ''}`} onClick={() => setSmartFilter(p.id)}>{p.label}</button>
+                        <button key={p.id} className={`smart-filter-btn ${presetActive(p.id) ? 'active' : ''}`} onClick={() => setSmartFilter(p.id)}>{tr(`ordersList.${p.id}`)}</button>
                     ))}
                     <button className={`smart-filter-btn ${showCustom ? 'active' : ''}`} onClick={() => setShowCustom(v => !v)}>
-                        <Icon name="calendar" size={13} color={showCustom ? "#fff" : t.text} /> Свій період
+                        <Icon name="calendar" size={13} color={showCustom ? "#fff" : t.text} /> {tr("ordersList.custom")}
                     </button>
                 </ScrollRow>
 
@@ -183,7 +186,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 {showCustom && (
                     <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12 }}>
                         <div style={{ flex: 1 }}>
-                            <p style={{ color: t.textMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>З дати:</p>
+                            <p style={{ color: t.textMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>{tr("ordersList.fromDate")}</p>
                             <input
                                 type="date"
                                 value={startDate}
@@ -192,7 +195,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                             />
                         </div>
                         <div style={{ flex: 1 }}>
-                            <p style={{ color: t.textMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>По дату:</p>
+                            <p style={{ color: t.textMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>{tr("ordersList.toDate")}</p>
                             <input
                                 type="date"
                                 value={endDate}
@@ -213,7 +216,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 ) : orders.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "40px 20px" }}>
                         <Icon name="orders" size={48} color={t.border} />
-                        <p style={{ color: t.textMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>За вказаний період замовлень немає</p>
+                        <p style={{ color: t.textMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>{tr("ordersList.empty")}</p>
                     </div>
                 ) : (
                     orders.map(o => {
@@ -229,25 +232,25 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                         <p style={{ color: t.text, fontSize: 14, fontWeight: 800, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{o.num || `№${String(o.id || '').slice(0, 8)}`}</p>
                                         <span style={{ fontSize: 10, color: t.textMuted }}>{o.date}</span>
-                                        {!refs.ok && <span title="Посилання на видалені дані" style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>НЕДОСТУПНІ ДАНІ</span>}
-                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>КОНФЛІКТ</span>
-                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>ПОМИЛКА</span>
-                                            : o._pending && <span title="Очікує синхронізації" style={{ fontSize: 9.5, fontWeight: 800, color: t.textMuted, background: t.textMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>ОЧІКУЄ</span>}
+                                        {!refs.ok && <span title={tr("ordersList.tipStale")} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("ordersList.badgeStale")}</span>}
+                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
+                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeError")}</span>
+                                            : o._pending && <span title={tr("ordersList.tipWaiting")} style={{ fontSize: 9.5, fontWeight: 800, color: t.textMuted, background: t.textMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeWaiting")}</span>}
                                     </div>
-                                    <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600 }}>{o.client || o.customer?.name || "Невідомий клієнт"}</p>
+                                    <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600 }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>
                                 </div>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                 <div style={{ textAlign: "right" }}>
                                     <p style={{ color: t.text, fontSize: 14, fontWeight: 900, margin: "0 0 2px" }}>{o.total}</p>
-                                    <span style={{ fontSize: 11, fontWeight: 800, color: o.sColor }}>{o.status}</span>
+                                    <span style={{ fontSize: 11, fontWeight: 800, color: o.sColor }}>{tr(`status.${o.status}`)}</span>
                                 </div>
                                 {(() => {
                                     const blocked = o.status === "Проведено" || o.status === "Видалено";
                                     return (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); if (!blocked) setOrderToDelete(o); }}
-                                            title={blocked ? (o.status === "Видалено" ? "Вже помічено на видалення" : "Проведене не можна видалити") : "Видалити"}
+                                            title={blocked ? (o.status === "Видалено" ? tr("ordersList.tipAlreadyMarked") : tr("ordersList.tipCantDeletePosted")) : tr("ordersList.tipDelete")}
                                             style={{ background: blocked ? t.surfaceVariant : t.error + "15", border: "none", padding: 8, borderRadius: 10, cursor: blocked ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: blocked ? 0.45 : 1, transition: "background .2s" }}>
                                             <Icon name="trash" size={18} color={blocked ? t.textMuted : t.error} />
                                         </button>
@@ -282,18 +285,16 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                             const draft = isDraftStatus(orderToDelete);
                             return (
                                 <>
-                                    <h3 style={{ color: t.text, fontSize: 18, fontWeight: 800, textAlign: "center", margin: "0 0 8px" }}>{draft ? "Видалення замовлення" : "Помітка на видалення"}</h3>
+                                    <h3 style={{ color: t.text, fontSize: 18, fontWeight: 800, textAlign: "center", margin: "0 0 8px" }}>{draft ? tr("ordersList.delTitleDraft") : tr("ordersList.delTitleMark")}</h3>
                                     <p style={{ color: t.textMuted, fontSize: 14, textAlign: "center", margin: "0 0 24px" }}>
-                                        {draft
-                                            ? <>Видалити нове замовлення {label}? Цю дію неможливо скасувати.</>
-                                            : <>Замовлення {label} буде помічено на видалення (як у 1С), а не видалено остаточно. Продовжити?</>}
+                                        {draft ? tr("ordersList.delBodyDraft", { label }) : tr("ordersList.delBodyMark", { label })}
                                     </p>
                                     <div style={{ display: "flex", gap: 12 }}>
                                         <button onClick={() => setOrderToDelete(null)} style={{ flex: 1, padding: "12px", background: t.surfaceVariant, border: "none", borderRadius: 12, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                                            Скасувати
+                                            {tr("common.cancel")}
                                         </button>
                                         <button onClick={handleDelete} style={{ flex: 1, padding: "12px", background: t.error, border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: `0 4px 12px ${t.error}66` }}>
-                                            {draft ? "Видалити" : "Помітити"}
+                                            {draft ? tr("ordersList.confirmDelete") : tr("ordersList.confirmMark")}
                                         </button>
                                     </div>
                                 </>

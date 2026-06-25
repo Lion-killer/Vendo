@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM } from '../components/ui';
+import { localeTag } from '../i18n';
 
-const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { maximumFractionDigits: 0 });
+const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { maximumFractionDigits: 0 });
 
 // Картка клієнта (нижня шторка) — деталі + контактні особи.
 const ClientCard = ({ t, c, onClose }) => {
+    const { t: tr } = useTranslation();
     const debt = Number(c.debt) || 0;
     // Кілька контактних осіб (#11) — поки бекенд віддає одну; підтримуємо й масив c.contacts.
     const contacts = Array.isArray(c.contacts) ? c.contacts
-        : (c.contact || c.phone) ? [{ name: c.contact || "Контактна особа", phone: c.phone }] : [];
+        : (c.contact || c.phone) ? [{ name: c.contact || tr("customers.contactPerson"), phone: c.phone }] : [];
     const Field = ({ label, value, tel }) => value ? (
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: `1px solid ${t.lineSoft}` }}>
             <span style={{ fontSize: 12.5, color: t.inkMuted, flexShrink: 0 }}>{label}</span>
@@ -28,23 +31,23 @@ const ClientCard = ({ t, c, onClose }) => {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>{c.name}</div>
-                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? `Борг ${money(debt)} ₴` : `Переплата ${money(-debt)} ₴`}</div>}
+                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? tr("customers.debt", { sum: money(debt) }) : tr("customers.overpay", { sum: money(-debt) })}</div>}
                     </div>
                 </div>
 
                 <div style={{ marginTop: 8 }}>
-                    <Field label="Код" value={c.code} />
-                    <Field label="Найменування" value={c.name} />
-                    <Field label="Адреса" value={c.address} />
-                    <Field label="Телефон" value={c.phone} tel />
+                    <Field label={tr("customers.code")} value={c.code} />
+                    <Field label={tr("customers.name")} value={c.name} />
+                    <Field label={tr("customers.address")} value={c.address} />
+                    <Field label={tr("customers.phone")} value={c.phone} tel />
                 </div>
 
-                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "18px 0 8px" }}>Контактні особи</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "18px 0 8px" }}>{tr("customers.contacts")}</div>
                 {contacts.length === 0 ? (
-                    <div style={{ fontSize: 13, color: t.inkMuted, paddingBottom: 8 }}>Не вказано</div>
+                    <div style={{ fontSize: 13, color: t.inkMuted, paddingBottom: 8 }}>{tr("customers.noContacts")}</div>
                 ) : contacts.map((p, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: i < contacts.length - 1 ? `1px solid ${t.lineSoft}` : "none" }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name || "Контактна особа"}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name || tr("customers.contactPerson")}</span>
                         {p.phone && <a href={`tel:${p.phone}`} style={{ fontSize: 13, fontWeight: 600, color: t.accent, fontFamily: F_NUM, textDecoration: "none", flexShrink: 0 }}>{p.phone}</a>}
                     </div>
                 ))}
@@ -54,6 +57,7 @@ const ClientCard = ({ t, c, onClose }) => {
 };
 
 const ClientRow = ({ t, c, onClick }) => {
+    const { t: tr } = useTranslation();
     const debt = Number(c.debt) || 0;
     return (
         <Card t={t} onClick={onClick} style={{ padding: 12, marginBottom: 8, cursor: "pointer" }}>
@@ -79,12 +83,12 @@ const ClientRow = ({ t, c, onClick }) => {
                     {debt > 0 ? (
                         <>
                             <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.err }}>{money(debt)} ₴</div>
-                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>борг</div>
+                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr("customers.debtShort")}</div>
                         </>
                     ) : debt < 0 ? (
                         <>
                             <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.ok }}>{money(-debt)} ₴</div>
-                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>переплата</div>
+                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr("customers.overpayShort")}</div>
                         </>
                     ) : (
                         <div style={{ fontSize: 13, color: t.inkMuted }}>—</div>
@@ -96,14 +100,15 @@ const ClientRow = ({ t, c, onClick }) => {
 };
 
 export const CustomersScreen = ({ t, customers = [], isOnline }) => {
+    const { t: tr } = useTranslation();
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
     const [selected, setSelected] = useState(null);
 
     const withDebt = customers.filter(c => (Number(c.debt) || 0) > 0);
     const filters = [
-        { id: "all", label: "Усі", n: customers.length },
-        { id: "debt", label: "З боргом", n: withDebt.length },
+        { id: "all", label: tr("customers.all"), n: customers.length },
+        { id: "debt", label: tr("customers.withDebt"), n: withDebt.length },
     ];
 
     let list = filter === "debt" ? withDebt : customers;
@@ -124,9 +129,9 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
                     <div>
-                        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Клієнти</div>
+                        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>{tr("nav.customers")}</div>
                         <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 2 }}>
-                            <span style={{ fontFamily: F_NUM }}>{customers.length}</span> контрагентів
+                            {tr("customers.count", { count: customers.length })}
                         </div>
                     </div>
                 </div>
@@ -134,7 +139,7 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
                 {/* Пошук */}
                 <div style={{ background: t.surface, border: `1px solid ${query ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
                     <MIcon name="search" size={18} color={query ? t.accent : t.inkMuted} />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Пошук: назва, код, адреса, телефон…"
+                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder={tr("customers.searchPlaceholder")}
                         style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
                     {query && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                 </div>
@@ -158,7 +163,7 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
                 {list.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
                         <MIcon name="users" size={36} color={t.line} />
-                        <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>Нічого не знайдено</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
                     </div>
                 ) : list.map(c => <ClientRow key={c.id || c.code} t={t} c={c} onClick={() => setSelected(c)} />)}
                 <div style={{ height: 16 }} />

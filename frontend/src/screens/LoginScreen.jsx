@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '../components/Icon';
 import { auth } from '../api/client';
 import { scanQr, parseQr } from '../api/scanner';
 
 export const LoginScreen = ({ t, onLogin }) => {
+    const { t: tr } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [scanned, setScanned] = useState(false);
@@ -17,7 +19,7 @@ export const LoginScreen = ({ t, onLogin }) => {
             raw = await scanQr();
         } catch (e) {
             setLoading(false);
-            setError("Не вдалося відкрити сканер. Дозвольте доступ до камери.");
+            setError(tr("login.errScanner"));
             return;
         }
         if (!raw) { setLoading(false); return; } // скасовано користувачем
@@ -32,14 +34,14 @@ export const LoginScreen = ({ t, onLogin }) => {
             const res = await auth(deviceId, pairingCode);
             if (res.success) {
                 setLoading(false); setScanned(true);
-                setTimeout(() => onLogin(res.user?.name || deviceId || "Користувач", res.token), 700);
+                setTimeout(() => onLogin(res.user?.name || deviceId || tr("common.user"), res.token), 700);
             } else {
-                throw new Error(res.message || "Пристрій не авторизовано");
+                throw new Error(res.message || tr("login.errUnauthorized"));
             }
         } catch (e) {
             setLoading(false);
             const netErr = !e.message || /fetch|network|json|failed/i.test(e.message);
-            setError(netErr ? "Помилка автентифікації. Перевірте з'єднання." : e.message);
+            setError(netErr ? tr("login.errAuth") : e.message);
         }
     };
 
@@ -56,7 +58,7 @@ export const LoginScreen = ({ t, onLogin }) => {
                     <Icon name="vmark" size={42} color="#fff" />
                 </div>
                 <h1 style={{ color: t.ink, fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: -0.6 }}>Vendo</h1>
-                <p style={{ color: t.inkMuted, fontSize: 14, margin: "6px 0 0", fontWeight: 500 }}>Система торгового представника</p>
+                <p style={{ color: t.inkMuted, fontSize: 14, margin: "6px 0 0", fontWeight: 500 }}>{tr("login.subtitle")}</p>
             </div>
 
             <div style={{ height: 36 }} />
@@ -64,20 +66,20 @@ export const LoginScreen = ({ t, onLogin }) => {
             {/* Картка скану QR */}
             <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 20, padding: 20, width: "100%", maxWidth: 340 }}>
                 <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    <span style={{ color: t.inkSoft, fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>Автентифікація за QR-кодом</span>
+                    <span style={{ color: t.inkSoft, fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>{tr("login.qrTitle")}</span>
                 </div>
                 <div style={{ width: "100%", aspectRatio: "1", background: t.surfaceMuted, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", border: `2px dashed ${scanned ? t.ok : loading ? t.accent : t.line}`, transition: "border-color .3s", position: "relative", overflow: "hidden" }}>
                     {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 42, height: 42, border: `3px solid ${t.line}`, borderTopColor: t.accent, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                            <span style={{ color: t.inkMuted, fontSize: 12, fontWeight: 600 }}>Сканування…</span>
+                            <span style={{ color: t.inkMuted, fontSize: 12, fontWeight: 600 }}>{tr("login.scanning")}</span>
                         </div>
                     ) : scanned ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
                             <div style={{ width: 52, height: 52, borderRadius: "50%", background: t.ok, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 <Icon name="check" size={28} color="#fff" />
                             </div>
-                            <span style={{ color: t.ok, fontSize: 13, fontWeight: 700 }}>Підтверджено</span>
+                            <span style={{ color: t.ok, fontSize: 13, fontWeight: 700 }}>{tr("login.confirmed")}</span>
                         </div>
                     ) : (
                         <Icon name="qr" size={76} color={t.inkMuted} />
@@ -98,11 +100,11 @@ export const LoginScreen = ({ t, onLogin }) => {
             <button onClick={handleScan} disabled={busy} style={{ width: "100%", maxWidth: 340, height: 54, borderRadius: 14, background: busy ? t.surfaceMuted : t.accent, border: "none", cursor: busy ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit", transition: "background .2s" }}>
                 <Icon name="qr" size={20} color={busy ? t.inkMuted : "#fff"} />
                 <span style={{ color: busy ? t.inkMuted : "#fff", fontSize: 15, fontWeight: 700, letterSpacing: 0.3 }}>
-                    {loading ? "Зчитування…" : scanned ? "Успішно" : "Сканувати QR-код"}
+                    {loading ? tr("login.reading") : scanned ? tr("login.success") : tr("login.scan")}
                 </span>
             </button>
 
-            <p style={{ color: t.inkMuted, fontSize: 12, textAlign: "center", margin: "16px 0 0" }}>Відскануйте QR-код з корпоративного порталу</p>
+            <p style={{ color: t.inkMuted, fontSize: 12, textAlign: "center", margin: "16px 0 0" }}>{tr("login.hint")}</p>
         </div>
     );
 };

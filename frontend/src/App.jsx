@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LIGHT, DARK } from './theme';
 import { BottomNav, TopActions } from './components/ui';
 import { Snackbar } from './components/Shared';
@@ -29,6 +30,7 @@ const getInitialDark = () => {
 };
 
 export default function App() {
+  const { t: tr } = useTranslation();
   const [isDark, setIsDark] = useState(getInitialDark);
   // Відновлюємо збережену сесію (#24): якщо вона є, пропускаємо екран логіну.
   const [screen, setScreen] = useState(() => getSession() ? "dashboard" : "login");
@@ -79,7 +81,7 @@ export default function App() {
       num: editNum || undefined,
       customer: editCustomer || null,
       customerId: editCustomer?.id || null,
-      client: editCustomer?.name || "Невідомий клієнт",
+      client: editCustomer?.name || tr("common.unknownClient"),
       items: orderItems,
       date: editDate || undefined,
       total: `${total.toLocaleString("uk-UA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₴`,
@@ -88,7 +90,7 @@ export default function App() {
       // База версії лише для правок серверного замовлення (виявлення конфлікту).
       baseVersion: queueStatus === "Відправлено" ? editVersion : undefined,
     });
-    notify(`Збережено ${orderLabel({ id, num: editNum })} · ${fmtDate(editDate) || "сьогодні"}`);
+    notify(tr("toast.saved", { label: orderLabel({ id, num: editNum }), date: fmtDate(editDate) || tr("common.today") }));
   };
 
   // Поки користувач не обрав тему вручну — слідуємо за системною.
@@ -160,7 +162,7 @@ export default function App() {
   // Ручна синхронізація офлайн-черги на сервер (доступна з усіх екранів через TopActions).
   // Стійка: одна помилка не валить чергу; кожен запис — успіх/конфлікт/помилка/пропуск.
   const doSync = async () => {
-    if (!isOnline) { notify("Немає підключення"); return; }
+    if (!isOnline) { notify(tr("toast.offline")); return; }
     setSyncing(true);
     const locals = getLocalOrders();
     const canCheck = products.length > 0 && customers.length > 0;
@@ -184,10 +186,10 @@ export default function App() {
     }
     await fetchFromNetwork(true);
     const parts = [];
-    if (sent) parts.push(`надіслано ${sent}`);
-    if (failed) parts.push(`помилок ${failed}`);
-    if (skipped) parts.push(`пропущено ${skipped}`);
-    notify(parts.length ? `Синхронізація: ${parts.join(", ")}` : "Немає чого синхронізувати");
+    if (sent) parts.push(tr("toast.syncSent", { count: sent }));
+    if (failed) parts.push(tr("toast.syncFailed", { count: failed }));
+    if (skipped) parts.push(tr("toast.syncSkipped", { count: skipped }));
+    notify(parts.length ? tr("toast.syncResult", { parts: parts.join(", ") }) : tr("toast.syncNothing"));
     setSyncing(false);
   };
 
@@ -217,7 +219,7 @@ export default function App() {
   }, []);
 
   const handleLogin = (name, token) => {
-    const resolvedName = name || "Користувач";
+    const resolvedName = name || tr("common.user");
     saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
     setUserName(resolvedName);
     setScreen("dashboard");
@@ -241,7 +243,7 @@ export default function App() {
     setEditLocked(false);
     setEditDate(null);
     orderHandled.current = false;
-    notify("Замовлення скопійовано в нове");
+    notify(tr("toast.copied"));
   };
 
   const handleNav = (s, params = {}) => {

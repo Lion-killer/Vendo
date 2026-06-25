@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { F_NUM } from '../theme';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
@@ -111,7 +112,7 @@ const ZoomImage = ({ src, alt }) => {
 };
 
 // ─── Фото товару з fallback на плейсхолдер + lightbox на повний екран (#30) ─────
-export const ProductImage = ({ t, img, sku, size = 56, radius = 10 }) => {
+export const ProductImage = ({ t, img, sku, name, barcode, price, stock, unit, size = 56, radius = 10 }) => {
   const [err, setErr] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const show = img && !err;
@@ -135,7 +136,13 @@ export const ProductImage = ({ t, img, sku, size = 56, radius = 10 }) => {
             style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <MIcon name="x" size={22} color="#fff" />
           </button>
-          {sku && <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontFamily: F_NUM, fontSize: 12 }}>{sku}</div>}
+          {name && <div style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", left: 16, right: 64, color: "#fff", fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{name}</div>}
+          {(sku || barcode || price != null || stock != null) && <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.85)", fontFamily: F_NUM, fontSize: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+            {price != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Ціна: </span>{Number(price).toFixed(2)} ₴</span>}
+            {stock != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Залишок: </span>{stock}{unit ? ` ${unit}` : ""}</span>}
+            {sku && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Артикул: </span>{sku}</span>}
+            {barcode && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Штрихкод: </span>{barcode}</span>}
+          </div>}
         </div>
       )}
     </>
@@ -244,15 +251,17 @@ export const Pill = ({ children, bg, fg }) => (
 );
 
 // ─── Нижня навігація ─────────────────────────────────────────────────────────
-// Мапа екранів застосунку → вкладки редизайну.
+// Мапа екранів застосунку → вкладки редизайну (підпис локалізується через i18n-ключ).
 const TABS = [
-  { id: "dashboard", label: "Головна", icon: "home" },
-  { id: "catalog", label: "Каталог", icon: "grid" },
-  { id: "customers", label: "Клієнти", icon: "users" },
-  { id: "ordersList", label: "Замовлення", icon: "doc" },
+  { id: "dashboard", icon: "home" },
+  { id: "catalog", icon: "grid" },
+  { id: "customers", icon: "users" },
+  { id: "ordersList", icon: "doc" },
 ];
 
-export const BottomNav = ({ active, onNav, t }) => (
+export const BottomNav = ({ active, onNav, t }) => {
+  const { t: tr } = useTranslation();
+  return (
   <div style={{ height: "calc(58px + env(safe-area-inset-bottom))", background: t.surface, borderTop: `1px solid ${t.line}`, display: "flex", paddingBottom: "env(safe-area-inset-bottom)", flexShrink: 0 }}>
     {TABS.map(tab => {
       const on = active === tab.id;
@@ -260,11 +269,12 @@ export const BottomNav = ({ active, onNav, t }) => (
         <button key={tab.id} onClick={() => onNav(tab.id)}
           style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
           <MIcon name={tab.icon} size={22} w={on ? 1.9 : 1.5} color={on ? t.accent : t.inkMuted} />
-          <span style={{ fontSize: 10.5, fontWeight: on ? 700 : 500, color: on ? t.accent : t.inkMuted }}>{tab.label}</span>
+          <span style={{ fontSize: 10.5, fontWeight: on ? 700 : 500, color: on ? t.accent : t.inkMuted }}>{tr(`nav.${tab.id}`)}</span>
         </button>
       );
     })}
   </div>
-);
+  );
+};
 
 export { F_NUM };

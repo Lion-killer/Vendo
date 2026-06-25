@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete } from '../components/ui';
+import { localeTag } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
 
-const money = (n) => (Number(n) || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+    const { t: tr } = useTranslation();
     // Лейбл: номер документа, якщо є; інакше короткий №<id>.
     const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
     // Набір GUID наявних товарів — для позначення «зниклих» позицій (видалених на бекенді).
@@ -60,7 +63,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 num: num || undefined,
                 customer: customer || null,
                 customerId: customer?.id || null,
-                client: customer?.name || "Невідомий клієнт",
+                client: customer?.name || tr("common.unknownClient"),
                 items: orderItems,
                 date: orderDate,
                 total: `${money(total)} ₴`,
@@ -80,12 +83,12 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             const queueStatus = status === "Відправлено" ? "Відправлено" : "Нове";
             const savedId = saveLocalOrder({
                 id: editOrderId || undefined, num: num || undefined, customer: customer || null, customerId: customer?.id || null,
-                client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
+                client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
                 total: `${money(total)} ₴`, status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
                 baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
-            notify?.(`Збережено ${orderLabel({ num, id: savedId })} · ${orderDate.split("-").reverse().join(".")}`);
+            notify?.(tr("toast.saved", { label: orderLabel({ num, id: savedId }), date: orderDate.split("-").reverse().join(".") }));
         }
         if (isMounted.current) setOrderItems([]);
         if (goToOrdersList) goToOrdersList();
@@ -111,7 +114,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 saveLocalOrder({
                     id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено',
                     customer: customer || null, customerId: customer?.id || null,
-                    client: customer?.name || "Невідомий клієнт", items: orderItems, date: orderDate,
+                    client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
                     total: `${money(total)} ₴`, sColor: t.err,
                 });
             } else {
@@ -120,12 +123,13 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             markHandled?.();
             if (isMounted.current) setOrderItems([]);
             refreshOrders?.();
-            notify?.(isNew ? `Видалено ${orderLabel({ num, id: editOrderId })}`
-                : !isOnline ? `Видалення в черзі (офлайн) · ${orderLabel({ num, id: editOrderId })}`
-                : `Помічено на видалення ${orderLabel({ num, id: editOrderId })}`);
+            const label = orderLabel({ num, id: editOrderId });
+            notify?.(isNew ? tr("order.deleted", { label })
+                : !isOnline ? tr("order.deleteQueued", { label })
+                : tr("order.markedDeleted", { label }));
             if (goToOrdersList) goToOrdersList();
         } catch (e) {
-            notify?.("Не вдалося видалити");
+            notify?.(tr("order.deleteFailed"));
         }
     };
 
@@ -137,10 +141,10 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             await restoreOrder(editOrderId);
             markHandled?.();
             refreshOrders?.();
-            notify?.(`Помітку знято · ${orderLabel({ num, id: editOrderId })}`);
+            notify?.(tr("order.unmarked", { label: orderLabel({ num, id: editOrderId }) }));
             if (goToOrdersList) goToOrdersList();
         } catch (e) {
-            notify?.("Не вдалося зняти помітку");
+            notify?.(tr("order.unmarkFailed"));
         }
     };
 
@@ -149,14 +153,14 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const resolveOverwrite = () => {
         saveLocalOrder({ id: editOrderId, baseVersion: null, conflict: false, syncError: "" });
         markHandled?.();
-        notify?.("Ваша версія перезапише сервер при наступній синхронізації");
+        notify?.(tr("order.willOverwrite"));
         if (goToOrdersList) goToOrdersList();
     };
     const resolveTakeServer = () => {
         removeLocalOrder(editOrderId);
         markHandled?.();
         refreshOrders?.();
-        notify?.("Взято серверну версію");
+        notify?.(tr("order.tookServer"));
         if (goToOrdersList) goToOrdersList();
     };
 
@@ -178,11 +182,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     <button onClick={goToOrdersList} style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer" }}>
                         <MIcon name="back" size={18} color={t.ink} />
                     </button>
-                    <div style={{ background: statusColor + "22", height: 26, padding: "0 11px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4, display: "flex", alignItems: "center" }}>● {String(status).toUpperCase()}</div>
+                    <div style={{ background: statusColor + "22", height: 26, padding: "0 11px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4, display: "flex", alignItems: "center" }}>● {tr(`status.${status}`).toUpperCase()}</div>
                 </div>
                 {/* Рядок 2: заголовок + єдина група контролів (номер · дата · меню) */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Замовлення</div>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tr("order.title")}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                         {subLabel && <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, fontWeight: 600, color: t.inkMuted }}>{subLabel}</div>}
                         {locked
@@ -202,16 +206,16 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "12px 12px max(16px, env(safe-area-inset-bottom))" }}>
                         <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "4px auto 12px" }} />
                         <button onClick={handleCopy} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
-                            <MIcon name="doc" size={20} color={t.ink} /> Скопіювати
+                            <MIcon name="doc" size={20} color={t.ink} /> {tr("order.copy")}
                         </button>
                         <button onClick={handleUnmark} disabled={status !== "Видалено"} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: status === "Видалено" ? "pointer" : "not-allowed", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: status === "Видалено" ? t.ink : t.inkMuted, textAlign: "left", opacity: status === "Видалено" ? 1 : 0.5 }}>
-                            <MIcon name="check" size={20} color={status === "Видалено" ? t.ink : t.inkMuted} /> Зняти помітку видалення
+                            <MIcon name="check" size={20} color={status === "Видалено" ? t.ink : t.inkMuted} /> {tr("order.unmark")}
                         </button>
                         {(() => {
                             const canDelete = status === "Нове" || status === "Відправлено";
                             return (
                                 <button onClick={handleDeleteOrder} disabled={!canDelete} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: canDelete ? "pointer" : "not-allowed", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: canDelete ? t.err : t.inkMuted, textAlign: "left", opacity: canDelete ? 1 : 0.5 }}>
-                                    <MIcon name="trash" size={20} color={canDelete ? t.err : t.inkMuted} /> {status === "Нове" ? "Видалити" : "Помітити на видалення"}
+                                    <MIcon name="trash" size={20} color={canDelete ? t.err : t.inkMuted} /> {status === "Нове" ? tr("order.delete") : tr("order.markDelete")}
                                 </button>
                             );
                         })()}
@@ -224,11 +228,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <div style={{ margin: "0 16px 12px", padding: "12px 14px", background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <div style={{ flexShrink: 0, marginTop: 1, display: "flex" }}><MIcon name="bell" size={15} color={t.err} /></div>
-                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>Замовлення змінили на сервері після ваших правок. Оберіть, яку версію лишити.</div>
+                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>{tr("order.conflictMsg")}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                        <button onClick={resolveOverwrite} style={{ flex: 1, height: 38, borderRadius: 10, background: t.err, color: "#fff", border: "none", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>Перезаписати моє</button>
-                        <button onClick={resolveTakeServer} style={{ flex: 1, height: 38, borderRadius: 10, background: t.surface, color: t.ink, border: `1px solid ${t.line}`, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>Взяти серверне</button>
+                        <button onClick={resolveOverwrite} style={{ flex: 1, height: 38, borderRadius: 10, background: t.err, color: "#fff", border: "none", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{tr("order.overwrite")}</button>
+                        <button onClick={resolveTakeServer} style={{ flex: 1, height: 38, borderRadius: 10, background: t.surface, color: t.ink, border: `1px solid ${t.line}`, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{tr("order.takeServer")}</button>
                     </div>
                 </div>
             )}
@@ -241,11 +245,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <MIcon name="building" size={20} color={t.ink} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14.5, fontWeight: 700, color: customerMissing ? t.err : t.ink }}>{customer?.name || "Оберіть контрагента"}</div>
+                            <div style={{ fontSize: 14.5, fontWeight: 700, color: customerMissing ? t.err : t.ink }}>{customer?.name || tr("order.selectCustomer")}</div>
                             <div style={{ fontSize: 11.5, color: t.inkSoft, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                {customerMissing && <span style={{ color: t.err, fontWeight: 700 }}>клієнта видалено на сервері</span>}
+                                {customerMissing && <span style={{ color: t.err, fontWeight: 700 }}>{tr("order.customerDeleted")}</span>}
                                 {customer?.address && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{customer.address}</span>}
-                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>борг {money(debt)} ₴</span></>}
+                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>{tr("order.debt", { sum: money(debt) })}</span></>}
                             </div>
                         </div>
                         {!locked && <MIcon name="chevron" size={18} color={t.inkMuted} />}
@@ -256,24 +260,24 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             {/* Позиції */}
             <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px 0" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 4px 8px" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>Позиції · {orderItems.length}</div>
-                    {!locked && <div onClick={goToCatalog} style={{ fontSize: 12, color: t.accent, fontWeight: 600, cursor: "pointer" }}>+ Додати</div>}
+                    <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>{tr("order.positions")} · {orderItems.length}</div>
+                    {!locked && <div onClick={goToCatalog} style={{ fontSize: 12, color: t.accent, fontWeight: 600, cursor: "pointer" }}>{tr("order.add")}</div>}
                 </div>
 
                 {orderItems.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
                         <MIcon name="cart" size={40} color={t.line} />
-                        <div style={{ fontSize: 14, fontWeight: 600, marginTop: 12 }}>Кошик порожній</div>
-                        <button onClick={goToCatalog} style={{ marginTop: 18, padding: "10px 22px", borderRadius: 12, background: t.accent, color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: 14 }}>Перейти в каталог</button>
+                        <div style={{ fontSize: 14, fontWeight: 600, marginTop: 12 }}>{tr("order.emptyCart")}</div>
+                        <button onClick={goToCatalog} style={{ marginTop: 18, padding: "10px 22px", borderRadius: 12, background: t.accent, color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: 14 }}>{tr("order.goCatalog")}</button>
                     </div>
                 ) : (
                     <Card t={t} style={{ overflow: "hidden" }}>
                         {orderItems.map((it, idx) => (
                             <SwipeToDelete key={it.product?.id || idx} t={t} disabled={locked} onDelete={() => removeItem(idx)}>
                             <div style={{ padding: "8px 12px", borderBottom: idx < orderItems.length - 1 ? `1px solid ${t.lineSoft}` : "none", display: "flex", alignItems: "center", gap: 8 }}>
-                                <ProductImage t={t} img={it.product.img} sku={it.product.sku} size={32} radius={7} />
+                                <ProductImage t={t} img={it.product.img} sku={it.product.sku} name={it.product.name} barcode={it.product.barcode} price={it.product.price} stock={it.product.stock} unit={it.product.unit} size={32} radius={7} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: productMissing(it.product) ? t.err : t.ink }}>{it.product.name}{productMissing(it.product) ? " · недоступний" : ""}</div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: productMissing(it.product) ? t.err : t.ink }}>{it.product.name}{productMissing(it.product) ? ` · ${tr("order.unavailable")}` : ""}</div>
                                     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 1 }}>
                                         <div style={{ flex: 1, minWidth: 0, fontFamily: F_NUM, fontSize: 10.5, color: t.inkMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.sku} · {money(it.product.price)} ₴{it.product.unit ? `/${it.product.unit}` : ""}</div>
                                         <div style={{ flexShrink: 0, fontFamily: F_NUM, fontSize: 11, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{money(it.product.price * it.qty)} ₴</div>
@@ -304,11 +308,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             {!locked && orderItems.length > 0 && (
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "10px 16px max(12px, env(safe-area-inset-bottom))", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ flexShrink: 0 }}>
-                        <div style={{ fontSize: 10.5, fontWeight: 600, color: t.inkMuted, textTransform: "uppercase", letterSpacing: 0.4 }}>До оплати</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 600, color: t.inkMuted, textTransform: "uppercase", letterSpacing: 0.4 }}>{tr("order.toPay")}</div>
                         <div style={{ fontFamily: F_NUM, fontSize: 20, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{money(total)} ₴</div>
                     </div>
                     <button onClick={saveDraft} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: t.accent, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
-                        <MIcon name="check" size={16} color="#fff" w={2} /> Зберегти
+                        <MIcon name="check" size={16} color="#fff" w={2} /> {tr("order.save")}
                     </button>
                 </div>
             )}
@@ -316,7 +320,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             {/* Проведене замовлення: підсумок без дій */}
             {locked && orderItems.length > 0 && (
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "14px 16px max(16px, env(safe-area-inset-bottom))", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>Сума</span>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{tr("order.sum")}</span>
                     <span style={{ fontFamily: F_NUM, fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>{money(total)} ₴</span>
                 </div>
             )}
@@ -327,19 +331,19 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "20px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
                         <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "0 auto 16px" }} />
                         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 0 12px" }}>
-                            <span style={{ fontSize: 16, fontWeight: 700 }}>Оберіть контрагента</span>
-                            <span style={{ fontSize: 11, color: t.inkMuted, fontFamily: F_NUM }}>{filteredCustomers.length} із {customers.length}</span>
+                            <span style={{ fontSize: 16, fontWeight: 700 }}>{tr("order.selectCustomer")}</span>
+                            <span style={{ fontSize: 11, color: t.inkMuted, fontFamily: F_NUM }}>{tr("order.ofTotal", { shown: filteredCustomers.length, total: customers.length })}</span>
                         </div>
                         {/* Пошук по назві / адресі / телефону */}
                         <div style={{ display: "flex", alignItems: "center", gap: 10, height: 44, padding: "0 14px", background: t.surfaceMuted, border: `1px solid ${t.line}`, borderRadius: 12, marginBottom: 12 }}>
                             <MIcon name="search" size={18} color={t.inkMuted} />
-                            <input autoFocus value={custQuery} onChange={e => setCustQuery(e.target.value)} placeholder="Назва, адреса, телефон…"
+                            <input autoFocus value={custQuery} onChange={e => setCustQuery(e.target.value)} placeholder={tr("order.searchCust")}
                                 style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
                             {custQuery && <div onClick={() => setCustQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                         </div>
                         <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
                             {filteredCustomers.length === 0 && (
-                                <div style={{ padding: "24px 8px", textAlign: "center", color: t.inkMuted, fontSize: 13 }}>Нічого не знайдено</div>
+                                <div style={{ padding: "24px 8px", textAlign: "center", color: t.inkMuted, fontSize: 13 }}>{tr("common.nothing")}</div>
                             )}
                             {filteredCustomers.map(c => {
                                 const on = customer?.id === c.id;

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM } from '../components/ui';
+import { localeTag, fmtMoney as fmtCurLocale, setLang, SUPPORTED } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
 
@@ -10,24 +12,25 @@ const parseMoney = (v) => {
     const n = parseFloat(String(v).replace(/\s/g, '').replace(/[^\d.,-]/g, '').replace(',', '.'));
     return isNaN(n) ? 0 : n;
 };
-const fmtMoney = (n) => n.toLocaleString('uk-UA', { maximumFractionDigits: 0 });
+const fmtMoney = (n) => fmtCurLocale(n, { maximumFractionDigits: 0 });
 
 const initials = (name) => (name || "")
     .split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]?.toUpperCase()).join("") || "?";
 
 // Відносний час останньої синхронізації ("щойно", "5 хв тому", "2 год тому", "вчора"…).
-const syncLabel = (ts) => {
-    if (!ts) return "ще не було";
+const syncLabel = (ts, tr) => {
+    if (!ts) return tr("sync.never");
     const min = Math.floor((Date.now() - ts) / 60000);
-    if (min < 1) return "щойно";
-    if (min < 60) return `${min} хв тому`;
+    if (min < 1) return tr("sync.justNow");
+    if (min < 60) return tr("sync.minAgo", { count: min });
     const h = Math.floor(min / 60);
-    if (h < 24) return `${h} год тому`;
+    if (h < 24) return tr("sync.hourAgo", { count: h });
     const d = Math.floor(h / 24);
-    return d === 1 ? "вчора" : `${d} дн тому`;
+    return d === 1 ? tr("sync.yesterday") : tr("sync.dayAgo", { count: d });
 };
 
 export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme }) => {
+    const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
 
     // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
@@ -41,7 +44,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     // Локальні + серверні замовлення (спільне злиття: локальне виграє за id, _pending).
     const displayOrders = mergeOrders(orders, getLocalOrders());
 
-    const today = new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
+    const today = new Date().toLocaleDateString(localeTag(), { weekday: 'long', day: 'numeric', month: 'long' });
 
     const statusColor = (o) => o.sColor || (o.status === 'Видалено' ? t.err : o.status === 'Відправлено' ? t.ok : o.status === 'Нове' ? t.warn : t.inkSoft);
     const isNew = (o) => o.status === 'Нове';
@@ -64,14 +67,14 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
 
     const stats = [
         {
-            l: "Синхронізація",
-            v: lastSync ? new Date(lastSync).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : "—",
-            s: syncLabel(lastSync), icon: "sync", onClick: onSync,
+            l: tr("dashboard.sync"),
+            v: lastSync ? new Date(lastSync).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' }) : "—",
+            s: syncLabel(lastSync, tr), icon: "sync", onClick: onSync,
         },
         {
-            l: "На відправку",
+            l: tr("dashboard.toSend"),
             v: String(pendingCount),
-            s: pendingCount ? "очікують" : "надіслано",
+            s: pendingCount ? tr("dashboard.pending") : tr("dashboard.sent"),
             icon: "send", warn: pendingCount > 0, onClick: () => onNav("ordersList"),
         },
     ];
@@ -84,7 +87,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                     <div style={{ width: 36, height: 36, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{initials(userName)}</div>
                     <div>
                         <div style={{ fontSize: 11, color: t.inkMuted, fontWeight: 500, textTransform: "capitalize" }}>{today}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: t.ink }}>{userName || "Користувач"}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: t.ink }}>{userName || tr("common.user")}</div>
                     </div>
                 </button>
                 {/* Кнопки сповіщень/синхронізації/статусу — у глобальному TopActions (App) */}
@@ -93,11 +96,11 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             {/* Hero: KPI дня */}
             <div style={{ margin: "12px 16px 0", borderRadius: 20, background: t.invBg, color: "#fff", padding: "18px 20px", overflow: "hidden" }}>
                 <div>
-                    <div style={{ fontSize: 11, opacity: 0.55, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.8 }}>Виторг сьогодні</div>
+                    <div style={{ fontSize: 11, opacity: 0.55, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.8 }}>{tr("dashboard.revenueToday")}</div>
                     <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4, fontFamily: F_NUM, letterSpacing: -0.5 }}>{fmtMoney(revenue)} ₴</div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, fontSize: 11, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 14 }}>
-                    {[["Замовлень", String(ordersCount)], ["Середній чек", `${fmtMoney(avgCheck)} ₴`], ["Клієнтів", String(customersCount)]].map(([l, v]) => (
+                    {[[tr("dashboard.orders"), String(ordersCount)], [tr("dashboard.avgCheck"), `${fmtMoney(avgCheck)} ₴`], [tr("dashboard.clients"), String(customersCount)]].map(([l, v]) => (
                         <div key={l}>
                             <div style={{ opacity: 0.55 }}>{l}</div>
                             <div style={{ fontFamily: F_NUM, fontWeight: 600, fontSize: 16, marginTop: 1 }}>{v}</div>
@@ -109,7 +112,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             {/* Основна дія */}
             <div style={{ margin: "14px 16px 0" }}>
                 <button onClick={() => onNav("orders", { newOrder: true })} style={{ width: "100%", height: 54, border: "none", background: t.accent, borderRadius: 14, fontFamily: "inherit", fontSize: 15, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
-                    <MIcon name="plus" size={18} color="#fff" w={2} /> Нове замовлення
+                    <MIcon name="plus" size={18} color="#fff" w={2} /> {tr("dashboard.newOrder")}
                 </button>
             </div>
 
@@ -127,12 +130,12 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             {/* Сьогоднішні замовлення — займають усю нижню область, скрол усередині */}
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 16px 12px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 4px 8px" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>Сьогоднішні замовлення</div>
-                    <div onClick={() => onNav("ordersList")} style={{ fontSize: 12, color: t.accent, fontWeight: 600, cursor: "pointer" }}>Усі →</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase" }}>{tr("dashboard.todayOrders")}</div>
+                    <div onClick={() => onNav("ordersList")} style={{ fontSize: 12, color: t.accent, fontWeight: 600, cursor: "pointer" }}>{tr("common.all")}</div>
                 </div>
                 <Card t={t} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     {todayOrders.length === 0 ? (
-                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", color: t.inkMuted, fontSize: 13, padding: 24 }}>Сьогодні замовлень ще немає</div>
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", color: t.inkMuted, fontSize: 13, padding: 24 }}>{tr("dashboard.empty")}</div>
                     ) : (
                     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                         {todayOrders.map((o, i, arr) => (
@@ -141,16 +144,16 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                         <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</span>
-                                        {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>НОВЕ</span>}
-                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>КОНФЛІКТ</span>
-                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ПОМИЛКА</span>
-                                            : (o._pending && !isNew(o)) ? <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>ОЧІКУЄ</span> : null}
+                                        {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeNew")}</span>}
+                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeConflict")}</span>
+                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeError")}</span>
+                                            : (o._pending && !isNew(o)) ? <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeWaiting")}</span> : null}
                                     </div>
-                                    <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || "Невідомий клієнт"}</div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</div>
                                 </div>
                                 <div style={{ textAlign: "right", marginLeft: 10 }}>
                                     <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{o.total}</div>
-                                    <div style={{ fontSize: 10.5, color: statusColor(o), fontWeight: 600, marginTop: 1 }}>{o.status}</div>
+                                    <div style={{ fontSize: 10.5, color: statusColor(o), fontWeight: 600, marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
                                 </div>
                             </div>
                         ))}
@@ -167,19 +170,33 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: "0 4px" }}>
                             <div style={{ width: 52, height: 52, borderRadius: 16, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 700, fontSize: 18 }}>{initials(userName)}</div>
                             <div style={{ minWidth: 0 }}>
-                                <div style={{ color: t.inkMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: .5 }}>Торговий представник</div>
+                                <div style={{ color: t.inkMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: .5 }}>{tr("profile.role")}</div>
                                 <div style={{ color: t.ink, fontSize: 17, marginTop: 2, fontWeight: 800 }}>{userName}</div>
+                            </div>
+                        </div>
+                        {/* Перемикач мови (#26): ручний вибір, негайне застосування без перезавантаження */}
+                        <div style={{ marginBottom: 10 }}>
+                            <div style={{ color: t.inkMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: .5, margin: "0 4px 6px" }}>{tr("lang.title")}</div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                {SUPPORTED.map(lng => {
+                                    const on = i18n.language === lng;
+                                    return (
+                                        <button key={lng} onClick={() => setLang(lng)} style={{ flex: 1, height: 44, borderRadius: 12, background: on ? t.btnBg : t.surfaceMuted, border: `1px solid ${on ? t.btnBg : t.line}`, color: on ? "#fff" : t.ink, fontSize: 13, fontWeight: on ? 700 : 600, cursor: "pointer", fontFamily: "inherit" }}>
+                                            {tr(`lang.${lng}`)}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                         {onToggleTheme && (
                             <button onClick={onToggleTheme} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
                                 <MIcon name="moon" size={20} color={t.ink} />
-                                <span style={{ flex: 1, textAlign: "left" }}>Темна тема</span>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? t.accent : t.inkMuted }}>{isDark ? "Увімкнено" : "Вимкнено"}</span>
+                                <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.darkTheme")}</span>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? t.accent : t.inkMuted }}>{isDark ? tr("profile.on") : tr("profile.off")}</span>
                             </button>
                         )}
                         <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.errSoft, border: `1px solid ${t.err}33`, color: t.err, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
-                            <MIcon name="logout" size={20} color={t.err} /> Вийти
+                            <MIcon name="logout" size={20} color={t.err} /> {tr("profile.logout")}
                         </button>
                     </div>
                 </div>
