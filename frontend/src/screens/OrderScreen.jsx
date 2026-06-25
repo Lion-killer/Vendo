@@ -180,8 +180,10 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 </div>
                 {/* Рядок 2: заголовок + номер + дата + меню — в одну стрічку */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>Замовлення</div>
-                    {subLabel && <span style={{ fontFamily: F_NUM, fontSize: 11, color: t.inkMuted, fontWeight: 500, letterSpacing: 0.3 }}>{subLabel}</span>}
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
+                        <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>Замовлення</div>
+                        {subLabel && <span style={{ fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted, fontWeight: 600, letterSpacing: 0.3 }}>{subLabel}</span>}
+                    </div>
                     <div style={{ flex: 1 }} />
                     {locked
                         ? <span style={{ fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</span>
@@ -298,18 +300,18 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         ))}
                     </Card>
                 )}
-                <div style={{ height: 140 }} />
+                <div style={{ height: 96 }} />
             </div>
 
-            {/* Підсумок + збереження (проведене замовлення — лише перегляд, без дій) */}
+            {/* Підсумок + збереження — в один рядок (компактна нижня панель) */}
             {!locked && orderItems.length > 0 && (
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "14px 16px max(16px, env(safe-area-inset-bottom))" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>До оплати</span>
-                        <span style={{ fontFamily: F_NUM, fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>{money(total)} ₴</span>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "10px 16px max(12px, env(safe-area-inset-bottom))", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ flexShrink: 0 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 600, color: t.inkMuted, textTransform: "uppercase", letterSpacing: 0.4 }}>До оплати</div>
+                        <div style={{ fontFamily: F_NUM, fontSize: 20, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{money(total)} ₴</div>
                     </div>
-                    <button onClick={saveDraft} style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: t.accent, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
-                        <MIcon name="check" size={16} color="#fff" w={2} /> Зберегти замовлення
+                    <button onClick={saveDraft} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: t.accent, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
+                        <MIcon name="check" size={16} color="#fff" w={2} /> Зберегти
                     </button>
                 </div>
             )}
