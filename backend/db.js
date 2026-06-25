@@ -16,6 +16,7 @@ db.exec(`
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         sku TEXT,
+        barcode TEXT,
         price REAL NOT NULL DEFAULT 0,
         stock INTEGER NOT NULL DEFAULT 0,
         unit TEXT,
@@ -74,6 +75,7 @@ db.exec(`
 // Міграція наявних баз: додаємо deletionMark, якщо колонки ще немає.
 try { db.exec("ALTER TABLE orders ADD COLUMN deletionMark INTEGER NOT NULL DEFAULT 0"); } catch (e) { /* колонка вже існує */ }
 try { db.exec("ALTER TABLE orders ADD COLUMN version TEXT"); } catch (e) { /* колонка вже існує */ }
+try { db.exec("ALTER TABLE products ADD COLUMN barcode TEXT"); } catch (e) { /* колонка вже існує */ }
 
 // --- Одноразовий сід із db.json (лише якщо БД порожня) ---
 const seedIfEmpty = () => {
@@ -84,8 +86,8 @@ const seedIfEmpty = () => {
     const seed = JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
 
     const insertProduct = db.prepare(
-        `INSERT INTO products (id, name, sku, price, stock, unit, category, categoryId, img)
-         VALUES (@id, @name, @sku, @price, @stock, @unit, @category, @categoryId, @img)`
+        `INSERT INTO products (id, name, sku, barcode, price, stock, unit, category, categoryId, img)
+         VALUES (@id, @name, @sku, @barcode, @price, @stock, @unit, @category, @categoryId, @img)`
     );
     const insertCustomer = db.prepare(
         `INSERT INTO customers (id, name, code, address, contact, phone, contacts, debt, status)
@@ -104,7 +106,7 @@ const seedIfEmpty = () => {
     const setMeta = db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)`);
 
     const seedAll = db.transaction(() => {
-        (seed.products || []).forEach(p => insertProduct.run({ ...p, categoryId: p.categoryId ?? null }));
+        (seed.products || []).forEach(p => insertProduct.run({ ...p, barcode: p.barcode ?? null, categoryId: p.categoryId ?? null }));
         (seed.customers || []).forEach(c => insertCustomer.run({
             ...c,
             address: c.address ?? null,

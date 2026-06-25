@@ -126,6 +126,7 @@
           "id": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
           "sku": { "type": "string" },
+          "barcode": { "type": "string", "description": "Штрихкод EAN-13 (для сканера)" },
           "price": { "type": "number" },
           "stock": { "type": "integer" },
           "unit": { "type": "string" },

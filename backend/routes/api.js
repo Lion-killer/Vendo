@@ -6,8 +6,8 @@ const router = express.Router();
 
 // --- Підготовлені запити ---
 const q = {
-    products: db.prepare('SELECT id, name, sku, price, stock, unit, category, categoryId, img FROM products'),
-    productById: db.prepare('SELECT id, name, sku, price, stock, unit, category, categoryId, img FROM products WHERE id = ?'),
+    products: db.prepare('SELECT id, name, sku, barcode, price, stock, unit, category, categoryId, img FROM products'),
+    productById: db.prepare('SELECT id, name, sku, barcode, price, stock, unit, category, categoryId, img FROM products WHERE id = ?'),
     customers: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers'),
     customerById: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
     categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
