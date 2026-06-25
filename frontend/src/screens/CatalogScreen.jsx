@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow } from '../components/ui';
+import { scanBarcode } from '../api/scanner';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
 function buildTree(categories, products) {
@@ -95,7 +96,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify }) => {
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
 
@@ -120,6 +121,20 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
         : [], [searching, query, root]);
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
+
+    // Сканування штрихкоду товару: знайти за barcode/артикулом/id і додати в замовлення.
+    const handleScan = async () => {
+        let code;
+        try { code = await scanBarcode(); }
+        catch (e) { notify?.("Не вдалося відкрити сканер. Дозвольте доступ до камери."); return; }
+        if (!code) return; // скасовано
+        const norm = code.trim().toLowerCase();
+        const found = (products || []).find(p =>
+            [p.barcode, p.sku, p.id].filter(Boolean).some(v => String(v).toLowerCase() === norm));
+        if (found) { onAddToOrder(found, 1); notify?.(`Додано: ${found.name}`); }
+        else notify?.(`Штрихкод не знайдено: ${code}`);
+    };
+
     const cartCount = orderItems.length;
     const cartTotal = orderItems.reduce((s, it) => s + (Number(it.product.price) || 0) * it.qty, 0);
 
@@ -130,9 +145,9 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
                     <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>Каталог</div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 150 }}>{/* лишаємо місце глобальному TopActions (App) */}
-                        <div style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <button onClick={handleScan} aria-label="Сканувати штрихкод" style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
                             <MIcon name="barcode" size={18} color={t.ink} />
-                        </div>
+                        </button>
                         <button onClick={() => onNav("orders", { keepOrder: true })} style={{ padding: "0 12px", height: 38, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
                             <MIcon name="cart" size={16} color="#fff" /> {cartCount}
                         </button>

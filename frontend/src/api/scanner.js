@@ -16,6 +16,17 @@ export async function scanQr() {
     return (res?.ScanResult || '').trim();
 }
 
+// Відкриває нативний сканер для ШТРИХКОДІВ товарів (EAN/UPC/Code128 тощо — hint ALL,
+// бо звичайні штрихкоди різних форматів). Повертає зчитаний рядок ("" якщо скасовано).
+export async function scanBarcode() {
+    const res = await CapacitorBarcodeScanner.scanBarcode({
+        hint: CapacitorBarcodeScannerTypeHint.ALL,
+        scanInstructions: 'Наведіть камеру на штрихкод товару',
+        android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING },
+    });
+    return (res?.ScanResult || '').trim();
+}
+
 // Парсинг вмісту QR. Підтримувані формати:
 //   • JSON: {"deviceId":"...","apiUrl":"https://.../hs/vendo","code":"..."}
 //   • URL із параметрами: https://host/hs/vendo?device=GUID&code=...
