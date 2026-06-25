@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MIcon, Card, F_NUM, ProductImage } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete } from '../components/ui';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
@@ -269,7 +269,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 ) : (
                     <Card t={t}>
                         {orderItems.map((it, idx) => (
-                            <div key={idx} style={{ padding: "8px 12px", borderBottom: idx < orderItems.length - 1 ? `1px solid ${t.lineSoft}` : "none", display: "flex", alignItems: "center", gap: 8 }}>
+                            <SwipeToDelete key={it.product?.id || idx} t={t} disabled={locked} onDelete={() => removeItem(idx)}>
+                            <div style={{ padding: "8px 12px", borderBottom: idx < orderItems.length - 1 ? `1px solid ${t.lineSoft}` : "none", display: "flex", alignItems: "center", gap: 8 }}>
                                 <ProductImage t={t} img={it.product.img} sku={it.product.sku} size={32} radius={7} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: productMissing(it.product) ? t.err : t.ink }}>{it.product.name}{productMissing(it.product) ? " · недоступний" : ""}</div>
@@ -281,22 +282,18 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                 {locked ? (
                                     <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.inkSoft, flexShrink: 0, minWidth: 28, textAlign: "right" }}>{it.qty}</div>
                                 ) : (
-                                    <>
-                                        <div style={{ display: "flex", alignItems: "center", border: `1px solid ${t.line}`, borderRadius: 9, height: 30, flexShrink: 0 }}>
-                                            <button onClick={() => updateQty(idx, -1)} style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer" }}>
-                                                <MIcon name="minus" size={13} color={t.ink} w={2} />
-                                            </button>
-                                            <div style={{ minWidth: 24, textAlign: "center", fontFamily: F_NUM, fontSize: 13.5, fontWeight: 700 }}>{it.qty}</div>
-                                            <button onClick={() => updateQty(idx, 1)} style={{ width: 30, height: 30, background: t.btnBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 8px 8px 0", border: "none", cursor: "pointer" }}>
-                                                <MIcon name="plus" size={13} color="#fff" w={2} />
-                                            </button>
-                                        </div>
-                                        <button onClick={() => removeItem(idx)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, display: "flex", flexShrink: 0 }}>
-                                            <MIcon name="trash" size={15} color={t.inkMuted} />
+                                    <div style={{ display: "flex", alignItems: "center", border: `1px solid ${t.line}`, borderRadius: 9, height: 30, flexShrink: 0 }}>
+                                        <button onClick={() => updateQty(idx, -1)} style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer" }}>
+                                            <MIcon name="minus" size={13} color={t.ink} w={2} />
                                         </button>
-                                    </>
+                                        <div style={{ minWidth: 24, textAlign: "center", fontFamily: F_NUM, fontSize: 13.5, fontWeight: 700 }}>{it.qty}</div>
+                                        <button onClick={() => updateQty(idx, 1)} style={{ width: 30, height: 30, background: t.btnBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 8px 8px 0", border: "none", cursor: "pointer" }}>
+                                            <MIcon name="plus" size={13} color="#fff" w={2} />
+                                        </button>
+                                    </div>
                                 )}
                             </div>
+                            </SwipeToDelete>
                         ))}
                     </Card>
                 )}

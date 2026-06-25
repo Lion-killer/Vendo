@@ -180,6 +180,49 @@ export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync
   );
 };
 
+// ─── Свайп-вліво для видалення рядка (без бібліотек, на pointer-подіях) ──────────
+// Тягнемо рядок вліво — з-під нього проступає червоний фон із кошиком; якщо відпустити
+// за порогом — спрацьовує onDelete, інакше повертається. Вертикальний скрол не блокуємо
+// (touchAction: pan-y). disabled — для нередагованих (проведених) замовлень.
+export const SwipeToDelete = ({ children, onDelete, t, disabled = false }) => {
+  const [dx, setDx] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const s = useRef(null);
+  const dxRef = useRef(0);
+  const MAX = 88, TRIGGER = 56;
+  if (disabled) return children;
+  const setX = (v) => { dxRef.current = v; setDx(v); };
+  const down = (e) => { s.current = { x: e.clientX, y: e.clientY, on: false }; };
+  const move = (e) => {
+    if (!s.current) return;
+    const ddx = e.clientX - s.current.x, ddy = e.clientY - s.current.y;
+    if (!s.current.on) {
+      if (Math.abs(ddx) > 8 && Math.abs(ddx) > Math.abs(ddy)) { s.current.on = true; setDragging(true); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } }
+      else if (Math.abs(ddy) > 8) { s.current = null; return; } // вертикальний скрол
+      else return;
+    }
+    setX(Math.max(-MAX, Math.min(0, ddx)));
+  };
+  const up = () => {
+    const on = s.current && s.current.on; s.current = null; setDragging(false);
+    if (!on) return;
+    const trigger = dxRef.current <= -TRIGGER;
+    setX(0);
+    if (trigger) onDelete && onDelete();
+  };
+  return (
+    <div style={{ position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, background: t.err, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 22 }}>
+        <MIcon name="trash" size={18} color="#fff" />
+      </div>
+      <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+        style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform .2s ease", touchAction: "pan-y", position: "relative", background: t.surface }}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 // ─── Базова картка ──────────────────────────────────────────────────────────────
 export const Card = ({ children, style = {}, t, ...rest }) => (
   <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 16, ...style }} {...rest}>
