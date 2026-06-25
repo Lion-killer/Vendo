@@ -35,6 +35,20 @@ const STATUS_COLORS = {
 };
 const colorFor = (status) => STATUS_COLORS[status] || "#F2C94C";
 
+// --- Локалізація message-рядків (#26): мова з Accept-Language (uk/ru/en, fallback en) ---
+const MESSAGES = {
+    conflict: { uk: "Замовлення змінили на сервері після ваших правок", ru: "Заказ изменили на сервере после ваших правок", en: "The order was changed on the server after your edits" },
+    notFound: { uk: "Замовлення не знайдено", ru: "Заказ не найден", en: "Order not found" },
+    cantDeletePosted: { uk: "Проведене замовлення не можна видалити", ru: "Проведённый заказ нельзя удалить", en: "A posted order cannot be deleted" },
+    deleted: { uk: "Замовлення видалено", ru: "Заказ удалён", en: "Order deleted" },
+    marked: { uk: "Помічено на видалення", ru: "Помечено на удаление", en: "Marked for deletion" }
+};
+const pickLang = (req) => {
+    const raw = String(req.headers['accept-language'] || '').toLowerCase();
+    return ['uk', 'ru', 'en'].find(l => raw.includes(l)) || 'en';
+};
+const msg = (req, key) => (MESSAGES[key] || {})[pickLang(req)] || (MESSAGES[key] || {}).en || key;
+
 const formatUAH = (n) => `${Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₴`;
 
 // Нормалізуємо вхідні позиції до { productId, qty, price }.
@@ -141,7 +155,7 @@ router.post('/orders', (req, res) => {
     if (existing && baseVersion != null && String(existing.version) !== String(baseVersion)) {
         return res.status(409).json({
             success: false, conflict: true,
-            message: "Замовлення змінили на сервері після ваших правок",
+            message: msg(req, 'conflict'),
             order: hydrateOrder(existing)
         });
     }
@@ -182,7 +196,7 @@ router.put('/orders/:id', (req, res) => {
 
     const existing = q.orderById.get(id);
     if (!existing) {
-        return res.status(404).json({ success: false, message: "Замовлення не знайдено" });
+        return res.status(404).json({ success: false, message: msg(req, 'notFound') });
     }
 
     const update = db.transaction(() => {
@@ -215,22 +229,22 @@ router.delete('/orders/:id', (req, res) => {
     const { id } = req.params;
     const existing = q.orderById.get(id);
     if (!existing) {
-        return res.status(404).json({ success: false, message: "Замовлення не знайдено" });
+        return res.status(404).json({ success: false, message: msg(req, 'notFound') });
     }
 
     // Проведене замовлення не можна видалити/позначити з додатку (спершу розпроводять у 1С).
     if (existing.status === "Проведено") {
-        return res.status(409).json({ success: false, message: "Проведене замовлення не можна видалити" });
+        return res.status(409).json({ success: false, message: msg(req, 'cantDeletePosted') });
     }
 
     if (existing.status === "Нове") {
         q.deleteOrder.run(id);   // order_items видаляються каскадно
-        return res.json({ success: true, deleted: true, message: "Замовлення видалено" });
+        return res.json({ success: true, deleted: true, message: msg(req, 'deleted') });
     }
 
     // Відправлене — помітка на видалення (як ПометкаУдаления в 1С).
     q.markOrderDeletion.run({ id, version: randomUUID() });
-    res.json({ success: true, marked: true, order: hydrateOrder(q.orderById.get(id)), message: "Помічено на видалення" });
+    res.json({ success: true, marked: true, order: hydrateOrder(q.orderById.get(id)), message: msg(req, 'marked') });
 });
 
 module.exports = router;
