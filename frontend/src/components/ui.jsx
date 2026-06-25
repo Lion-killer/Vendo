@@ -213,11 +213,15 @@ export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label =
   const open = dx <= -OPEN_AT;
   return (
     <div style={{ position: "relative", overflow: "hidden" }}>
-      <button onClick={(e) => { e.stopPropagation(); setX(0); onDelete && onDelete(); }}
-        style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: REVEAL, background: t.err, color: "#fff", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700 }}>
-        <MIcon name="trash" size={16} color="#fff" />
-        {label}
-      </button>
+      {/* Кнопку показуємо лише коли рядок відкривають/тягнуть — у закритому стані її
+          немає взагалі (щоб червоне не проступало під рядками). */}
+      {dx < 0 && (
+        <button onClick={(e) => { e.stopPropagation(); setX(0); onDelete && onDelete(); }}
+          style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: REVEAL, background: t.err, color: "#fff", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700 }}>
+          <MIcon name="trash" size={16} color="#fff" />
+          {label}
+        </button>
+      )}
       <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         onClickCapture={(e) => { if (armed.current) { armed.current = false; e.stopPropagation(); e.preventDefault(); return; } if (open) { e.stopPropagation(); e.preventDefault(); setX(0); } }}
         style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform .2s ease", touchAction: "pan-y", position: "relative", background: t.surface }}>
