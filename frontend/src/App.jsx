@@ -9,7 +9,8 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, fetchAuthedBlobRaw } from './api/client';
+import { prefetchImages } from './api/imageCache';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
 import { idSet, checkOrderRefs } from './api/refs';
@@ -138,6 +139,9 @@ export default function App() {
       setCategories(catRes);
       setCustomers(custRes);
       setOrders(ordRes);
+      // Проактивно кешуємо всі фото товарів для офлайну (вимога клієнта) — у фоні, не блокує UI.
+      const imgPaths = prodRes.filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
+      if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
       localStorage.setItem('cached_data_v2', JSON.stringify({
         products: prodRes, categories: catRes, customers: custRes, orders: ordRes
       }));

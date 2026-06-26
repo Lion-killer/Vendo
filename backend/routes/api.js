@@ -118,6 +118,13 @@ router.get('/products', (req, res) => {
     res.json(q.products.all());
 });
 
+// GET /products/:id/image — у 1С повертає Номенклатура.ОсновноеИзображение (бінарно).
+// Демо не зберігає бінарних зображень (img — емодзі/URL), тож завжди 404 — як 1С за
+// відсутності зображення. Існує для сумісності контракту.
+router.get('/products/:id/image', (req, res) => {
+    res.status(404).end();
+});
+
 router.get('/categories', (req, res) => {
     res.json(q.categories.all().map(c => ({ ...c, expanded: !!c.expanded })));
 });

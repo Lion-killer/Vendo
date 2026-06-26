@@ -50,6 +50,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="e0ac9bc0-54a7-4460-b865-8eb9cea1ea31">
+				<Properties>
+					<Name>ProductImage</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>ProductImage</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/products/{id}/image</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="76c0100d-2dff-409f-93a1-cd7fce00012b">
+						<Properties>
+							<Name>Get</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Get</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>GET</HTTPMethod>
+							<Handler>ProductImageGet</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 			<URLTemplate uuid="429af04a-0b87-419c-aece-968a194a06cb">
 				<Properties>
 					<Name>Order</Name>

@@ -37,6 +37,18 @@
         "responses": { "200": { "description": "Список товарів", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
       }
     },
+    "/products/{id}/image": {
+      "get": {
+        "tags": ["Довідники"], "summary": "Основне зображення товару (1С: Номенклатура.ОсновноеИзображение)",
+        "description": "Бінарний вміст зображення. Захищено (X-Device-Id + bearer) — тягнути через fetch із заголовками, не голим <img src>. У демо-бекенді завжди 404 (немає бінарних зображень).",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "GUID номенклатури (Product.id)" } ],
+        "responses": {
+          "200": { "description": "Байти зображення", "content": { "image/png": {}, "image/jpeg": {} } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "description": "Товар або зображення відсутні" }
+        }
+      }
+    },
     "/categories": {
       "get": {
         "tags": ["Довідники"], "summary": "Групи номенклатури (повна ієрархія через parentId)",
@@ -132,7 +144,7 @@
           "unit": { "type": "string" },
           "category": { "type": "string" },
           "categoryId": { "type": "integer", "nullable": true },
-          "img": { "type": "string" }
+          "img": { "type": "string", "description": "Відносний шлях бінарного ендпоінта зображення (/products/{id}/image), якщо є ОсновноеИзображение; інакше \"\". Тягнути через fetch із заголовками." }
         }
       },
       "Category": {

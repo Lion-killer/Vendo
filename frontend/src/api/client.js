@@ -53,6 +53,29 @@ export const fetchCustomers = async () =>
 export const fetchCategories = async () =>
     (await tfetch(`${apiUrl()}/categories`, { headers: h() })).json();
 
+// Завантажити захищене бінарне зображення за відносним шляхом API (напр. поле Product.img
+// = "/products/{id}/image") і повернути blob-URL для <img src>. Заголовки (X-Device-Id +
+// bearer) додаються, бо ендпоінт захищений і голий <img src> не пройшов би. null — якщо
+// немає (404). Викликач має зробити URL.revokeObjectURL(url) при розмонтуванні.
+export const fetchAuthedBlob = async (relPath) => {
+    const blob = await fetchAuthedBlobRaw(relPath);
+    return blob ? URL.createObjectURL(blob) : null;
+};
+
+// Сирий Blob (для кешу в IndexedDB — imageCache). null при помилці/404.
+export const fetchAuthedBlobRaw = async (relPath) => {
+    try {
+        const res = await tfetch(`${apiUrl()}${relPath}`, { headers: h() });
+        if (!res.ok) return null;
+        return await res.blob();
+    } catch (e) {
+        return null;
+    }
+};
+
+// Основне зображення товару за id (зручний шорткат над fetchAuthedBlob).
+export const fetchProductImage = (id) => fetchAuthedBlob(`/products/${id}/image`);
+
 export const fetchOrders = async (startDate, endDate) => {
     let url = `${apiUrl()}/orders`;
     const params = new URLSearchParams();

@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { fetchAuthedBlobRaw } from '../api/client';
+import { loadCachedImage } from '../api/imageCache';
 import { F_NUM } from '../theme';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
@@ -115,7 +117,22 @@ const ZoomImage = ({ src, alt }) => {
 export const ProductImage = ({ t, img, sku, name, barcode, price, stock, unit, size = 56, radius = 10 }) => {
   const [err, setErr] = React.useState(false);
   const [open, setOpen] = React.useState(false);
-  const show = img && !err;
+  // img-шлях виду "/products/{id}/image" — захищений ендпоінт: вантажимо blob із заголовками.
+  // Звичайний URL/емодзі-фолбек використовуємо напряму.
+  const isApi = typeof img === "string" && img.charAt(0) === "/";
+  const [blobSrc, setBlobSrc] = React.useState(null);
+  React.useEffect(() => {
+    setErr(false);
+    if (!isApi) { setBlobSrc(null); return; }
+    let alive = true, url = null;
+    loadCachedImage(img, fetchAuthedBlobRaw).then(u => {
+      if (alive) { url = u; setBlobSrc(u); }
+      else if (u) URL.revokeObjectURL(u);
+    });
+    return () => { alive = false; if (url) URL.revokeObjectURL(url); };
+  }, [img]);
+  const src = isApi ? blobSrc : img;
+  const show = src && !err;
   return (
     <>
       <div onClick={show ? (e) => { e.stopPropagation(); setOpen(true); } : undefined} style={{
@@ -125,13 +142,13 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, stock, unit, s
         cursor: show ? "zoom-in" : "default",
       }}>
         {show
-          ? <img src={img} alt={sku || ""} loading="lazy" onError={() => setErr(true)}
+          ? <img src={src} alt={sku || ""} loading="lazy" onError={() => setErr(true)}
               style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           : <span style={{ fontFamily: F_NUM, fontSize: size > 44 ? 9 : 8, color: t.inkMuted }}>{sku}</span>}
       </div>
       {open && (
         <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
-          <ZoomImage src={img} alt={sku} />
+          <ZoomImage src={src} alt={sku} />
           <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} aria-label="Закрити"
             style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
             <MIcon name="x" size={22} color="#fff" />
