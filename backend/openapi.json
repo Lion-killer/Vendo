@@ -14,7 +14,7 @@
     { "name": "Довідники" },
     { "name": "Замовлення" }
   ],
-  "security": [ { "DeviceId": [], "BearerAuth": [] } ],
+  "security": [ { "DeviceId": [], "AuthToken": [] } ],
   "paths": {
     "/auth": {
       "post": {
@@ -110,7 +110,7 @@
   "components": {
     "securitySchemes": {
       "DeviceId": { "type": "apiKey", "in": "header", "name": "X-Device-Id", "description": "GUID мобільного пристрою (фільтрація даних)" },
-      "BearerAuth": { "type": "http", "scheme": "bearer", "description": "Токен, виданий у /auth" }
+      "AuthToken": { "type": "apiKey", "in": "header", "name": "X-Auth-Token", "description": "Токен, виданий у /auth. У власному заголовку (НЕ Authorization), бо 1С перехоплює Authorization для автентифікації до ІБ." }
     },
     "responses": {
       "Unauthorized": { "description": "Не авторизовано (немає/невірний пристрій або токен)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },

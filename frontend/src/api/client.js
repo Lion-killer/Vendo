@@ -13,8 +13,10 @@ const h = (extra = {}) => {
     const headers = { ...extra };
     const d = deviceId();
     if (d) headers['X-Device-Id'] = d;
+    // Токен носимо в X-Auth-Token, а НЕ в Authorization: заголовок Authorization 1С
+    // перехоплює для автентифікації до ІБ (Bearer там → 401 ще до обробника сервісу).
     const tk = token();
-    if (tk) headers['Authorization'] = `Bearer ${tk}`;
+    if (tk) headers['X-Auth-Token'] = tk;
     // #26: мова інтерфейсу → бекенд локалізує message-рядки (uk/ru/en).
     const lang = localStorage.getItem('vendo_lang');
     if (lang) headers['Accept-Language'] = lang;
