@@ -10,6 +10,14 @@ export const newId = () => {
     });
 };
 
+// Простий чернетковий номер для нового замовлення до синхронізації (ЧН-N, лічильник у
+// localStorage). Сервер при синхронізації присвоїть власний ЗМ-номер — це лише для показу.
+export const nextDraftNum = () => {
+    const seq = (parseInt(localStorage.getItem('vendo_draft_seq') || '0', 10) || 0) + 1;
+    localStorage.setItem('vendo_draft_seq', String(seq));
+    return `ЧН-${seq}`;
+};
+
 export const getLocalOrders = () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);

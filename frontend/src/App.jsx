@@ -11,7 +11,7 @@ import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder } from './api/client';
 import { getSession, saveSession, clearSession } from './api/session';
-import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError } from './api/localOrders';
+import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
 import { idSet, checkOrderRefs } from './api/refs';
 
 // Сума з рядка ("4 280 ₴") або числа → Number.
@@ -242,6 +242,8 @@ export default function App() {
     setEditStatus("Нове");
     setEditLocked(false);
     setEditDate(null);
+    setEditNum(nextDraftNum());
+    setEditVersion(null);
     orderHandled.current = false;
     notify(tr("toast.copied"));
   };
@@ -271,7 +273,7 @@ export default function App() {
       setEditLocked(false);
       setEditDate(null);
       setEditStatus("Нове");
-      setEditNum(null);
+      setEditNum(nextDraftNum());
       setEditVersion(null);
       orderBaseline.current = orderSig([], null, null);
     } else if (s === "catalog" && !params.keepOrder) {
@@ -282,7 +284,7 @@ export default function App() {
       setEditLocked(false);
       setEditDate(null);
       setEditStatus("Нове");
-      setEditNum(null);
+      setEditNum(nextDraftNum());
       setEditVersion(null);
       orderBaseline.current = orderSig([], null, null);
     }
