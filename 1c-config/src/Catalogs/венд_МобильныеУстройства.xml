@@ -855,6 +855,7 @@
 					<DataHistory>Use</DataHistory>
 				</Properties>
 			</Attribute>
+			<Template>ГенераторQR</Template>
 		</ChildObjects>
 	</Catalog>
 </MetaDataObject>
