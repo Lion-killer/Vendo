@@ -248,6 +248,8 @@
 		</Properties>
 		<ChildObjects>
 			<Language>Русский</Language>
+			<Language>Українська</Language>
+			<Language>English</Language>
 			<Role>венд_ОсновнаяРоль</Role>
 			<HTTPService>венд_МобильноеПриложение</HTTPService>
 			<Catalog>венд_МобильныеУстройства</Catalog>

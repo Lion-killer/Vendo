@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xen="http://v8.1c.ru/8.3/xcf/enums" xmlns:xpr="http://v8.1c.ru/8.3/xcf/predef" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
 	<Catalog uuid="050b36b5-d9be-49ea-99da-c3b943ec16e6">
 		<InternalInfo>
@@ -29,6 +29,14 @@
 				<v8:item>
 					<v8:lang>ru</v8:lang>
 					<v8:content>Мобильные устройства</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Мобільні пристрої</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Mobile devices</v8:content>
 				</v8:item>
 			</Synonym>
 			<Comment />
@@ -331,6 +339,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Идентификатор устройства</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Ідентифікатор пристрою</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Device identifier</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<Type>
@@ -375,6 +391,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Склад</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Склад</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Warehouse</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<Type>
@@ -415,6 +439,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Тип цен</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Тип цін</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Price type</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<Type>
@@ -454,6 +486,14 @@
 						<v8:item>
 							<v8:lang>ru</v8:lang>
 							<v8:content>Менеджер</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Менеджер</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Manager</v8:content>
 						</v8:item>
 					</Synonym>
 					<Comment />
@@ -506,6 +546,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Контрагенты</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Контрагенти</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Counterparties</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<ToolTip />
@@ -548,6 +596,14 @@
 								<v8:item>
 									<v8:lang>ru</v8:lang>
 									<v8:content>Контрагент</v8:content>
+								</v8:item>
+								<v8:item>
+									<v8:lang>uk</v8:lang>
+									<v8:content>Контрагент</v8:content>
+								</v8:item>
+								<v8:item>
+									<v8:lang>en</v8:lang>
+									<v8:content>Counterparty</v8:content>
 								</v8:item>
 							</Synonym>
 							<Comment />
@@ -598,6 +654,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Товары</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Товари</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Products</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<ToolTip />
@@ -641,6 +705,14 @@
 									<v8:lang>ru</v8:lang>
 									<v8:content>Номенклатура</v8:content>
 								</v8:item>
+								<v8:item>
+									<v8:lang>uk</v8:lang>
+									<v8:content>Номенклатура</v8:content>
+								</v8:item>
+								<v8:item>
+									<v8:lang>en</v8:lang>
+									<v8:content>Item</v8:content>
+								</v8:item>
 							</Synonym>
 							<Comment />
 							<Type>
@@ -679,6 +751,14 @@
 						<v8:item>
 							<v8:lang>ru</v8:lang>
 							<v8:content>Авто проведение</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Автопроведення</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Auto-posting</v8:content>
 						</v8:item>
 					</Synonym>
 					<Comment />
@@ -720,6 +800,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Код привязки</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Код прив'язки</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Pairing code</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<Type>
@@ -736,6 +824,14 @@
 						<v8:item>
 							<v8:lang>ru</v8:lang>
 							<v8:content>Одноразовый код для привязки устройства (QR). Гасится после получения токена.</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Одноразовий код для прив'язки пристрою (QR). Гаситься після отримання токена.</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>One-time device pairing code (QR). Cleared after the token is issued.</v8:content>
 						</v8:item>
 					</ToolTip>
 					<MarkNegatives>false</MarkNegatives>
@@ -769,6 +865,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Хеш токена</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Хеш токена</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Token hash</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<Type>
@@ -785,6 +889,14 @@
 						<v8:item>
 							<v8:lang>ru</v8:lang>
 							<v8:content>SHA-256 (base64) выданного устройству токена. Сам токен не хранится.</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>SHA-256 (base64) виданого пристрою токена. Сам токен не зберігається.</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>SHA-256 (base64) of the token issued to the device. The token itself is not stored.</v8:content>
 						</v8:item>
 					</ToolTip>
 					<MarkNegatives>false</MarkNegatives>
@@ -818,6 +930,14 @@
 							<v8:lang>ru</v8:lang>
 							<v8:content>Заблокировано</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Заблоковано</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Blocked</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment />
 					<Type>
@@ -830,6 +950,14 @@
 						<v8:item>
 							<v8:lang>ru</v8:lang>
 							<v8:content>Отзыв доступа: заблокированное устройство не проходит авторизацию.</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Відкликання доступу: заблокований пристрій не проходить авторизацію.</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Access revocation: a blocked device fails authorization.</v8:content>
 						</v8:item>
 					</ToolTip>
 					<MarkNegatives>false</MarkNegatives>
