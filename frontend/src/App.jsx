@@ -232,7 +232,7 @@ export default function App() {
         }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; continue; }
         const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion);
-        if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true); failed++; continue; }
+        if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); failed++; continue; }
         if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
         removeLocalOrder(o.id); sent++;
       } catch (e) {

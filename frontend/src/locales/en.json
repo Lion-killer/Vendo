@@ -88,6 +88,7 @@
     "delete": "Delete",
     "markDelete": "Mark for deletion",
     "conflictMsg": "The order was changed on the server after your edits. Choose which version to keep.",
+    "conflictPosted": "The order is already posted in 1C — your edits cannot be applied. It must be unposted in 1C first. You can only take the server version.",
     "overwrite": "Overwrite mine",
     "takeServer": "Take server's",
     "ofTotal": "{{shown}} of {{total}}",

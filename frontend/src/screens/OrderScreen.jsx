@@ -18,7 +18,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const productMissing = (p) => products.length > 0 && p?.id != null && !prodIds.has(p.id);
     const customerMissing = !!(customers.length > 0 && editCustomer?.id && !idSet(customers).has(editCustomer.id));
     // Конфлікт: серверну версію змінили після наших правок (позначено під час doSync).
-    const conflicted = !!(editOrderId && getLocalOrder(editOrderId)?.conflict);
+    const conflictLocal = editOrderId ? getLocalOrder(editOrderId) : null;
+    const conflicted = !!(conflictLocal && conflictLocal.conflict);
+    // Проведене на сервері перезаписати НЕ можна (1С відмовляє навіть форсом) — лишаємо
+    // тільки «взяти серверне».
+    const conflictPosted = conflicted && conflictLocal.serverState === 'posted';
     const statusColor = status === "Видалено" ? t.err : status === "Проведено" ? t.inkSoft : status === "Відправлено" ? t.ok : t.warn;
     const customer = editCustomer; // без фолбеку: не вибрано — показуємо плейсхолдер
     const setCustomer = setEditCustomer;
@@ -241,10 +245,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <div style={{ margin: "0 16px 12px", padding: "12px 14px", background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <div style={{ flexShrink: 0, marginTop: 1, display: "flex" }}><MIcon name="bell" size={15} color={t.err} /></div>
-                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>{tr("order.conflictMsg")}</div>
+                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>{conflictPosted ? tr("order.conflictPosted") : (conflictLocal?.syncError || tr("order.conflictMsg"))}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                        <button onClick={resolveOverwrite} style={{ flex: 1, height: 38, borderRadius: 10, background: t.err, color: "#fff", border: "none", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{tr("order.overwrite")}</button>
+                        {/* Проведене: лише «взяти серверне» (перезапис заблоковано на сервері). */}
+                        {!conflictPosted && <button onClick={resolveOverwrite} style={{ flex: 1, height: 38, borderRadius: 10, background: t.err, color: "#fff", border: "none", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{tr("order.overwrite")}</button>}
                         <button onClick={resolveTakeServer} style={{ flex: 1, height: 38, borderRadius: 10, background: t.surface, color: t.ink, border: `1px solid ${t.line}`, fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" }}>{tr("order.takeServer")}</button>
                     </div>
                 </div>

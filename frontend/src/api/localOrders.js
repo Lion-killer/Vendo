@@ -59,12 +59,13 @@ export const updateLocalOrderStatus = (id, status) => {
 
 // Позначити запис помилкою синхронізації (лишається в черзі для повторної спроби).
 // conflict=true — серверну версію змінили після правок (оптимістична конкуренція).
-export const setLocalOrderError = (id, message, conflict = false) => {
+export const setLocalOrderError = (id, message, conflict = false, serverState = null) => {
     const orders = getLocalOrders();
     const i = orders.findIndex(o => o.id === id);
     if (i >= 0) {
         orders[i].syncError = message || "Помилка";
         orders[i].conflict = !!conflict;
+        orders[i].serverState = serverState; // 'posted'|'deleted'|'edited' — для діалогу вирішення
         orders[i].syncAttempts = (orders[i].syncAttempts || 0) + 1;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
     }
