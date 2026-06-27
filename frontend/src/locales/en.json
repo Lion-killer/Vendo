@@ -135,6 +135,11 @@
     "darkTheme": "Dark theme",
     "on": "On",
     "off": "Off",
+    "sendLog": "Send log to developer",
+    "sendLog_server": "Sent ✓",
+    "sendLog_share": "Opened ✓",
+    "sendLog_clipboard": "Copied",
+    "sendLog_fail": "Failed",
     "logout": "Log out"
   },
   "toast": {

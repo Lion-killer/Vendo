@@ -1,4 +1,5 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { logInfo, logWarn, logError } from '../logger';
 
 // Адреса бекенду й ідентифікатор пристрою беруться з QR-коду (зберігаються в
 // localStorage під час логіну). DEFAULT_API — запасний для dev/емулятора.
@@ -28,10 +29,25 @@ const h = (extra = {}) => {
 // fetch із таймаутом — без нього недоступний бекенд висить до системного TCP-таймауту
 // (~30 с) і офлайн виявляється надто пізно.
 const TIMEOUT = 8000;
-const tfetch = (url, opts = {}, timeout = TIMEOUT) => {
+// Шлях без хоста — для компактного логу (метод + ендпоінт, без секретів у query немає).
+const shortPath = (url) => { try { return new URL(url).pathname; } catch { return url; } };
+const tfetch = async (url, opts = {}, timeout = TIMEOUT) => {
     const ctrl = new AbortController();
     const id = setTimeout(() => ctrl.abort(), timeout);
-    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
+    const method = (opts.method || 'GET').toUpperCase();
+    const path = shortPath(url);
+    const started = Date.now();
+    try {
+        const res = await fetch(url, { ...opts, signal: ctrl.signal });
+        const ms = Date.now() - started;
+        (res.ok ? logInfo : logWarn)(`${method} ${path} → ${res.status}`, `${ms}ms`);
+        return res;
+    } catch (e) {
+        logError(`${method} ${path} → помилка мережі`, e && e.name === 'AbortError' ? `таймаут ${timeout}ms` : String(e && e.message || e));
+        throw e;
+    } finally {
+        clearTimeout(id);
+    }
 };
 
 // Обмін одноразового коду прив'язки на bearer-токен. Токен зберігаємо локально —
@@ -135,9 +151,11 @@ export const restoreOrder = async (id) =>
         body: JSON.stringify({ deletionMark: false }),
     })).json();
 
+// Дешевий пінг доступності: /health (HEAD, без авторизації й без запитів до БД) —
+// не вантажить сервер кожні 15с, на відміну від важкого /products.
 export const pingServer = async () => {
     try {
-        const res = await tfetch(`${apiUrl()}/products`, { method: 'HEAD', headers: h() }, 5000);
+        const res = await tfetch(`${apiUrl()}/health`, { method: 'HEAD' }, 5000);
         return res.ok;
     } catch (e) {
         return false;

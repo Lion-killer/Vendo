@@ -137,6 +137,11 @@
     "darkTheme": "Темна тема",
     "on": "Увімкнено",
     "off": "Вимкнено",
+    "sendLog": "Надіслати лог розробнику",
+    "sendLog_server": "Надіслано ✓",
+    "sendLog_share": "Відкрито ✓",
+    "sendLog_clipboard": "Скопійовано",
+    "sendLog_fail": "Помилка",
     "logout": "Вийти"
   },
   "toast": {

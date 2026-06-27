@@ -135,15 +135,18 @@ export default function App() {
       const [prodRes, catRes, custRes, ordRes] = await Promise.all([
         fetchProducts(), fetchCategories(), fetchCustomers(), fetchOrders()
       ]);
-      setProducts(prodRes);
-      setCategories(catRes);
-      setCustomers(custRes);
-      setOrders(ordRes);
+      // Сервер може повернути {success:false,message} замість масиву (помилка хендлера 1С);
+      // коерсимо до масиву, інакше .map на екрані валить додаток у білий екран.
+      const arr = (x) => Array.isArray(x) ? x : [];
+      setProducts(arr(prodRes));
+      setCategories(arr(catRes));
+      setCustomers(arr(custRes));
+      setOrders(arr(ordRes));
       // Проактивно кешуємо всі фото товарів для офлайну (вимога клієнта) — у фоні, не блокує UI.
-      const imgPaths = prodRes.filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
+      const imgPaths = arr(prodRes).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
       if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
       localStorage.setItem('cached_data_v2', JSON.stringify({
-        products: prodRes, categories: catRes, customers: custRes, orders: ordRes
+        products: arr(prodRes), categories: arr(catRes), customers: arr(custRes), orders: arr(ordRes)
       }));
       localStorage.setItem('vendo_last_sync', String(Date.now())); // час останньої успішної синхронізації
       setIsOnline(true);

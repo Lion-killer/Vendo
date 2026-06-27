@@ -4,6 +4,7 @@ import { MIcon, Card, F_NUM } from '../components/ui';
 import { localeTag, fmtMoney as fmtCurLocale, setLang, SUPPORTED } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
+import { sendLog } from '../logger';
 
 // Розбір суми з рядка ("4 280 ₴" / "1 078.00 ₴") або числа → Number.
 const parseMoney = (v) => {
@@ -32,6 +33,11 @@ const syncLabel = (ts, tr) => {
 export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme }) => {
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
+    const [logState, setLogState] = useState(null); // null | 'sending' | 'server' | 'share' | 'clipboard' | 'fail'
+    const doSendLog = async () => {
+        setLogState('sending');
+        setLogState((await sendLog('Ручне надсилання з налаштувань')) || 'fail');
+    };
 
     // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
     // ("щойно" → "1 хв тому" → …). Хвилинна гранулярність — навантаження мінімальне.
@@ -195,6 +201,15 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                                 <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? t.accent : t.inkMuted }}>{isDark ? tr("profile.on") : tr("profile.off")}</span>
                             </button>
                         )}
+                        <button onClick={doSendLog} disabled={logState === 'sending'} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10, opacity: logState === 'sending' ? 0.6 : 1 }}>
+                            <MIcon name="send" size={20} color={t.ink} />
+                            <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.sendLog")}</span>
+                            {logState && logState !== 'sending' && (
+                                <span style={{ fontSize: 12, fontWeight: 700, color: logState === 'fail' ? t.err : t.ok }}>
+                                    {tr(`profile.sendLog_${logState}`)}
+                                </span>
+                            )}
+                        </button>
                         <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.errSoft, border: `1px solid ${t.err}33`, color: t.err, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
                             <MIcon name="logout" size={20} color={t.err} /> {tr("profile.logout")}
                         </button>
