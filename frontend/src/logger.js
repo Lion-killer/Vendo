@@ -87,7 +87,7 @@ const shareReport = async (text) => {
         try {
             const { zipSync, strToU8 } = await import('fflate');
             const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const zipped = zipSync({ [`vendo-log-${stamp}.txt`]: strToU8(text) }, { level: 6 });
+            const zipped = zipSync({ [`vendo-log-${stamp}.log`]: strToU8(text) }, { level: 6 });
             const { Filesystem, Directory } = await import('@capacitor/filesystem');
             const fileName = `vendo-log-${Date.now()}.zip`;
             // Без encoding → Filesystem трактує data як base64 і пише байти.
