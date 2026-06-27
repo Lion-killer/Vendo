@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM } from '../components/ui';
+import { MIcon, Card, F_NUM, ConfirmDialog } from '../components/ui';
 import { localeTag, fmtMoney as fmtCurLocale, setLang, SUPPORTED } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
@@ -32,6 +32,7 @@ const syncLabel = (ts, tr) => {
 export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData }) => {
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
+    const [clearConfirm, setClearConfirm] = useState(null); // {body} коли відкрито діалог очистки
 
     // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
     // ("щойно" → "1 хв тому" → …). Хвилинна гранулярність — навантаження мінімальне.
@@ -203,8 +204,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         {onClearData && (
                             <button onClick={() => {
                                 const pending = getLocalOrders().length;
-                                const msg = pending > 0 ? tr("profile.clearDataPending", { count: pending }) : tr("profile.clearDataConfirm");
-                                if (window.confirm(msg)) { setShowProfile(false); onClearData(); }
+                                setClearConfirm({ body: pending > 0 ? tr("profile.clearDataPending", { count: pending }) : tr("profile.clearDataConfirm") });
                             }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
                                 <MIcon name="trash" size={20} color={t.ink} />
                                 <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.clearData")}</span>
@@ -217,6 +217,13 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                 </div>
             )}
 
+            {clearConfirm && (
+                <ConfirmDialog t={t} icon="trash"
+                    title={tr("profile.clearData")} body={clearConfirm.body}
+                    confirmLabel={tr("profile.clearData")} cancelLabel={tr("common.cancel")}
+                    onConfirm={() => { setClearConfirm(null); setShowProfile(false); onClearData && onClearData(); }}
+                    onCancel={() => setClearConfirm(null)} />
+            )}
         </div>
     );
 };

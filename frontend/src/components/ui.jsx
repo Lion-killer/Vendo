@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchAuthedBlobRaw } from '../api/client';
 import { loadCachedImage } from '../api/imageCache';
-import { F_NUM } from '../theme';
+import { F_NUM, F_UI } from '../theme';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
 // тінь зліва/справа зʼявляється лише коли є куди гортати (чіпи фільтра, хлібні крихти).
@@ -279,6 +279,25 @@ export const ListPlaceholder = ({ loading, t, children }) => (
     {loading
       ? <div style={{ width: 30, height: 30, border: `3px solid ${t.line}`, borderTopColor: t.accent, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
       : children}
+  </div>
+);
+
+// ─── Діалог підтвердження у стилі додатка (замість нативного window.confirm) ───────
+export const ConfirmDialog = ({ t, icon = "trash", danger = true, title, body, confirmLabel = "OK", cancelLabel = "Скасувати", onConfirm, onCancel }) => (
+  <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 2300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(2px)" }}>
+    <div onClick={(e) => e.stopPropagation()} style={{ background: t.surface, borderRadius: 20, padding: 24, width: "100%", maxWidth: 340, boxShadow: "0 16px 40px rgba(0,0,0,0.3)", fontFamily: F_UI }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 24, background: (danger ? t.err : t.accent) + "22", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <MIcon name={icon} size={24} color={danger ? t.err : t.accent} />
+        </div>
+      </div>
+      {title && <h3 style={{ color: t.ink, fontSize: 18, fontWeight: 800, textAlign: "center", margin: "0 0 8px" }}>{title}</h3>}
+      {body && <p style={{ color: t.inkMuted, fontSize: 14, lineHeight: 1.45, textAlign: "center", margin: "0 0 24px" }}>{body}</p>}
+      <div style={{ display: "flex", gap: 12 }}>
+        <button onClick={onCancel} style={{ flex: 1, padding: 12, background: t.surfaceMuted, border: `1px solid ${t.line}`, borderRadius: 12, color: t.ink, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>{cancelLabel}</button>
+        <button onClick={onConfirm} style={{ flex: 1, padding: 12, background: danger ? t.err : t.accent, border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>{confirmLabel}</button>
+      </div>
+    </div>
   </div>
 );
 

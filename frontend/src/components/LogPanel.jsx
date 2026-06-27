@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEntries, clearLog } from '../logger';
 import { useLogSend } from '../useLogSend';
+import { ConfirmDialog } from './ui';
 
 // Панель журналу: показує записи логу (за замовчуванням лише помилки/попередження),
 // дає надіслати лог розробнику (sendLog: API → файл+«Поділитися» → текст → буфер) і
@@ -11,13 +12,14 @@ const LEVEL_LABEL = { server: 'sendLog_server', share: 'sendLog_share', clipboar
 export const LogPanel = ({ t, onClose }) => {
     const { t: tr } = useTranslation();
     const [all, setAll] = useState(false);
+    const [confirmClear, setConfirmClear] = useState(false);
     const { state: sendState, send: doSend, sending } = useLogSend('Надсилання з журналу помилок');
 
     // Читаємо журнал на кожному рендері (не знімком): після спроби надсилання стан
     // змінюється → перемальовка → одразу видно нові записи (зокрема причину збою).
     const entries = getEntries().slice().reverse(); // найновіші зверху
     const shown = all ? entries : entries.filter(e => e.level !== 'info');
-    const doClear = () => { if (window.confirm(tr('log.clearConfirm'))) { clearLog(); onClose(); } };
+    const doClear = () => setConfirmClear(true);
 
     const lvlColor = (lvl) => lvl === 'error' ? t.err : lvl === 'warn' ? t.warn : t.inkMuted;
     const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
@@ -63,6 +65,14 @@ export const LogPanel = ({ t, onClose }) => {
                     </div>
                 ))}
             </div>
+
+            {confirmClear && (
+                <ConfirmDialog t={t} icon="trash"
+                    title={tr('log.title')} body={tr('log.clearConfirm')}
+                    confirmLabel={tr('log.clear')} cancelLabel={tr('common.cancel')}
+                    onConfirm={() => { clearLog(); onClose(); }}
+                    onCancel={() => setConfirmClear(false)} />
+            )}
         </div>
     );
 };
