@@ -202,12 +202,9 @@ export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync
   const btn = { width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
   return (
     <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: 16, zIndex: 1500, display: "flex", gap: 8 }}>
-      <div style={{ ...btn, position: "relative" }} aria-label="Сповіщення">
-        <MIcon name="bell" size={18} color={t.ink} />
-        {pending > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
-      </div>
-      <button onClick={onSync} aria-label="Синхронізувати" style={{ ...btn, cursor: "pointer", fontFamily: "inherit" }}>
+      <button onClick={onSync} aria-label="Синхронізувати" style={{ ...btn, position: "relative", cursor: "pointer", fontFamily: "inherit" }}>
         <div style={{ animation: syncing ? "spin 1s linear infinite" : "none", display: "flex" }}><MIcon name="sync" size={18} color={t.ink} /></div>
+        {pending > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
       </button>
       <OnlineIndicator t={t} online={online} connecting={connecting} />
     </div>
