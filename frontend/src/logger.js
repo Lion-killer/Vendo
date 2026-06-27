@@ -86,13 +86,16 @@ const postToServer = async () => {
         const { Capacitor, CapacitorHttp } = await import('@capacitor/core');
         if (Capacitor.isNativePlatform()) {
             const res = await CapacitorHttp.post({ url, headers, data: body });
-            return res.status >= 200 && res.status < 300;
+            if (res.status >= 200 && res.status < 300) return true;
+            logWarn('Лог: API /logs відповів помилкою', 'HTTP ' + res.status);
+            return false;
         }
         const ctrl = new AbortController();
         const id = setTimeout(() => ctrl.abort(), 10000);
         const res = await fetch(url, {
             method: 'POST', headers, body: JSON.stringify(body), signal: ctrl.signal,
         }).finally(() => clearTimeout(id));
+        if (!res.ok) logWarn('Лог: API /logs відповів помилкою', 'HTTP ' + res.status);
         return res.ok;
     } catch (e) { logWarn('Лог: API /logs недоступний', String(e && e.message || e)); return false; }
 };
