@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getEntries, clearLog, sendLog } from '../logger';
+import { getEntries, clearLog } from '../logger';
+import { useLogSend } from '../useLogSend';
 
 // Панель журналу: показує записи логу (за замовчуванням лише помилки/попередження),
 // дає надіслати лог розробнику (sendLog: API → файл+«Поділитися» → текст → буфер) і
@@ -10,15 +11,10 @@ const LEVEL_LABEL = { server: 'sendLog_server', share: 'sendLog_share', clipboar
 export const LogPanel = ({ t, onClose }) => {
     const { t: tr } = useTranslation();
     const [all, setAll] = useState(false);
-    const [sendState, setSendState] = useState(null); // null|'sending'|server|share|clipboard|fail
     const [entries] = useState(() => getEntries().slice().reverse()); // найновіші зверху
+    const { state: sendState, send: doSend, sending } = useLogSend('Надсилання з журналу помилок');
 
     const shown = all ? entries : entries.filter(e => e.level !== 'info');
-
-    const doSend = async () => {
-        setSendState('sending');
-        setSendState((await sendLog('Надсилання з журналу помилок')) || 'fail');
-    };
     const doClear = () => { clearLog(); onClose(); };
 
     const lvlColor = (lvl) => lvl === 'error' ? t.err : lvl === 'warn' ? t.warn : t.inkMuted;
@@ -37,12 +33,12 @@ export const LogPanel = ({ t, onClose }) => {
 
             {/* Дії */}
             <div style={{ display: 'flex', gap: 10, padding: '12px 16px' }}>
-                <button onClick={doSend} disabled={sendState === 'sending'} style={{ flex: 1, height: 46, borderRadius: 12, background: t.accent, color: '#fff', border: 'none', fontSize: 14.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sendState === 'sending' ? 0.6 : 1 }}>
-                    {sendState === 'sending' ? tr('log.sending') : tr('profile.sendLog')}
+                <button onClick={doSend} disabled={sending} style={{ flex: 1, height: 46, borderRadius: 12, background: t.accent, color: '#fff', border: 'none', fontSize: 14.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sending ? 0.6 : 1 }}>
+                    {sending ? tr('log.sending') : tr('profile.sendLog')}
                 </button>
                 <button onClick={doClear} style={{ width: 46, height: 46, borderRadius: 12, background: t.surfaceMuted, color: t.err, border: `1px solid ${t.line}`, fontSize: 18, cursor: 'pointer', fontFamily: 'inherit' }} title={tr('log.clear')}>🗑</button>
             </div>
-            {sendState && sendState !== 'sending' && (
+            {LEVEL_LABEL[sendState] && (
                 <div style={{ padding: '0 16px 8px', fontSize: 13, fontWeight: 600, color: sendState === 'fail' ? t.err : t.ok }}>
                     {tr(`profile.${LEVEL_LABEL[sendState]}`)}
                 </div>
