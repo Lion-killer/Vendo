@@ -146,6 +146,7 @@
     "saved": "Saved {{label}} · {{date}}",
     "copied": "Order copied to a new one",
     "offline": "No connection",
+    "loadError": "Server load error: {{what}}",
     "syncResult": "Sync: {{parts}}",
     "syncNothing": "Nothing to sync",
     "syncSent": "sent {{count}}",

@@ -11,6 +11,7 @@ import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, fetchAuthedBlobRaw } from './api/client';
 import { prefetchImages } from './api/imageCache';
+import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
 import { idSet, checkOrderRefs } from './api/refs';
@@ -145,6 +146,18 @@ export default function App() {
       setCategories(arr(catRes));
       setCustomers(arr(custRes));
       setOrders(arr(ordRes));
+      // Якась колекція прийшла не масивом → сервер повернув {success:false}. Не валимо
+      // додаток (вже коерсили), але повідомляємо користувача (Snackbar) і пишемо в лог,
+      // щоб порожній екран не виглядав «мовчазним». Тихі фонові перечитування не спамлять.
+      const failed = [];
+      let serverMsg = "";
+      const checkRes = (res, key) => { if (!Array.isArray(res)) { failed.push(tr(key)); if (res && res.message) serverMsg = res.message; } };
+      checkRes(prodRes, "nav.catalog"); checkRes(catRes, "nav.catalog");
+      checkRes(custRes, "nav.customers"); checkRes(ordRes, "nav.ordersList");
+      if (failed.length) {
+        logWarn("Сервер повернув помилку завантаження: " + failed.join(", "), serverMsg);
+        if (!silent) notify(tr("toast.loadError", { what: [...new Set(failed)].join(", ") }));
+      }
       // Проактивно кешуємо всі фото товарів для офлайну (вимога клієнта) — у фоні, не блокує UI.
       const imgPaths = arr(prodRes).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
       if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
