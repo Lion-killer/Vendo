@@ -377,7 +377,7 @@ export default function App() {
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
-      {["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
+      {!showLog && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
         <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} />}
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
