@@ -138,8 +138,10 @@ export default function App() {
   // 2) Тягнемо мережу у фоні; на успіх — оновлюємо стан і кеш.
   // silent=true — тихе фонове перечитування (без анімації індикатора): дані й стан
   // онлайн оновлюються, але "connecting" не вмикаємо, щоб значок не миготів щоразу.
-  const fetchFromNetwork = async (silent = false) => {
-    if (fetchingRef.current) return false; // попередній цикл ще йде (повільний сервер) — не накладаємо
+  const fetchFromNetwork = async (silent = false, force = false) => {
+    // force=true — для оновлення після дій (видалення/відновлення): минаємо guard, бо
+    // інакше на повільному сервері фоновий цикл майже завжди «зайнятий» і дія не оновиться.
+    if (!force && fetchingRef.current) return false; // фоновий цикл ще йде — не накладаємо
     fetchingRef.current = true;
     if (!silent) setConnecting(true);
     try {
@@ -203,6 +205,11 @@ export default function App() {
     loadFromCache();
     await fetchFromNetwork();
   };
+
+  // Оновлення після дій (видалення/відновлення/збереження замовлення): форсований
+  // мережевий рефетч БЕЗ скидання в кеш (інакше loadFromCache повернув би стару версію,
+  // а guard заблокував би оновлення). Тихо, щоб не миготів індикатор.
+  const refreshOrders = () => fetchFromNetwork(true, true);
 
   // Ручна синхронізація офлайн-черги на сервер (доступна з усіх екранів через TopActions).
   // Стійка: одна помилка не валить чергу; кожен запис — успіх/конфлікт/помилка/пропуск.
@@ -410,11 +417,11 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
-          {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} orders={orders} connecting={connecting} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
