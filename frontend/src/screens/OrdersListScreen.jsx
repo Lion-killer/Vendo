@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../components/Icon';
 import { ScrollRow } from '../components/ui';
-import { fetchOrders, deleteOrder } from '../api/client';
+import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 
@@ -77,27 +77,9 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
     const activeFilter = matchedPreset(startDate, endDate);
     const presetActive = (id) => !showCustom && activeFilter === id;
 
-    const loadFilteredOrders = async () => {
-        setLoading(true);
-        try {
-            let data = null;
-            if (isOnline) {
-                try {
-                    data = await fetchOrders(startDate, endDate);
-                } catch (err) {
-                    console.warn("Помилка завантаження замовлень з сервера (можливо офлайн):", err);
-                }
-            }
-            // Сервер не відповів/повернув не масив → не затираємо, показуємо вже відомі з App.
-            const base = Array.isArray(data) ? data : appOrders.filter(inRange);
-            const filteredLocals = getLocalOrders().filter(inRange);
-            setOrders(mergeOrders(base, filteredLocals));
-        } catch (e) {
-            console.error("Помилка обробки замовлень", e);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Список будуємо ПОВНІСТЮ з App-стану (фонова 20-с синхронізація) + локальні, фільтр
+    // за датою клієнтсько. Жодних власних мережевих викликів — як решта екранів.
+    const recompute = () => setOrders(mergeOrders(appOrders.filter(inRange), getLocalOrders().filter(inRange)));
 
     const isDraftStatus = (o) => o?.status === "Нове";
 
@@ -126,8 +108,8 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             }
 
             setOrderToDelete(null);
-            await loadFilteredOrders(); // Оновлення списку
-            if (refreshOrders) refreshOrders();
+            recompute(); // миттєво відображаємо локальну зміну
+            if (refreshOrders) refreshOrders(); // App перечитає сервер у фоні → appOrders оновиться
         } catch (err) {
             console.error("Помилка видалення", err);
         } finally {
@@ -135,10 +117,10 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
         }
     };
 
-    // Завантажуємо при зміні дат або при першому рендері
+    // Перерахунок списку при зміні App-замовлень або періоду (клієнтська фільтрація).
     useEffect(() => {
-        loadFilteredOrders();
-    }, [startDate, endDate]);
+        recompute();
+    }, [appOrders, startDate, endDate]);
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingBottom: "20px", position: "relative", overflow: "hidden" }}>
