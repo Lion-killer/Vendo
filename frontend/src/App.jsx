@@ -259,6 +259,22 @@ export default function App() {
     };
   }, []);
 
+  // Апаратна кнопка «Назад» (Android): без обробника Capacitor одразу виходить із додатку.
+  // Перехоплюємо й навігуємо всередині: журнал → закрити; підекран → на головну; головна/
+  // логін → вихід. Перепідписка на зміну screen/showLog, щоб у замиканні були свіжі значення.
+  useEffect(() => {
+    let handle, cancelled = false;
+    import('@capacitor/app').then(async ({ App: CapApp }) => {
+      const h = await CapApp.addListener('backButton', () => {
+        if (showLog) { setShowLog(false); return; }
+        if (screen !== 'dashboard' && screen !== 'login') { handleNav('dashboard'); return; }
+        CapApp.exitApp();
+      });
+      if (cancelled) h.remove(); else handle = h;
+    }).catch(() => {});
+    return () => { cancelled = true; if (handle) handle.remove(); };
+  }, [screen, showLog]);
+
   const handleLogin = (name, token) => {
     const resolvedName = name || tr("common.user");
     saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
