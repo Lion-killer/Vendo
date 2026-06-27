@@ -22,6 +22,10 @@ const parseMoney = (v) => typeof v === 'number' ? v : (Number(String(v || '').re
 const orderSig = (items, custId, date) =>
   JSON.stringify({ i: (items || []).map(it => [it.product?.id, it.qty]), c: custId ?? null, d: date || null });
 
+// Коерсія будь-якого значення до масиву: API чи кеш можуть повернути {success:false}
+// замість масиву — без цього .map/.filter на екранах валить додаток у білий екран.
+const arr = (x) => Array.isArray(x) ? x : [];
+
 // Тема: збережений вибір користувача (vendo_theme) має пріоритет; інакше — системна.
 const getInitialDark = () => {
   const saved = localStorage.getItem('vendo_theme');
@@ -115,10 +119,10 @@ export default function App() {
       const cached = localStorage.getItem('cached_data_v2'); // v2: GUID-ідентифікація (старий кеш із цілими id ігноруємо)
       if (!cached) return false;
       const data = JSON.parse(cached);
-      setProducts(data.products || []);
-      setCategories(data.categories || []);
-      setCustomers(data.customers || []);
-      setOrders(data.orders || []);
+      setProducts(arr(data.products));
+      setCategories(arr(data.categories));
+      setCustomers(arr(data.customers));
+      setOrders(arr(data.orders));
       return true;
     } catch (e) {
       console.error("Помилка відновлення кешу", e);
@@ -136,8 +140,7 @@ export default function App() {
         fetchProducts(), fetchCategories(), fetchCustomers(), fetchOrders()
       ]);
       // Сервер може повернути {success:false,message} замість масиву (помилка хендлера 1С);
-      // коерсимо до масиву, інакше .map на екрані валить додаток у білий екран.
-      const arr = (x) => Array.isArray(x) ? x : [];
+      // коерсимо до масиву (arr() на рівні модуля), інакше .map на екрані валить у білий екран.
       setProducts(arr(prodRes));
       setCategories(arr(catRes));
       setCustomers(arr(custRes));
