@@ -67,38 +67,6 @@ export const buildReport = (note) => {
     return head + '\n' + body;
 };
 
-// Структурований payload для серверного вивантаження.
-const payload = (note) => ({ context: context(), note: note || '', entries: read() });
-
-// Спроба вивантажити лог на бекенд (основний транспорт). Не через client.js — щоб
-// уникнути циклічного імпорту; токен/адресу беремо з localStorage. На нативі шлемо через
-// CapacitorHttp (як решта запитів) — інакше кастомні заголовки + JSON ловлять CORS-
-// preflight у WebView і POST стабільно падає, через що API ніколи не спрацьовував.
-const postToServer = async () => {
-    const base = localStorage.getItem('vendo_api_url');
-    if (!base || !navigator.onLine) return false;
-    const headers = { 'Content-Type': 'application/json' };
-    const dev = localStorage.getItem('vendo_device_id'); if (dev) headers['X-Device-Id'] = dev;
-    const tok = localStorage.getItem('vendo_token'); if (tok) headers['X-Auth-Token'] = tok;
-    const url = `${base}/logs`;
-    const body = payload();
-    try {
-        const { Capacitor, CapacitorHttp } = await import('@capacitor/core');
-        if (Capacitor.isNativePlatform()) {
-            const res = await CapacitorHttp.post({ url, headers, data: body });
-            if (res.status >= 200 && res.status < 300) return true;
-            logWarn('Лог: API /logs відповів помилкою', 'HTTP ' + res.status);
-            return false;
-        }
-        const ctrl = new AbortController();
-        const id = setTimeout(() => ctrl.abort(), 10000);
-        const res = await fetch(url, {
-            method: 'POST', headers, body: JSON.stringify(body), signal: ctrl.signal,
-        }).finally(() => clearTimeout(id));
-        if (!res.ok) logWarn('Лог: API /logs відповів помилкою', 'HTTP ' + res.status);
-        return res.ok;
-    } catch (e) { logWarn('Лог: API /logs недоступний', String(e && e.message || e)); return false; }
-};
 
 // Uint8Array → base64 (для запису бінарного файлу через Filesystem). Чанками, щоб не
 // впертись у ліміт аргументів String.fromCharCode на великих масивах.
@@ -137,10 +105,10 @@ const shareReport = async (text) => {
     } catch (e) { logWarn('Лог: текстовий шаринг не вдався', String(e && e.message || e)); return false; }
 };
 
-// Надіслати лог: сервер → діалог «Поділитися». Повертає спосіб, що спрацював, або null.
+// Надіслати лог — лише через діалог «Поділитися» (zip-файл / текст). Без вивантаження по
+// API. Повертає 'share' або null.
 export const sendLog = async (note) => {
     logInfo('Запит на надсилання логу', note);
-    if (await postToServer()) return 'server';
     if (await shareReport(buildReport(note))) return 'share';
     return null;
 };

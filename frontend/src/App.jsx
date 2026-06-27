@@ -174,10 +174,14 @@ export default function App() {
         setLoadError(null); // повний свіжий знімок без помилок — прибираємо банер
       }
 
-      // Кеш і прехеш фото — лише з повного знімка (усі 4), щоб не зберігати часткове.
-      if (okCount === 4) {
+      // Прехеш фото каталогу — ЗАВЖДИ у фоні, щойно є товари (незалежно від решти колекцій),
+      // щоб картинки були готові, а не вантажились поштучно при скролі.
+      if (prodR.status === 'fulfilled') {
         const imgPaths = arr(prodR.value).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
         if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
+      }
+      // Кеш даних — лише з повного знімка (усі 4), щоб не зберігати часткове.
+      if (okCount === 4) {
         localStorage.setItem('cached_data_v2', JSON.stringify({
           products: arr(prodR.value), categories: arr(catR.value), customers: arr(custR.value), orders: arr(ordR.value)
         }));
