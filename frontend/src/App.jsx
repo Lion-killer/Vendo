@@ -356,9 +356,9 @@ export default function App() {
             Тап відкриває журнал помилок (деталі + надсилання розробнику). */}
         {isLoggedIn && loadError && (
           <button onClick={() => setShowLog(true)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", border: "none", cursor: "pointer", background: t.errSoft, color: t.err, padding: "10px 16px", fontFamily: "inherit", borderBottom: `1px solid ${t.err}33` }}>
-            <span style={{ fontSize: 16 }}>⚠️</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>{tr("error.loadBanner", { what: loadError.what })}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, whiteSpace: "nowrap" }}>{tr("error.details")} ›</span>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tr("error.loadBanner", { what: loadError.what })}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, whiteSpace: "nowrap", flexShrink: 0 }}>{tr("error.details")} ›</span>
           </button>
         )}
 
@@ -378,7 +378,7 @@ export default function App() {
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
       {!showLog && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
-        <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} />}
+        <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} offsetTop={loadError ? 42 : 0} />}
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
       <Snackbar msg={toast} t={t} />

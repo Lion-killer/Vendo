@@ -198,10 +198,10 @@ export const OnlineIndicator = ({ t, online, connecting, floating }) => {
 };
 
 // ─── Плаваючий кластер верхніх дій (на всіх екранах): сповіщення, синхронізація, статус ──
-export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync }) => {
+export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync, offsetTop = 0 }) => {
   const btn = { width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
   return (
-    <div style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", right: 16, zIndex: 1500, display: "flex", gap: 8 }}>
+    <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: 16, zIndex: 1500, display: "flex", gap: 8 }}>
       <div style={{ ...btn, position: "relative" }} aria-label="Сповіщення">
         <MIcon name="bell" size={18} color={t.ink} />
         {pending > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
