@@ -43,7 +43,7 @@ const matchedPreset = (start, end) => {
     return null; // довільний діапазон
 };
 
-export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [] }) => {
+export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [], orders: appOrders = [] }) => {
     const { t: tr } = useTranslation();
     const [startDate, setStartDate] = useState(() => localStorage.getItem('orders_startDate') || presetRange('last7').start);
     const [endDate, setEndDate] = useState(() => localStorage.getItem('orders_endDate') || presetRange('last7').end);
@@ -53,7 +53,11 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
         localStorage.getItem('orders_startDate') || presetRange('last7').start,
         localStorage.getItem('orders_endDate') || presetRange('last7').end,
     ));
-    const [orders, setOrders] = useState([]);
+    // Сидуємо вже відомими замовленнями (з App + локальні, у межах періоду), щоб при
+    // переході екран не блимав порожнім спінером, поки повільний сервер відповідає.
+    const inRange = (o) => o.date >= startDate && o.date <= endDate;
+    const [orders, setOrders] = useState(() =>
+        mergeOrders(appOrders.filter(inRange), getLocalOrders().filter(inRange)));
     const [loading, setLoading] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState(null);
 
@@ -76,19 +80,18 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
     const loadFilteredOrders = async () => {
         setLoading(true);
         try {
-            let data = [];
+            let data = null;
             if (isOnline) {
                 try {
                     data = await fetchOrders(startDate, endDate);
                 } catch (err) {
                     console.warn("Помилка завантаження замовлень з сервера (можливо офлайн):", err);
-                    // Продовжуємо з пустим data, щоб показати хоча б локальні
                 }
             }
-
-            // Локальні в межах періоду; спільне злиття (локальне виграє за id, _pending).
-            const filteredLocals = getLocalOrders().filter(o => o.date >= startDate && o.date <= endDate);
-            setOrders(mergeOrders(data, filteredLocals));
+            // Сервер не відповів/повернув не масив → не затираємо, показуємо вже відомі з App.
+            const base = Array.isArray(data) ? data : appOrders.filter(inRange);
+            const filteredLocals = getLocalOrders().filter(inRange);
+            setOrders(mergeOrders(base, filteredLocals));
         } catch (e) {
             console.error("Помилка обробки замовлень", e);
         } finally {
@@ -209,7 +212,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
 
             {/* List */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 80px" }}>
-                {loading ? (
+                {loading && orders.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "40px" }}>
                         <div style={{ width: 30, height: 30, borderTop: `3px solid ${t.primary}`, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
                     </div>
