@@ -31,6 +31,39 @@
         }
       }
     },
+    "/health": {
+      "get": {
+        "tags": ["Діагностика"],
+        "summary": "Дешева перевірка доступності (без авторизації, без БД)",
+        "description": "Найлегший пінг: підтверджує, що сервіс живий. Клієнт використовує HEAD для online-детекції замість важкого /products.",
+        "security": [],
+        "responses": { "200": { "description": "Сервіс живий", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" }, "time": { "type": "string" } } } } } } }
+      },
+      "head": {
+        "tags": ["Діагностика"], "summary": "Пінг доступності (HEAD)", "security": [],
+        "responses": { "200": { "description": "Сервіс живий" } }
+      }
+    },
+    "/logs": {
+      "post": {
+        "tags": ["Діагностика"],
+        "summary": "Клієнтський звіт про роботу/збій (для розробника)",
+        "description": "Клієнт надсилає буфер подій. Node дописує у data/app-logs.ndjson; 1С пише в журнал реєстрації (подія венд_МобильноеПриложение.Лог). Не вимагає суворої авторизації — звіт має пройти навіть при зламаній автентифікації.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "note": { "type": "string" },
+              "context": { "type": "object" },
+              "entries": { "type": "array", "items": { "type": "object", "properties": { "t": { "type": "string" }, "level": { "type": "string" }, "msg": { "type": "string" }, "data": { "type": "string" } } } }
+            }
+          } } }
+        },
+        "responses": { "200": { "description": "Прийнято", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" } } } } } } }
+      }
+    },
     "/products": {
       "get": {
         "tags": ["Довідники"], "summary": "Номенклатура пристрою (ціна за типом цін, залишок за складом)",

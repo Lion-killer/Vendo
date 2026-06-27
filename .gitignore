@@ -9,6 +9,7 @@ frontend/build_err.txt
 backend/data/*.db
 backend/data/*.db-shm
 backend/data/*.db-wal
+backend/data/app-logs.ndjson
 
 # Capacitor / Android build artifacts
 frontend/android/.gradle/
