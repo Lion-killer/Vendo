@@ -238,6 +238,60 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="b7e1dcba-a50f-4c24-8ec0-b7793840ab00">
+				<Properties>
+					<Name>Logs</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Logs</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/logs</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="7d0684be-e865-4a4a-8dbb-6faf863d07d4">
+						<Properties>
+							<Name>Post</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Post</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>POST</HTTPMethod>
+							<Handler>LogsPost</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
+			<URLTemplate uuid="69b41c64-7ab5-44b2-877f-3e86fb0632b1">
+				<Properties>
+					<Name>Health</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Health</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/health</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="1222e8c7-4fb4-4edd-8637-ea71ec74b5e7">
+						<Properties>
+							<Name>Get</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Get</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>GET</HTTPMethod>
+							<Handler>HealthGet</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 		</ChildObjects>
 	</HTTPService>
 </MetaDataObject>
