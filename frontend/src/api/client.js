@@ -154,12 +154,11 @@ export const restoreOrder = async (id) =>
         body: JSON.stringify({ deletionMark: false }),
     })).json();
 
-// Дешевий пінг доступності: GET /health (без авторизації й без запитів до БД) — не
-// вантажить сервер, на відміну від важкого /products. GET, а не HEAD: 1С-шаблон /health
-// визначає лише GET (HEAD → 405).
+// Найдешевший пінг доступності: HEAD /health (без авторизації, без БД, без тіла) —
+// 1С-шаблон /health має окремий HEAD-метод (HealthHead → порожній 200), Node теж.
 export const pingServer = async () => {
     try {
-        const res = await tfetch(`${apiUrl()}/health`, { method: 'GET' }, 5000);
+        const res = await tfetch(`${apiUrl()}/health`, { method: 'HEAD' }, 5000);
         return res.ok;
     } catch (e) {
         return false;

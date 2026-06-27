@@ -290,6 +290,19 @@
 							<Handler>HealthGet</Handler>
 						</Properties>
 					</Method>
+					<Method uuid="d1ad3aab-d381-4d05-af84-cb89237ac14a">
+						<Properties>
+							<Name>Head</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Head</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>HEAD</HTTPMethod>
+							<Handler>HealthHead</Handler>
+						</Properties>
+					</Method>
 				</ChildObjects>
 			</URLTemplate>
 		</ChildObjects>
