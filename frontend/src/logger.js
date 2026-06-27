@@ -70,39 +70,60 @@ export const buildReport = (note) => {
 // Структурований payload для серверного вивантаження.
 const payload = (note) => ({ context: context(), note: note || '', entries: read() });
 
-// Спроба вивантажити лог на бекенд (основний транспорт). Окремий fetch (не через
-// client.js), щоб уникнути циклічного імпорту; токен/адресу беремо з localStorage.
+// Спроба вивантажити лог на бекенд (основний транспорт). Не через client.js — щоб
+// уникнути циклічного імпорту; токен/адресу беремо з localStorage. На нативі шлемо через
+// CapacitorHttp (як решта запитів) — інакше кастомні заголовки + JSON ловлять CORS-
+// preflight у WebView і POST стабільно падає, через що API ніколи не спрацьовував.
 const postToServer = async () => {
     const base = localStorage.getItem('vendo_api_url');
     if (!base || !navigator.onLine) return false;
     const headers = { 'Content-Type': 'application/json' };
     const dev = localStorage.getItem('vendo_device_id'); if (dev) headers['X-Device-Id'] = dev;
     const tok = localStorage.getItem('vendo_token'); if (tok) headers['X-Auth-Token'] = tok;
+    const url = `${base}/logs`;
+    const body = payload();
     try {
+        const { Capacitor, CapacitorHttp } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+            const res = await CapacitorHttp.post({ url, headers, data: body });
+            return res.status >= 200 && res.status < 300;
+        }
         const ctrl = new AbortController();
         const id = setTimeout(() => ctrl.abort(), 10000);
-        const res = await fetch(`${base}/logs`, {
-            method: 'POST', headers, body: JSON.stringify(payload()), signal: ctrl.signal,
+        const res = await fetch(url, {
+            method: 'POST', headers, body: JSON.stringify(body), signal: ctrl.signal,
         }).finally(() => clearTimeout(id));
         return res.ok;
     } catch { return false; }
 };
 
-// Запасне: системне «Поділитися». На нативі спершу формуємо лог-ФАЙЛ і ділимось ним
-// (надійніше за text — застосунки не обрізають великий вміст), інакше — текстом.
-// Динамічні імпорти — не валять веб-збірку, якщо плагін недоступний.
-// ponytail: ділимось .txt, без zip — текст і так малий; додати архівацію (jszip), якщо
-// лог почне сягати мегабайтів і месенджери відмовлятимуться приймати .txt.
+// Uint8Array → base64 (для запису бінарного файлу через Filesystem). Чанками, щоб не
+// впертись у ліміт аргументів String.fromCharCode на великих масивах.
+const u8ToBase64 = (bytes) => {
+    let bin = '';
+    const CH = 0x8000;
+    for (let i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+    return btoa(bin);
+};
+
+// Запасне (коли API недоступний): системне «Поділитися». На нативі пакуємо лог у ZIP і
+// ділимось файлом (надійно, компактно — месенджери приймають .zip; текст застосунки
+// інколи обрізають). Якщо щось пішло не так — ділимось текстом. Динамічні імпорти не
+// валять веб-збірку, якщо плагіна немає.
 const shareReport = async (text) => {
     const { Capacitor } = await import('@capacitor/core');
     if (Capacitor.isNativePlatform()) {
         try {
-            const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
-            const fileName = `vendo-log-${Date.now()}.txt`;
-            await Filesystem.writeFile({ path: fileName, data: text, directory: Directory.Cache, encoding: Encoding.UTF8 });
+            const { zipSync, strToU8 } = await import('fflate');
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const zipped = zipSync({ [`vendo-log-${stamp}.txt`]: strToU8(text) }, { level: 6 });
+            const { Filesystem, Directory } = await import('@capacitor/filesystem');
+            const fileName = `vendo-log-${Date.now()}.zip`;
+            // Без encoding → Filesystem трактує data як base64 і пише байти.
+            await Filesystem.writeFile({ path: fileName, data: u8ToBase64(zipped), directory: Directory.Cache });
             const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
             const { Share } = await import('@capacitor/share');
-            await Share.share({ title: 'Vendo log', files: [uri] });
+            await Share.share({ title: 'Vendo log', text: 'Лог Vendo (архів)', files: [uri] });
             return true;
         } catch { /* падаємо на текстовий шаринг нижче */ }
     }
