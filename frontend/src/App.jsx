@@ -10,7 +10,7 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, fetchAuthedBlobRaw } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw } from './api/client';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
@@ -224,6 +224,10 @@ export default function App() {
       try {
         if (o.op === 'delete') {
           if (o.num) { const r = await deleteOrder(o.id); if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено"); }
+          removeLocalOrder(o.id); sent++; continue;
+        }
+        if (o.op === 'restore') {
+          const r = await restoreOrder(o.id); if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
           removeLocalOrder(o.id); sent++; continue;
         }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; continue; }

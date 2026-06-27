@@ -97,6 +97,7 @@
     "markedDeleted": "Marked for deletion {{label}}",
     "deleteFailed": "Could not delete",
     "unmarked": "Mark removed · {{label}}",
+    "unmarkQueued": "Restore queued (offline) · {{label}}",
     "unmarkFailed": "Could not remove the mark",
     "willOverwrite": "Your version will overwrite the server on the next sync",
     "tookServer": "Took the server version"

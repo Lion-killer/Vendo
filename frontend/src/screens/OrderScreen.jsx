@@ -137,11 +137,24 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const handleUnmark = async () => {
         setShowMenu(false);
         if (status !== "Видалено" || !editOrderId) return;
+        const label = orderLabel({ num, id: editOrderId });
         try {
-            await restoreOrder(editOrderId);
+            if (!isOnline) {
+                // Офлайн: ставимо відновлення в чергу (op:'restore') — doSync виконає при
+                // синхронізації. Локальний запис із deletionMark:false перекриває серверний
+                // (mergeOrders) → у списку одразу показується НЕ видаленим.
+                saveLocalOrder({
+                    id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено',
+                    deletionMark: false, customer: customer || null, customerId: customer?.id || null,
+                    client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
+                    total: `${money(total)} ₴`, sColor: t.ok,
+                });
+            } else {
+                await restoreOrder(editOrderId);
+            }
             markHandled?.();
             refreshOrders?.();
-            notify?.(tr("order.unmarked", { label: orderLabel({ num, id: editOrderId }) }));
+            notify?.(isOnline ? tr("order.unmarked", { label }) : tr("order.unmarkQueued", { label }));
             if (goToOrdersList) goToOrdersList();
         } catch (e) {
             notify?.(tr("order.unmarkFailed"));
