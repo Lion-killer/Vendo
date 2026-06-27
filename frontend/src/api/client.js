@@ -1,3 +1,5 @@
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
+
 // Адреса бекенду й ідентифікатор пристрою беруться з QR-коду (зберігаються в
 // localStorage під час логіну). DEFAULT_API — запасний для dev/емулятора.
 const DEFAULT_API = 'http://10.0.2.2:3000/api';
@@ -64,10 +66,28 @@ export const fetchAuthedBlob = async (relPath) => {
     return blob ? URL.createObjectURL(blob) : null;
 };
 
+// base64 → Blob (для бінарних відповідей CapacitorHttp на нативі).
+const base64ToBlob = (b64, type) => {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: type || 'application/octet-stream' });
+};
+
 // Сирий Blob (для кешу в IndexedDB — imageCache). null при помилці/404.
+// На нативі (CapacitorHttp) патчений fetch НЕ повертає коректний blob для бінарних
+// відповідей, тому беремо нативний CapacitorHttp.get з responseType:'blob' (base64) і
+// конвертуємо. У вебі/dev — звичайний fetch.
 export const fetchAuthedBlobRaw = async (relPath) => {
     try {
-        const res = await tfetch(`${apiUrl()}${relPath}`, { headers: h() });
+        const url = `${apiUrl()}${relPath}`;
+        if (Capacitor.isNativePlatform()) {
+            const res = await CapacitorHttp.get({ url, headers: h(), responseType: 'blob' });
+            if (res.status < 200 || res.status >= 300 || !res.data) return null;
+            const ct = res.headers && (res.headers['Content-Type'] || res.headers['content-type']);
+            return base64ToBlob(res.data, ct);
+        }
+        const res = await tfetch(url, { headers: h() });
         if (!res.ok) return null;
         return await res.blob();
     } catch (e) {

@@ -122,29 +122,39 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, stock, unit, s
   const isApi = typeof img === "string" && img.charAt(0) === "/";
   const [blobSrc, setBlobSrc] = React.useState(null);
   React.useEffect(() => {
-    setErr(false);
-    if (!isApi) { setBlobSrc(null); return; }
+    setErr(false); setBlobSrc(null);
+    if (!isApi) return;
     let alive = true, url = null;
     loadCachedImage(img, fetchAuthedBlobRaw).then(u => {
-      if (alive) { url = u; setBlobSrc(u); }
-      else if (u) URL.revokeObjectURL(u);
+      if (!alive) { if (u) URL.revokeObjectURL(u); return; }
+      url = u; setBlobSrc(u);
     });
     return () => { alive = false; if (url) URL.revokeObjectURL(url); };
   }, [img]);
   const src = isApi ? blobSrc : img;
   const show = src && !err;
+  // Сервер каже, що фото Є (непорожній img-шлях), але blob ще немає → "вантажиться/не
+  // завантажилось" (три крапки), а не "фото немає" (артикул). Так розрізняємо ці стани.
+  const pending = isApi && !show && !err;
   return (
     <>
       <div onClick={show ? (e) => { e.stopPropagation(); setOpen(true); } : undefined} style={{
         width: size, height: size, borderRadius: radius, flexShrink: 0, overflow: "hidden",
         border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center",
-        background: show ? "#fff" : `repeating-linear-gradient(135deg, ${t.surfaceMuted} 0 6px, ${t.bg} 6px 12px)`,
+        // Фото є: білий фон (показ) або нейтральний (вантажиться). Фото немає: діагональна штриховка.
+        background: show ? "#fff" : pending ? t.surfaceMuted : `repeating-linear-gradient(135deg, ${t.surfaceMuted} 0 6px, ${t.bg} 6px 12px)`,
         cursor: show ? "zoom-in" : "default",
       }}>
         {show
           ? <img src={src} alt={sku || ""} loading="lazy" onError={() => setErr(true)}
               style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-          : <span style={{ fontFamily: F_NUM, fontSize: size > 44 ? 9 : 8, color: t.inkMuted }}>{sku}</span>}
+          : pending
+            // Фото існує, але ще не показане (вантажиться або не вдалося) — три статичні
+            // крапки, без анімації. НЕ артикул-плейсхолдер.
+            ? <div style={{ display: "flex", gap: Math.max(2, size * 0.05) }}>
+                {[0, 1, 2].map(i => <span key={i} style={{ width: Math.max(3, size * 0.07), height: Math.max(3, size * 0.07), borderRadius: "50%", background: t.inkMuted, opacity: 0.6 }} />)}
+              </div>
+            : <span style={{ fontFamily: F_NUM, fontSize: size > 44 ? 9 : 8, color: t.inkMuted }}>{sku}</span>}
       </div>
       {open && (
         <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
