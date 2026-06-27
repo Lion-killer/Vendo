@@ -1,6 +1,8 @@
 {
   "lang": { "title": "Language", "uk": "Ukrainian", "ru": "Russian", "en": "English" },
   "nav": { "dashboard": "Home", "catalog": "Catalog", "customers": "Clients", "ordersList": "Orders" },
+  "error": { "loadBanner": "Loading errors: {{what}}", "details": "Details" },
+  "log": { "title": "Error log", "showAll": "All", "onlyErrors": "Errors only", "sending": "Sending…", "clear": "Clear", "empty": "No errors" },
   "common": { "unknownClient": "Unknown client", "user": "User", "today": "today", "all": "All →", "nothing": "Nothing found", "scannerError": "Could not open the scanner. Please allow camera access.", "cancel": "Cancel" },
   "status": { "Нове": "New", "Відправлено": "Sent", "Проведено": "Posted", "Видалено": "Deleted" },
   "login": {
@@ -135,6 +137,7 @@
     "darkTheme": "Dark theme",
     "on": "On",
     "off": "Off",
+    "openLog": "Error log",
     "sendLog": "Send log to developer",
     "sendLog_server": "Sent ✓",
     "sendLog_share": "Opened ✓",

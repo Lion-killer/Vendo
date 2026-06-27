@@ -88,9 +88,24 @@ const postToServer = async () => {
     } catch { return false; }
 };
 
-// Запасне: системне «Поділитися» (Telegram/Email/файл). Динамічний імпорт —
-// не валить веб-збірку, якщо плагін недоступний.
+// Запасне: системне «Поділитися». На нативі спершу формуємо лог-ФАЙЛ і ділимось ним
+// (надійніше за text — застосунки не обрізають великий вміст), інакше — текстом.
+// Динамічні імпорти — не валять веб-збірку, якщо плагін недоступний.
+// ponytail: ділимось .txt, без zip — текст і так малий; додати архівацію (jszip), якщо
+// лог почне сягати мегабайтів і месенджери відмовлятимуться приймати .txt.
 const shareReport = async (text) => {
+    const { Capacitor } = await import('@capacitor/core');
+    if (Capacitor.isNativePlatform()) {
+        try {
+            const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+            const fileName = `vendo-log-${Date.now()}.txt`;
+            await Filesystem.writeFile({ path: fileName, data: text, directory: Directory.Cache, encoding: Encoding.UTF8 });
+            const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
+            const { Share } = await import('@capacitor/share');
+            await Share.share({ title: 'Vendo log', files: [uri] });
+            return true;
+        } catch { /* падаємо на текстовий шаринг нижче */ }
+    }
     try {
         const { Share } = await import('@capacitor/share');
         await Share.share({ title: 'Vendo log', text });

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { LIGHT, DARK } from './theme';
 import { BottomNav, TopActions } from './components/ui';
 import { Snackbar } from './components/Shared';
+import { LogPanel } from './components/LogPanel';
 import { LoginScreen } from './screens/LoginScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { CatalogScreen } from './screens/CatalogScreen';
@@ -56,6 +57,8 @@ export default function App() {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
+  const [loadError, setLoadError] = useState(null); // {what, message} — постійна помилка завантаження (банер), null = немає
+  const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
   const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
   const orderBaseline = useRef(""); // знімок замовлення на момент відкриття (щоб зберігати лише за змінами)
@@ -147,16 +150,19 @@ export default function App() {
       setCustomers(arr(custRes));
       setOrders(arr(ordRes));
       // Якась колекція прийшла не масивом → сервер повернув {success:false}. Не валимо
-      // додаток (вже коерсили), але повідомляємо користувача (Snackbar) і пишемо в лог,
-      // щоб порожній екран не виглядав «мовчазним». Тихі фонові перечитування не спамлять.
+      // додаток (вже коерсили), але виставляємо ПОСТІЙНИЙ банер помилки (не зникає, доки
+      // завантаження не пройде успішно) і пишемо в лог. Успіх — знімаємо банер.
       const failed = [];
       let serverMsg = "";
       const checkRes = (res, key) => { if (!Array.isArray(res)) { failed.push(tr(key)); if (res && res.message) serverMsg = res.message; } };
       checkRes(prodRes, "nav.catalog"); checkRes(catRes, "nav.catalog");
       checkRes(custRes, "nav.customers"); checkRes(ordRes, "nav.ordersList");
       if (failed.length) {
-        logWarn("Сервер повернув помилку завантаження: " + failed.join(", "), serverMsg);
-        if (!silent) notify(tr("toast.loadError", { what: [...new Set(failed)].join(", ") }));
+        const what = [...new Set(failed)].join(", ");
+        logWarn("Сервер повернув помилку завантаження: " + what, serverMsg);
+        setLoadError({ what, message: serverMsg });
+      } else {
+        setLoadError(null); // дані завантажились — прибираємо банер
       }
       // Проактивно кешуємо всі фото товарів для офлайну (вимога клієнта) — у фоні, не блокує UI.
       const imgPaths = arr(prodRes).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
@@ -346,10 +352,20 @@ export default function App() {
       {/* Головний контейнер (з повноцінною висотою і нативним прокручуванням для Capacitor) */}
       <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: t.bg }}>
 
+        {/* Постійний банер помилки завантаження — не зникає, доки завантаження не пройде.
+            Тап відкриває журнал помилок (деталі + надсилання розробнику). */}
+        {isLoggedIn && loadError && (
+          <button onClick={() => setShowLog(true)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", border: "none", cursor: "pointer", background: t.errSoft, color: t.err, padding: "10px 16px", fontFamily: "inherit", borderBottom: `1px solid ${t.err}33` }}>
+            <span style={{ fontSize: 16 }}>⚠️</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>{tr("error.loadBanner", { what: loadError.what })}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, whiteSpace: "nowrap" }}>{tr("error.details")} ›</span>
+          </button>
+        )}
+
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} />}
@@ -366,6 +382,9 @@ export default function App() {
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
       <Snackbar msg={toast} t={t} />
+
+      {/* Журнал помилок: деталі + надсилання логу розробнику */}
+      {showLog && <LogPanel t={t} onClose={() => setShowLog(false)} />}
     </>
   );
 }
