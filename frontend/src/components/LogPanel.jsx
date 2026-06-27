@@ -15,7 +15,7 @@ export const LogPanel = ({ t, onClose }) => {
     const { state: sendState, send: doSend, sending } = useLogSend('Надсилання з журналу помилок');
 
     const shown = all ? entries : entries.filter(e => e.level !== 'info');
-    const doClear = () => { clearLog(); onClose(); };
+    const doClear = () => { if (window.confirm(tr('log.clearConfirm'))) { clearLog(); onClose(); } };
 
     const lvlColor = (lvl) => lvl === 'error' ? t.err : lvl === 'warn' ? t.warn : t.inkMuted;
     const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
