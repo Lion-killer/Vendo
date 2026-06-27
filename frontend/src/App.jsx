@@ -42,7 +42,7 @@ export default function App() {
   // Відновлюємо збережену сесію (#24): якщо вона є, пропускаємо екран логіну.
   const [screen, setScreen] = useState(() => getSession() ? "dashboard" : "login");
   const [isOnline, setIsOnline] = useState(true);
-  const [connecting, setConnecting] = useState(false);
+  const [connecting, setConnecting] = useState(true); // true на старті: до першого завантаження показуємо спінер, а не «порожньо»
   const [userName, setUserName] = useState(() => getSession()?.userName || "");
   const [orderItems, setOrderItems] = useState([]);
   const [editOrderId, setEditOrderId] = useState(null);
@@ -393,10 +393,10 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} />}
-          {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} />}
-          {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} orders={orders} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} />}
+          {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
+          {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} orders={orders} connecting={connecting} />}
           {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={loadData} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 

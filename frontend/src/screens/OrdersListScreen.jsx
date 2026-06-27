@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../components/Icon';
-import { ScrollRow } from '../components/ui';
+import { ScrollRow, ListPlaceholder } from '../components/ui';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
@@ -43,7 +43,7 @@ const matchedPreset = (start, end) => {
     return null; // довільний діапазон
 };
 
-export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [], orders: appOrders = [] }) => {
+export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [], orders: appOrders = [], connecting }) => {
     const { t: tr } = useTranslation();
     const [startDate, setStartDate] = useState(() => localStorage.getItem('orders_startDate') || presetRange('last7').start);
     const [endDate, setEndDate] = useState(() => localStorage.getItem('orders_endDate') || presetRange('last7').end);
@@ -194,15 +194,11 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
 
             {/* List */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 80px" }}>
-                {loading && orders.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "40px" }}>
-                        <div style={{ width: 30, height: 30, borderTop: `3px solid ${t.primary}`, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
-                    </div>
-                ) : orders.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                {orders.length === 0 ? (
+                    <ListPlaceholder loading={connecting && appOrders.length === 0} t={t}>
                         <Icon name="orders" size={48} color={t.border} />
                         <p style={{ color: t.textMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>{tr("ordersList.empty")}</p>
-                    </div>
+                    </ListPlaceholder>
                 ) : (
                     orders.map(o => {
                       const refs = (products.length > 0 && customers.length > 0)

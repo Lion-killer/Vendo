@@ -272,6 +272,16 @@ export const Card = ({ children, style = {}, t, ...rest }) => (
   </div>
 );
 
+// ─── Стан списку: спінер ЛИШЕ коли даних немає взагалі й триває завантаження;
+// інакше — порожній стан (children: іконка + текст). Єдине правило для всіх екранів. ──
+export const ListPlaceholder = ({ loading, t, children }) => (
+  <div style={{ textAlign: "center", padding: "44px 20px", color: t.inkMuted }}>
+    {loading
+      ? <div style={{ width: 30, height: 30, border: `3px solid ${t.line}`, borderTopColor: t.accent, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
+      : children}
+  </div>
+);
+
 // ─── Пілл стану (VIP / борг / новий…) ─────────────────────────────────────────
 export const Pill = ({ children, bg, fg }) => (
   <span style={{ fontSize: 10.5, fontWeight: 700, color: fg, background: bg, padding: "2px 7px", borderRadius: 6, letterSpacing: 0.2, whiteSpace: "nowrap" }}>{children}</span>

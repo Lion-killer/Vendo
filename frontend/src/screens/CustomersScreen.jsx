@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM } from '../components/ui';
+import { MIcon, Card, F_NUM, ListPlaceholder } from '../components/ui';
 import { localeTag } from '../i18n';
 
 const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { maximumFractionDigits: 0 });
@@ -96,7 +96,7 @@ const ClientRow = ({ t, c, onClick }) => {
     );
 };
 
-export const CustomersScreen = ({ t, customers = [], isOnline }) => {
+export const CustomersScreen = ({ t, customers = [], isOnline, connecting }) => {
     const { t: tr } = useTranslation();
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
@@ -158,10 +158,10 @@ export const CustomersScreen = ({ t, customers = [], isOnline }) => {
             {/* Список */}
             <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
                 {list.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
+                    <ListPlaceholder loading={connecting && customers.length === 0} t={t}>
                         <MIcon name="users" size={36} color={t.line} />
                         <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
-                    </div>
+                    </ListPlaceholder>
                 ) : list.map(c => <ClientRow key={c.id || c.code} t={t} c={c} onClick={() => setSelected(c)} />)}
                 <div style={{ height: 16 }} />
             </div>

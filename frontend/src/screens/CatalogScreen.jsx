@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, ScrollRow } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder } from '../components/ui';
 import { localeTag } from '../i18n';
 import { scanBarcode } from '../api/scanner';
 
@@ -100,7 +100,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify, connecting }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -203,10 +203,10 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                     <>
                         <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "4px 4px 8px" }}>{tr("catalog.found", { count: results.length })}</div>
                         {results.length === 0 ? (
-                            <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
+                            <ListPlaceholder loading={connecting && (products || []).length === 0} t={t}>
                                 <MIcon name="search" size={36} color={t.line} />
                                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
-                            </div>
+                            </ListPlaceholder>
                         ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
                     </>
                 ) : (
@@ -224,10 +224,10 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                             </>
                         )}
                         {subgroups.length === 0 && levelProducts.length === 0 && (
-                            <div style={{ textAlign: "center", padding: "48px 20px", color: t.inkMuted }}>
+                            <ListPlaceholder loading={connecting && (products || []).length === 0} t={t}>
                                 <MIcon name="grid" size={36} color={t.line} />
                                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("catalog.empty")}</div>
-                            </div>
+                            </ListPlaceholder>
                         )}
                     </>
                 )}
