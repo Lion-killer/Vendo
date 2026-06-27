@@ -113,18 +113,11 @@ const shareReport = async (text) => {
     } catch { return false; }
 };
 
-// Останнє: буфер обміну.
-const copyReport = async (text) => {
-    try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
-};
-
-// Надіслати лог: сервер → «Поділитися» → буфер. Повертає спосіб, що спрацював.
+// Надіслати лог: сервер → діалог «Поділитися». Повертає спосіб, що спрацював, або null.
 export const sendLog = async (note) => {
     logInfo('Запит на надсилання логу', note);
     if (await postToServer()) return 'server';
-    const text = buildReport(note);
-    if (await shareReport(text)) return 'share';
-    if (await copyReport(text)) return 'clipboard';
+    if (await shareReport(buildReport(note))) return 'share';
     return null;
 };
 
