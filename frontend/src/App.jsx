@@ -60,6 +60,7 @@ export default function App() {
   const [loadError, setLoadError] = useState(null); // {what, message} — постійна помилка завантаження (банер), null = немає
   const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
   const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
+  const fetchingRef = useRef(false); // мережеве перечитування в процесі — не накладати цикли (повільний сервер)
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
   const orderBaseline = useRef(""); // знімок замовлення на момент відкриття (щоб зберігати лише за змінами)
 
@@ -138,46 +139,57 @@ export default function App() {
   // silent=true — тихе фонове перечитування (без анімації індикатора): дані й стан
   // онлайн оновлюються, але "connecting" не вмикаємо, щоб значок не миготів щоразу.
   const fetchFromNetwork = async (silent = false) => {
+    if (fetchingRef.current) return false; // попередній цикл ще йде (повільний сервер) — не накладаємо
+    fetchingRef.current = true;
     if (!silent) setConnecting(true);
     try {
-      const [prodRes, catRes, custRes, ordRes] = await Promise.all([
+      // allSettled, а не all: один повільний/таймнутий запит НЕ валить усе в офлайн.
+      const [prodR, catR, custR, ordR] = await Promise.allSettled([
         fetchProducts(), fetchCategories(), fetchCustomers(), fetchOrders()
       ]);
-      // Сервер може повернути {success:false,message} замість масиву (помилка хендлера 1С);
-      // коерсимо до масиву (arr() на рівні модуля), інакше .map на екрані валить у білий екран.
-      setProducts(arr(prodRes));
-      setCategories(arr(catRes));
-      setCustomers(arr(custRes));
-      setOrders(arr(ordRes));
-      // Якась колекція прийшла не масивом → сервер повернув {success:false}. Не валимо
-      // додаток (вже коерсили), але виставляємо ПОСТІЙНИЙ банер помилки (не зникає, доки
-      // завантаження не пройде успішно) і пишемо в лог. Успіх — знімаємо банер.
+      const all = [prodR, catR, custR, ordR];
+      const okCount = all.filter(r => r.status === 'fulfilled').length;
+      if (okCount === 0) { setIsOnline(false); return false; } // справді недоступно — лишаємось на кеші
+      setIsOnline(true);
+
+      // Оновлюємо лише ті колекції, що прийшли; rejected (мережевий таймаут) не затирає дані.
+      // arr() коерсить {success:false} до [], інакше .map на екрані валить у білий екран.
+      if (prodR.status === 'fulfilled') setProducts(arr(prodR.value));
+      if (catR.status === 'fulfilled') setCategories(arr(catR.value));
+      if (custR.status === 'fulfilled') setCustomers(arr(custR.value));
+      if (ordR.status === 'fulfilled') setOrders(arr(ordR.value));
+
+      // Банер серверної помилки — лише коли колекція ПРИЙШЛА, але не масивом ({success:false}).
+      // Мережевий таймаут (rejected) тут не вважаємо помилкою даних (це повільність сервера).
       const failed = [];
       let serverMsg = "";
-      const checkRes = (res, key) => { if (!Array.isArray(res)) { failed.push(tr(key)); if (res && res.message) serverMsg = res.message; } };
-      checkRes(prodRes, "nav.catalog"); checkRes(catRes, "nav.catalog");
-      checkRes(custRes, "nav.customers"); checkRes(ordRes, "nav.ordersList");
+      const checkRes = (r, key) => { if (r.status === 'fulfilled' && !Array.isArray(r.value)) { failed.push(tr(key)); if (r.value && r.value.message) serverMsg = r.value.message; } };
+      checkRes(prodR, "nav.catalog"); checkRes(catR, "nav.catalog");
+      checkRes(custR, "nav.customers"); checkRes(ordR, "nav.ordersList");
       if (failed.length) {
         const what = [...new Set(failed)].join(", ");
         logWarn("Сервер повернув помилку завантаження: " + what, serverMsg);
         setLoadError({ what, message: serverMsg });
-      } else {
-        setLoadError(null); // дані завантажились — прибираємо банер
+      } else if (okCount === 4) {
+        setLoadError(null); // повний свіжий знімок без помилок — прибираємо банер
       }
-      // Проактивно кешуємо всі фото товарів для офлайну (вимога клієнта) — у фоні, не блокує UI.
-      const imgPaths = arr(prodRes).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
-      if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
-      localStorage.setItem('cached_data_v2', JSON.stringify({
-        products: arr(prodRes), categories: arr(catRes), customers: arr(custRes), orders: arr(ordRes)
-      }));
-      localStorage.setItem('vendo_last_sync', String(Date.now())); // час останньої успішної синхронізації
-      setIsOnline(true);
+
+      // Кеш і прехеш фото — лише з повного знімка (усі 4), щоб не зберігати часткове.
+      if (okCount === 4) {
+        const imgPaths = arr(prodR.value).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
+        if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
+        localStorage.setItem('cached_data_v2', JSON.stringify({
+          products: arr(prodR.value), categories: arr(catR.value), customers: arr(custR.value), orders: arr(ordR.value)
+        }));
+        localStorage.setItem('vendo_last_sync', String(Date.now())); // час останньої успішної синхронізації
+      }
       return true;
     } catch (e) {
       console.warn("Мережа недоступна — лишаємось на кеші.", e);
       setIsOnline(false);
       return false;
     } finally {
+      fetchingRef.current = false;
       if (!silent) setConnecting(false);
     }
   };
