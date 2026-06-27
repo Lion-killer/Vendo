@@ -119,6 +119,9 @@ export const installGlobalHandlers = () => {
     if (installed) return;
     installed = true;
     window.addEventListener('error', (e) => {
+        // "ResizeObserver loop ..." — нешкідливе браузерне попередження (колбек ResizeObserver
+        // сам змінює лейаут), не баг. Ігноруємо, щоб не засмічувати журнал помилками.
+        if (e.message && e.message.indexOf('ResizeObserver loop') !== -1) return;
         logError('window.onerror', `${e.message} @ ${e.filename}:${e.lineno}:${e.colno}`);
     });
     window.addEventListener('unhandledrejection', (e) => {
