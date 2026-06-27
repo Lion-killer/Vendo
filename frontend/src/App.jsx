@@ -15,7 +15,9 @@ import { prefetchImages, clearImageCache } from './api/imageCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
-import { idSet, checkOrderRefs } from './api/refs';
+import { idSet, checkOrderRefs, mergeOrders } from './api/refs';
+import { addSyncRun } from './api/syncHistory';
+import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 
 // Сума з рядка ("4 280 ₴") або числа → Number.
 const parseMoney = (v) => typeof v === 'number' ? v : (Number(String(v || '').replace(/[^\d.-]/g, '')) || 0);
@@ -59,6 +61,7 @@ export default function App() {
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
   const [loadError, setLoadError] = useState(null); // {what, message} — постійна помилка завантаження (банер), null = немає
   const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
+  const [showSyncHistory, setShowSyncHistory] = useState(false); // відкрита панель історії синхронізацій
   const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
   const fetchingRef = useRef(false); // мережеве перечитування в процесі — не накладати цикли (повільний сервер)
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
@@ -219,36 +222,41 @@ export default function App() {
     const locals = getLocalOrders();
     const canCheck = products.length > 0 && customers.length > 0;
     const prodIds = idSet(products), custIds = idSet(customers);
-    let sent = 0, failed = 0, skipped = 0;
+    let sent = 0, failed = 0, skipped = 0, conflict = 0;
+    const items = []; // per-record результат для історії синхронізацій (#20)
+    const opCode = (o) => o.op === 'delete' ? 'delete' : o.op === 'restore' ? 'restore' : (o.num ? 'edit' : 'new');
+    const rec = (o, result, message) => items.push({ id: o.id, label: o.num || ('№' + String(o.id || '').slice(0, 8)), op: opCode(o), result, message: message || '' });
     for (const o of locals) {
       try {
         if (o.op === 'delete') {
           if (o.num) {
             const r = await deleteOrder(o.id, o.baseVersion);
-            if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); failed++; continue; }
+            if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
             if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено");
           }
-          removeLocalOrder(o.id); sent++; continue;
+          removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
         if (o.op === 'restore') {
           const r = await restoreOrder(o.id, o.baseVersion);
-          if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); failed++; continue; }
+          if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
           if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
-          removeLocalOrder(o.id); sent++; continue;
+          removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
-        if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; continue; }
+        if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; rec(o, 'skipped', "Посилання на видалені дані"); continue; }
         const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion, o.deletionMark);
-        if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); failed++; continue; }
+        if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
         if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
-        removeLocalOrder(o.id); sent++;
+        removeLocalOrder(o.id); sent++; rec(o, 'sent');
       } catch (e) {
         console.error("Sync error", o.id, e);
-        setLocalOrderError(o.id, e.message || "Помилка"); failed++;
+        setLocalOrderError(o.id, e.message || "Помилка"); failed++; rec(o, 'failed', e.message || "Помилка");
       }
     }
     await fetchFromNetwork(true);
+    if (items.length) addSyncRun({ sent, failed, conflict, skipped, items }); // запис прогону в історію
     const parts = [];
     if (sent) parts.push(tr("toast.syncSent", { count: sent }));
+    if (conflict) parts.push(tr("toast.syncConflict", { count: conflict }));
     if (failed) parts.push(tr("toast.syncFailed", { count: failed }));
     if (skipped) parts.push(tr("toast.syncSkipped", { count: skipped }));
     notify(parts.length ? tr("toast.syncResult", { parts: parts.join(", ") }) : tr("toast.syncNothing"));
@@ -324,6 +332,12 @@ export default function App() {
     setOrderItems([]); setEditOrderId(null); setEditCustomer(null);
     notify(tr('toast.dataCleared'));
     loadData(); // перезавантажити з сервера у фоні
+  };
+
+  // Відкрити замовлення з історії синхронізацій (для вирішення конфлікту/помилки).
+  const openOrderFromHistory = (id) => {
+    const o = mergeOrders(orders, getLocalOrders()).find(x => x.id === id);
+    if (o) { setShowSyncHistory(false); handleNav("orders", { order: o }); }
   };
 
   // Копіювати поточне замовлення в нове: лишаємо товари й контрагента, скидаємо
@@ -427,7 +441,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
@@ -439,7 +453,7 @@ export default function App() {
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
-      {!showLog && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
+      {!showLog && !showSyncHistory && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
         <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} offsetTop={loadError ? 42 : 0} />}
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
@@ -447,6 +461,9 @@ export default function App() {
 
       {/* Журнал помилок: деталі + надсилання логу розробнику */}
       {showLog && <LogPanel t={t} onClose={() => setShowLog(false)} />}
+
+      {/* Історія синхронізацій: прогони + per-order результат, перехід у замовлення */}
+      {showSyncHistory && <SyncHistoryPanel t={t} onClose={() => setShowSyncHistory(false)} onOpenOrder={openOrderFromHistory} />}
     </>
   );
 }
