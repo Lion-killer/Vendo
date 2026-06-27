@@ -145,15 +145,22 @@ export const updateOrder = async (id, orderItems, customerId, total, status, dat
         body: JSON.stringify({ orderItems, customerId, total, status, date }),
     })).json();
 
-export const deleteOrder = async (id) =>
-    (await tfetch(`${apiUrl()}/orders/${id}`, { method: 'DELETE', headers: h() })).json();
+// baseVersion — токен версії на момент, коли додаток бачив замовлення: 1С виявляє
+// конфлікт (409), якщо помітку/вміст відтоді змінили (видалення/відновлення теж міняють
+// ВерсияДанных). Відсутній baseVersion = беззастережно (force).
+export const deleteOrder = async (id, baseVersion) =>
+    (await tfetch(`${apiUrl()}/orders/${id}`, {
+        method: 'DELETE',
+        headers: h({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ baseVersion }),
+    })).json();
 
 // Зняти помітку на видалення (PUT із deletionMark:false; інші поля не чіпаємо).
-export const restoreOrder = async (id) =>
+export const restoreOrder = async (id, baseVersion) =>
     (await tfetch(`${apiUrl()}/orders/${id}`, {
         method: 'PUT',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ deletionMark: false }),
+        body: JSON.stringify({ deletionMark: false, baseVersion }),
     })).json();
 
 // Найдешевший пінг доступності: HEAD /health (без авторизації, без БД, без тіла) —

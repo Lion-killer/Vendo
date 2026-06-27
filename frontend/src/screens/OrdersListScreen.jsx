@@ -92,15 +92,26 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             if (isDraftStatus(o)) {
                 // "Нове" — лише локальне; видаляємо локально (на сервері його ще немає).
                 removeLocalOrder(o.id);
-                if (o.num && isOnline) await deleteOrder(o.id);
+                if (o.num && isOnline) await deleteOrder(o.id, o.version);
             } else if (isOnline) {
                 // Відправлене — помітка на видалення (бекенд/1С ставлять ПометкаУдаления)
-                await deleteOrder(o.id);
+                const r = await deleteOrder(o.id, o.version);
+                // Конфлікт версій → у чергу як конфлікт (банер при відкритті), не «успіх».
+                if (r && r.conflict) {
+                    saveLocalOrder({
+                        id: o.id, num: o.num, op: 'delete', status: 'Видалено', baseVersion: o.version,
+                        conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
+                        customer: o.customer || null, customerId: o.customerId || null,
+                        client: o.client || o.customer?.name || tr('common.unknownClient'),
+                        items: o.items || [], date: o.date, total: o.total, sColor: t.error,
+                    });
+                    setOrderToDelete(null); recompute(); return;
+                }
                 removeLocalOrder(o.id); // прибрати локальну копію, якщо була
             } else {
                 // Офлайн: ставимо видалення в чергу (op:'delete') — виконається при синхронізації.
                 saveLocalOrder({
-                    id: o.id, num: o.num, op: 'delete', status: 'Видалено',
+                    id: o.id, num: o.num, op: 'delete', status: 'Видалено', baseVersion: o.version,
                     customer: o.customer || null, customerId: o.customerId || null,
                     client: o.client || o.customer?.name || tr('common.unknownClient'),
                     items: o.items || [], date: o.date, total: o.total, sColor: t.error,

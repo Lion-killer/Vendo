@@ -117,13 +117,25 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             } else if (!isOnline) {
                 // Офлайн: ставимо видалення в чергу (op:'delete') — doSync виконає при синхронізації.
                 saveLocalOrder({
-                    id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено',
+                    id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено', baseVersion,
                     customer: customer || null, customerId: customer?.id || null,
                     client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
                     total: `${money(total)} ₴`, sColor: t.err,
                 });
             } else {
-                await deleteOrder(editOrderId); // бекенд/1С ставлять помітку на видалення
+                const r = await deleteOrder(editOrderId, baseVersion); // 1С ставить помітку на видалення
+                // Конфлікт версій (помітку/вміст змінили на сервері) → у чергу як конфлікт, банер.
+                if (r && r.conflict) {
+                    saveLocalOrder({
+                        id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено', baseVersion,
+                        conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
+                        customer: customer || null, customerId: customer?.id || null,
+                        client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
+                        total: `${money(total)} ₴`, sColor: t.err,
+                    });
+                    markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
+                    return;
+                }
             }
             markHandled?.();
             if (isMounted.current) setOrderItems([]);
@@ -149,13 +161,24 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // синхронізації. Локальний запис із deletionMark:false перекриває серверний
                 // (mergeOrders) → у списку одразу показується НЕ видаленим.
                 saveLocalOrder({
-                    id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено',
+                    id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено', baseVersion,
                     deletionMark: false, customer: customer || null, customerId: customer?.id || null,
                     client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
                     total: `${money(total)} ₴`, sColor: t.ok,
                 });
             } else {
-                await restoreOrder(editOrderId);
+                const r = await restoreOrder(editOrderId, baseVersion);
+                if (r && r.conflict) {
+                    saveLocalOrder({
+                        id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено', baseVersion,
+                        deletionMark: false, conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
+                        customer: customer || null, customerId: customer?.id || null,
+                        client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
+                        total: `${money(total)} ₴`, sColor: t.ok,
+                    });
+                    markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
+                    return;
+                }
             }
             markHandled?.();
             refreshOrders?.();
@@ -179,7 +202,9 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         if (goToOrdersList) goToOrdersList();
     };
     const resolveOverwrite = () => {
-        if (conflictLocal?.serverState === 'deleted') { setAskUnmark(true); return; }
+        // Питаємо про зняття помітки лише коли це ПРАВКА над видаленим на сервері. Для
+        // самих операцій delete/restore намір уже в op — просто форсуємо.
+        if (conflictLocal?.serverState === 'deleted' && !conflictLocal?.op) { setAskUnmark(true); return; }
         doOverwrite();
     };
     const resolveTakeServer = () => {

@@ -223,11 +223,17 @@ export default function App() {
     for (const o of locals) {
       try {
         if (o.op === 'delete') {
-          if (o.num) { const r = await deleteOrder(o.id); if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено"); }
+          if (o.num) {
+            const r = await deleteOrder(o.id, o.baseVersion);
+            if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); failed++; continue; }
+            if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено");
+          }
           removeLocalOrder(o.id); sent++; continue;
         }
         if (o.op === 'restore') {
-          const r = await restoreOrder(o.id); if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
+          const r = await restoreOrder(o.id, o.baseVersion);
+          if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); failed++; continue; }
+          if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
           removeLocalOrder(o.id); sent++; continue;
         }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; continue; }
