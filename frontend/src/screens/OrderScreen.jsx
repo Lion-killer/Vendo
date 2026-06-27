@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog } from '../components/ui';
 import { localeTag } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
@@ -29,6 +29,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const [showCustPicker, setShowCustPicker] = useState(false);
     const [custQuery, setCustQuery] = useState("");
     const [showMenu, setShowMenu] = useState(false);
+    const [askUnmark, setAskUnmark] = useState(false); // діалог «зняти помітку при перезаписі видаленого»
 
     // Пошук контрагента по назві / адресі / телефону / коду (для великих списків).
     const custQ = custQuery.trim().toLowerCase();
@@ -167,11 +168,19 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
     // Розв'язання конфлікту: «перезаписати моє» — гасимо базу версії й помилку, наступна
     // синхронізація перезапише сервер (force); «взяти серверне» — викидаємо локальну правку.
-    const resolveOverwrite = () => {
-        saveLocalOrder({ id: editOrderId, baseVersion: null, conflict: false, syncError: "" });
+    // Якщо на сервері замовлення ПОМІЧЕНЕ на видалення — спершу питаємо, чи знімати помітку.
+    const doOverwrite = (deletionMark) => {
+        setAskUnmark(false);
+        const patch = { id: editOrderId, baseVersion: null, conflict: false, syncError: "" };
+        if (deletionMark === false) patch.deletionMark = false; // зняти помітку при перезаписі
+        saveLocalOrder(patch);
         markHandled?.();
         notify?.(tr("order.willOverwrite"));
         if (goToOrdersList) goToOrdersList();
+    };
+    const resolveOverwrite = () => {
+        if (conflictLocal?.serverState === 'deleted') { setAskUnmark(true); return; }
+        doOverwrite();
     };
     const resolveTakeServer = () => {
         removeLocalOrder(editOrderId);
@@ -380,6 +389,14 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         </div>
                     </div>
                 </div>
+            )}
+
+            {askUnmark && (
+                <ConfirmDialog t={t} icon="trash" danger={false}
+                    title={tr("order.unmarkOnOverwriteTitle")} body={tr("order.unmarkOnOverwriteBody")}
+                    confirmLabel={tr("order.unmarkYes")} cancelLabel={tr("order.unmarkNo")}
+                    onConfirm={() => doOverwrite(false)}
+                    onCancel={() => doOverwrite(undefined)} />
             )}
         </div>
     );

@@ -129,11 +129,13 @@ export const fetchOrders = async (startDate, endDate) => {
 // id — клієнтський GUID замовлення; сервер робить upsert за ним (ідемпотентно).
 // baseVersion — токен версії (як ВерсияДанных у 1С), від якої редагували: сервер виявляє
 // конфлікт (409), якщо запис відтоді змінився. Відсутній baseVersion = перезаписати.
-export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date, baseVersion) =>
+// deletionMark=false — зняти помітку видалення при upsert (для «перезаписати моє» над
+// видаленим на сервері). Якщо не передано — помітку не чіпаємо.
+export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date, baseVersion, deletionMark) =>
     (await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id, orderItems, customerId, total, status, date, baseVersion }),
+        body: JSON.stringify({ id, orderItems, customerId, total, status, date, baseVersion, ...(deletionMark === false ? { deletionMark: false } : {}) }),
     })).json();
 
 export const updateOrder = async (id, orderItems, customerId, total, status, date) =>
