@@ -94,7 +94,7 @@ const postToServer = async () => {
             method: 'POST', headers, body: JSON.stringify(body), signal: ctrl.signal,
         }).finally(() => clearTimeout(id));
         return res.ok;
-    } catch { return false; }
+    } catch (e) { logWarn('Лог: API /logs недоступний', String(e && e.message || e)); return false; }
 };
 
 // Uint8Array → base64 (для запису бінарного файлу через Filesystem). Чанками, щоб не
@@ -125,13 +125,13 @@ const shareReport = async (text) => {
             const { Share } = await import('@capacitor/share');
             await Share.share({ title: 'Vendo log', text: 'Лог Vendo (архів)', files: [uri] });
             return true;
-        } catch { /* падаємо на текстовий шаринг нижче */ }
+        } catch (e) { logWarn('Лог: шаринг ZIP-файлу не вдався', String(e && e.message || e)); }
     }
     try {
         const { Share } = await import('@capacitor/share');
         await Share.share({ title: 'Vendo log', text });
         return true;
-    } catch { return false; }
+    } catch (e) { logWarn('Лог: текстовий шаринг не вдався', String(e && e.message || e)); return false; }
 };
 
 // Надіслати лог: сервер → діалог «Поділитися». Повертає спосіб, що спрацював, або null.

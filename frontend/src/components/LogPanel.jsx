@@ -11,9 +11,11 @@ const LEVEL_LABEL = { server: 'sendLog_server', share: 'sendLog_share', clipboar
 export const LogPanel = ({ t, onClose }) => {
     const { t: tr } = useTranslation();
     const [all, setAll] = useState(false);
-    const [entries] = useState(() => getEntries().slice().reverse()); // найновіші зверху
     const { state: sendState, send: doSend, sending } = useLogSend('Надсилання з журналу помилок');
 
+    // Читаємо журнал на кожному рендері (не знімком): після спроби надсилання стан
+    // змінюється → перемальовка → одразу видно нові записи (зокрема причину збою).
+    const entries = getEntries().slice().reverse(); // найновіші зверху
     const shown = all ? entries : entries.filter(e => e.level !== 'info');
     const doClear = () => { if (window.confirm(tr('log.clearConfirm'))) { clearLog(); onClose(); } };
 
