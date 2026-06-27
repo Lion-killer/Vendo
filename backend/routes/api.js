@@ -1,13 +1,8 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const db = require('../db');
 
 const router = express.Router();
-
-// Лог-файл клієнтських звітів (POST /logs). NDJSON — по запису на рядок.
-const LOG_FILE = path.join(__dirname, '..', 'data', 'app-logs.ndjson');
 
 // --- Підготовлені запити ---
 const q = {
@@ -117,28 +112,6 @@ const nextOrderNum = () => {
 router.post('/auth', (req, res) => {
     // Імітація автентифікації (QR код в дизайні не передавав паролі)
     res.json({ success: true, user: { name: "Олексій К.", role: "sales_rep" }, token: "mock_token_123" });
-});
-
-// Ротація: при перевищенні ліміту перейменовуємо поточний файл у .1 (один бекап,
-// старий перезаписується) — файл не росте безмежно. Дешево: statSync лише на запис.
-const LOG_MAX_BYTES = 1024 * 1024; // 1 МБ
-const rotateLogs = () => {
-    try {
-        if (fs.statSync(LOG_FILE).size > LOG_MAX_BYTES) fs.renameSync(LOG_FILE, LOG_FILE + '.1');
-    } catch { /* файлу ще немає або зайнятий — ігноруємо */ }
-};
-
-// POST /logs — клієнт надсилає звіт про роботу/збій. Дописуємо рядком у NDJSON-файл
-// (у 1С — у журнал реєстрації). Не валимось, якщо тіло криве чи диск недоступний.
-router.post('/logs', (req, res) => {
-    try {
-        rotateLogs();
-        const rec = { received: new Date().toISOString(), deviceId: req.get('X-Device-Id') || '', body: req.body };
-        fs.appendFile(LOG_FILE, JSON.stringify(rec) + '\n', () => {});
-        const n = Array.isArray(req.body && req.body.entries) ? req.body.entries.length : 0;
-        console.log(`[logs] ${rec.deviceId} — ${n} записів`);
-    } catch (e) { /* лог не має валити запит */ }
-    res.json({ success: true });
 });
 
 // GET/HEAD /health — найдешевша перевірка доступності. Без авторизації й без звернень
