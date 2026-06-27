@@ -201,7 +201,11 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                             {hasErrors && <span style={{ width: 9, height: 9, borderRadius: "50%", background: t.err }} />}
                         </button>
                         {onClearData && (
-                            <button onClick={() => { if (window.confirm(tr("profile.clearDataConfirm"))) { setShowProfile(false); onClearData(); } }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                            <button onClick={() => {
+                                const pending = getLocalOrders().length;
+                                const msg = pending > 0 ? tr("profile.clearDataPending", { count: pending }) : tr("profile.clearDataConfirm");
+                                if (window.confirm(msg)) { setShowProfile(false); onClearData(); }
+                            }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
                                 <MIcon name="trash" size={20} color={t.ink} />
                                 <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.clearData")}</span>
                             </button>

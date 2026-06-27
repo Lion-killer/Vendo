@@ -140,6 +140,7 @@
     "openLog": "Error log",
     "clearData": "Clear data",
     "clearDataConfirm": "Clear all local data? Authorization is kept, data will reload from the server.",
+    "clearDataPending": "Warning: there are unsent orders ({{count}}). Clearing will delete them PERMANENTLY. Sync first. Clear anyway?",
     "sendLog": "Send log to developer",
     "sendLog_server": "Sent ✓",
     "sendLog_share": "Opened ✓",
