@@ -29,7 +29,7 @@ const syncLabel = (ts, tr) => {
     return d === 1 ? tr("sync.yesterday") : tr("sync.dayAgo", { count: d });
 };
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors }) => {
+export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData }) => {
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
 
@@ -200,6 +200,12 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                             <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.openLog")}</span>
                             {hasErrors && <span style={{ width: 9, height: 9, borderRadius: "50%", background: t.err }} />}
                         </button>
+                        {onClearData && (
+                            <button onClick={() => { if (window.confirm(tr("profile.clearDataConfirm"))) { setShowProfile(false); onClearData(); } }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                                <MIcon name="trash" size={20} color={t.ink} />
+                                <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.clearData")}</span>
+                            </button>
+                        )}
                         <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.errSoft, border: `1px solid ${t.err}33`, color: t.err, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
                             <MIcon name="logout" size={20} color={t.err} /> {tr("profile.logout")}
                         </button>

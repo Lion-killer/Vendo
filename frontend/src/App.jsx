@@ -11,7 +11,7 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, fetchAuthedBlobRaw } from './api/client';
-import { prefetchImages } from './api/imageCache';
+import { prefetchImages, clearImageCache } from './api/imageCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
@@ -296,6 +296,19 @@ export default function App() {
     setScreen("login");
   };
 
+  // #34: очистити всі локальні дані, ОКРІМ авторизації/налаштувань. Видаляємо все з
+  // localStorage, крім keep-списку (підхід «все крім дозволеного» ловить і ключі через
+  // константи: журнал, чернетки), + кеш зображень (IndexedDB), скидаємо стан і тягнемо заново.
+  const clearData = () => {
+    const KEEP = ['vendo_token', 'vendo_device_id', 'vendo_api_url', 'vendo_session', 'vendo_theme', 'vendo_lang'];
+    Object.keys(localStorage).forEach(k => { if (!KEEP.includes(k)) localStorage.removeItem(k); });
+    clearImageCache();
+    setProducts([]); setCategories([]); setCustomers([]); setOrders([]); setLoadError(null);
+    setOrderItems([]); setEditOrderId(null); setEditCustomer(null);
+    notify(tr('toast.dataCleared'));
+    loadData(); // перезавантажити з сервера у фоні
+  };
+
   // Копіювати поточне замовлення в нове: лишаємо товари й контрагента, скидаємо
   // прив'язку до існуючого документа (стає "Нове", редаговане).
   const copyOrderToNew = () => {
@@ -397,7 +410,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={loadData} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={loadData} products={products} customers={customers} orders={orders} connecting={connecting} />}

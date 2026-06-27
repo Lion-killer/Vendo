@@ -61,6 +61,15 @@ export async function loadCachedImage(path, fetchRaw) {
   return null;
 }
 
+// Повне очищення кешу зображень (для кнопки «Очистити дані», #34). Закриваємо з'єднання
+// й видаляємо всю БД — наступний доступ відкриє її заново.
+export function clearImageCache() {
+  try {
+    if (dbPromise) { dbPromise.then(db => { try { db.close(); } catch (e) {} }); dbPromise = null; }
+    if (typeof indexedDB !== 'undefined') indexedDB.deleteDatabase(DB_NAME);
+  } catch (e) { /* ігноруємо — не критично */ }
+}
+
 // Проактивне кешування всіх переданих шляхів (фонове, послідовне). Пропускаємо ті, що вже
 // в кеші з актуальною версією; решту (нові або зі зміненим фото) — перекешовуємо.
 export async function prefetchImages(paths, fetchRaw) {
