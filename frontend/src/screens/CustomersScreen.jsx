@@ -67,10 +67,7 @@ const ClientRow = ({ t, c, onClick }) => {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-                    <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 3, display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                        <span style={{ fontFamily: F_NUM }}>{c.code}</span>
-                        {c.address && <><span style={{ color: t.line }}>·</span><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.address}</span></>}
-                    </div>
+                    {c.address && <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.address}</div>}
                     {(c.phone || c.contact) && (
                         <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap", alignItems: "center" }}>
                             {c.contact && <span style={{ fontSize: 11, color: t.inkSoft }}>{c.contact}</span>}
