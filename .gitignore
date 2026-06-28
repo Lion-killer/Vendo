@@ -5,6 +5,10 @@ node_modules/
 frontend/dist/
 frontend/build_err.txt
 
+# Локальні env (адреса бекенду тощо); приклад — frontend/.env.example
+frontend/.env
+frontend/.env.local
+
 # SQLite database (runtime data; re-seeds from db.json)
 backend/data/*.db
 backend/data/*.db-shm

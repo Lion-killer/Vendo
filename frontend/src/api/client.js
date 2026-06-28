@@ -1,10 +1,10 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { logInfo, logWarn, logError } from '../logger';
 
-// Адреса бекенду й ідентифікатор пристрою беруться з QR-коду (зберігаються в
-// localStorage під час логіну). DEFAULT_API — запасний для dev/емулятора.
-const DEFAULT_API = 'http://10.0.2.2:3000/api';
-// Емулятор Android: хост = 10.0.2.2. Реальний пристрій — адреса з QR-коду.
+// Адреса бекенду береться з QR-коду (зберігається в localStorage під час логіну).
+// Пріоритет: QR (localStorage) → VITE_API_URL (.env, dev-дефолт) → хардкод-фолбек.
+// Підказки для емулятора (10.0.2.2) і реального пристрою (LAN IP) — у README.
+const DEFAULT_API = import.meta.env.VITE_API_URL || 'http://10.0.2.2:3000/api';
 
 const apiUrl = () => localStorage.getItem('vendo_api_url') || DEFAULT_API;
 const deviceId = () => localStorage.getItem('vendo_device_id') || '';

@@ -68,7 +68,18 @@ cd frontend
 npm run build          # → dist/
 npx cap sync android   # синхронізувати веб-збірку + нативні плагіни в Android-проект
 ```
-> Адреса бекенду й ідентифікатор пристрою беруться з **QR-коду** при вході (зберігаються в `localStorage`). Запасна адреса для емулятора — `10.0.2.2` ([`src/api/client.js`](frontend/src/api/client.js)).
+### Адреса бекенду
+
+Резолвиться в [`src/api/client.js`](frontend/src/api/client.js) у такому порядку:
+
+1. **QR-код** при вході — зберігається в `localStorage` (`vendo_api_url`). Основне джерело в проді: одна збірка APK → різні сервери без перезбірки.
+2. **`VITE_API_URL`** з `frontend/.env` — дефолт для локальної розробки (копіюй з [`.env.example`](frontend/.env.example); сам `.env` у `.gitignore`).
+3. **Хардкод-фолбек** `http://10.0.2.2:3000/api` — щоб dev на емуляторі працював без `.env`.
+
+Підказки для `VITE_API_URL`:
+- **Браузер на тому ж ПК:** `http://localhost:3000/api`
+- **Android-емулятор:** `http://10.0.2.2:3000/api` (хост видно як `10.0.2.2`)
+- **Реальний пристрій:** LAN IP хоста, напр. `http://192.168.1.50:3000/api`
 
 ## API
 
