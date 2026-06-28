@@ -20,7 +20,7 @@ Run from the project root unless noted. `start.bat` launches both servers in sep
 **Frontend** (`cd frontend`):
 - `npm run dev -- --host` — Vite dev server on http://localhost:5173 (`--host` exposes it on the LAN for device/emulator testing)
 - `npm run build` — production build into `dist/`
-- `npm test` — unit tests via stdlib `node --test` (`src/**/*.test.mjs`): `detectLang`, locale parity (uk/ru/en), `localOrders.newId`. No lint configured.
+- `npm test` — unit tests via stdlib `node --test` (`src/**/*.test.mjs`): `detectLang`, locale parity (uk/ru/en), `localOrders.newId`, `deviceData.purgeOnDeviceSwitch`. No lint configured.
 
 If `npm run dev`/`build` fails with `'vite' is not recognized`, the `node_modules/.bin` shims are missing (e.g. after copying `node_modules` between drives) — run `npm install` to regenerate them, or invoke directly via `node node_modules/vite/bin/vite.js build`.
 
@@ -51,6 +51,7 @@ When changing the order response shape, keep it compatible with what the screens
 
 **Offline-first behavior** is central and spans `App.jsx` + `src/api/localOrders.js`:
 - `loadData()` fetches all collections, mirrors them to `localStorage['cached_data']`, and falls back to that cache when offline. A background `pingServer()` (HEAD `/products`) every 15s toggles `isOnline` and reloads on reconnect.
+- **localStorage is device-scoped.** On QR login, `purgeOnDeviceSwitch` (`src/api/deviceData.js`) compares the scanned `vendo_device_id` with the stored one; if it changed, it wipes everything except UI prefs (`vendo_theme`/`vendo_lang`) and clears the image cache, so a different device's QR never loads the previous device's cached data, drafts, queue, token, or session.
 - Draft/unsent orders are persisted client-side in `localStorage['vendo_local_orders']` (keyed by `num`; local-only orders get `local_<timestamp>` ids). `OrderScreen` auto-saves drafts on edit. Screens **merge** server orders with these local ones, de-duping by `num`, and the Dashboard "sync" action replays locals to the server (`createOrder`/`updateOrder`) then clears them. Status colors for local orders are assigned client-side and differ from the server's.
 
 ### Theming & shared UI

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '../components/Icon';
 import { auth } from '../api/client';
 import { scanQr, parseQr } from '../api/scanner';
+import { clearImageCache } from '../api/imageCache';
+import { purgeOnDeviceSwitch } from '../api/deviceData';
 
 export const LoginScreen = ({ t, onLogin }) => {
     const { t: tr } = useTranslation();
@@ -26,6 +28,11 @@ export const LoginScreen = ({ t, onLogin }) => {
 
         // 2) Парсимо вміст: GUID пристрою + (опційно) адреса бекенду + код прив'язки
         const { deviceId, apiUrl, pairingCode } = parseQr(raw);
+
+        // Зміна пристрою: якщо сканують QR ІНШОГО пристрою — стираємо всі дані попереднього
+        // (кеш, чернетки, чергу, історію, токен, сесію) + кеш фото. Чужі дані не вантажаться.
+        if (purgeOnDeviceSwitch(deviceId, localStorage)) clearImageCache();
+
         if (apiUrl) localStorage.setItem('vendo_api_url', apiUrl);
         if (deviceId) localStorage.setItem('vendo_device_id', deviceId);
 
