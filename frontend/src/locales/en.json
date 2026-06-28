@@ -16,6 +16,8 @@
     "success": "Success",
     "scan": "Scan QR-code",
     "hint": "Scan the QR-code from the corporate portal",
+    "firstTime": "First time using the app?",
+    "help": "How to use it — guide",
     "errScanner": "Could not open the scanner. Please allow camera access.",
     "errUnauthorized": "Device not authorized",
     "errAuth": "Authentication error. Check your connection."

@@ -57,13 +57,6 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp }) => {
     return (
         <div style={{ flex: 1, background: t.bg, color: t.ink, display: "flex", flexDirection: "column", alignItems: "center", padding: "max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))", position: "relative" }}>
 
-            {/* Довідка — для нового агента до сканування QR */}
-            {onOpenHelp && (
-                <button onClick={onOpenHelp} aria-label={tr("help.title")} style={{ position: "absolute", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
-                    <Icon name="info" size={20} color={t.inkMuted} />
-                </button>
-            )}
-
             <div style={{ flex: 1.2 }} />
 
             {/* Бренд */}
@@ -117,6 +110,16 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp }) => {
             </button>
 
             <p style={{ color: t.inkMuted, fontSize: 12, textAlign: "center", margin: "16px 0 0" }}>{tr("login.hint")}</p>
+
+            {/* Довідка — помітний акцент для нового агента (до сканування QR) */}
+            {onOpenHelp && (
+                <div style={{ width: "100%", maxWidth: 340, marginTop: 18, textAlign: "center" }}>
+                    <div style={{ color: t.inkMuted, fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>{tr("login.firstTime")}</div>
+                    <button onClick={onOpenHelp} style={{ width: "100%", height: 48, borderRadius: 14, background: t.accentSoft, border: `1.5px solid ${t.accent}55`, color: t.accentInk, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit", fontSize: 14.5, fontWeight: 700 }}>
+                        <Icon name="info" size={19} color={t.accentInk} /> {tr("login.help")}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
