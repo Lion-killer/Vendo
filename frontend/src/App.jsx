@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LIGHT, DARK } from './theme';
-import { BottomNav, TopActions } from './components/ui';
+import { BottomNav, TopActions, Lightbox, closeLightbox } from './components/ui';
 import { Snackbar } from './components/Shared';
 import { LogPanel } from './components/LogPanel';
 import { LoginScreen } from './screens/LoginScreen';
@@ -467,6 +467,9 @@ export default function App() {
 
       {/* Вбудована довідка (markdown із docs/user-guide) */}
       {showHelp && <HelpScreen t={t} onClose={() => setShowHelp(false)} />}
+
+      {/* Єдиний лайтбокс фото (каталог + замовлення); закривається апаратним «назад» */}
+      <Lightbox />
     </>
   );
 }
