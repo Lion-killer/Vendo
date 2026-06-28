@@ -54,9 +54,7 @@ export const LoginScreen = ({ t, onLogin }) => {
 
             {/* Бренд */}
             <div style={{ textAlign: "center" }}>
-                <div style={{ width: 76, height: 76, borderRadius: 22, background: t.accent, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
-                    <Icon name="vmark" size={42} color="#fff" />
-                </div>
+                <img src="/app-icon.png" alt="Vendo" width={76} height={76} style={{ display: "block", borderRadius: 22, margin: "0 auto 18px" }} />
                 <h1 style={{ color: t.ink, fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: -0.6 }}>Vendo</h1>
                 <p style={{ color: t.inkMuted, fontSize: 14, margin: "6px 0 0", fontWeight: 500 }}>{tr("login.subtitle")}</p>
             </div>
