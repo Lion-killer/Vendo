@@ -19,9 +19,7 @@ import { idSet, checkOrderRefs, mergeOrders } from './api/refs';
 import { addSyncRun } from './api/syncHistory';
 import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 import { HelpScreen } from './screens/HelpScreen';
-
-// Сума з рядка ("4 280 ₴") або числа → Number.
-const parseMoney = (v) => typeof v === 'number' ? v : (Number(String(v || '').replace(/[^\d.-]/g, '')) || 0);
+import { parseMoney, orderNum as orderLabel, fmtDate } from './i18n';
 
 // Сигнатура замовлення (товари+контрагент+дата) — для порівняння «чи щось змінилось».
 const orderSig = (items, custId, date) =>
@@ -73,10 +71,6 @@ export default function App() {
 
   // Плаваюче повідомлення, що переживає навігацію (на відміну від снека всередині екрана).
   const notify = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2800); };
-  // Людський лейбл замовлення: номер документа, якщо присвоєний; інакше короткий №<id>.
-  const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
-  const fmtDate = (iso) => iso ? String(iso).split("-").reverse().join(".") : "";
-
   // Зберегти поточне (нове/редаговане) замовлення як чернетку при виході з екрана.
   // Викликається з handleNav; пропускається, якщо OrderScreen уже сам зберіг/відправив.
   const saveLeavingDraft = () => {
@@ -415,6 +409,9 @@ export default function App() {
   };
 
   const isLoggedIn = screen !== "login";
+  // Зсув плаваючих верхніх кластерів (глобальний TopActions + власні дії каталогу) на
+  // висоту банера помилки, щоб вони лишались вирівняними з посунутим донизу контентом.
+  const topOffset = loadError ? 42 : 0;
 
   return (
     <>
@@ -445,19 +442,19 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
           {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
-        {isLoggedIn && <BottomNav active={screen} onNav={handleNav} t={t} />}
+        {isLoggedIn && screen !== "orders" && <BottomNav active={screen} onNav={handleNav} t={t} />}
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
       {!showLog && !showSyncHistory && !showHelp && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
-        <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} offsetTop={loadError ? 42 : 0} />}
+        <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} offsetTop={topOffset} />}
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
       <Snackbar msg={toast} t={t} />

@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ConfirmDialog } from '../components/ui';
-import { localeTag, fmtMoney as fmtCurLocale, setLang, SUPPORTED } from '../i18n';
+import { localeTag, fmtMoney as fmtCurLocale, parseMoney, todayISO, orderNum, setLang, SUPPORTED } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
 
-// Розбір суми з рядка ("4 280 ₴" / "1 078.00 ₴") або числа → Number.
-const parseMoney = (v) => {
-    if (typeof v === 'number') return v;
-    if (!v) return 0;
-    const n = parseFloat(String(v).replace(/\s/g, '').replace(/[^\d.,-]/g, '').replace(',', '.'));
-    return isNaN(n) ? 0 : n;
-};
 const fmtMoney = (n) => fmtCurLocale(n, { maximumFractionDigits: 0 });
 
 const initials = (name) => (name || "")
@@ -49,11 +42,9 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
 
     const statusColor = (o) => o.sColor || (o.status === 'Видалено' ? t.err : o.status === 'Відправлено' ? t.ok : o.status === 'Нове' ? t.warn : t.inkSoft);
     const isNew = (o) => o.status === 'Нове';
-    const orderNum = (o) => o.num || `№${String(o.id || '').slice(0, 8)}`;
 
     // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки й KPI «сьогодні».
-    const todayISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
-    const todayOrders = displayOrders.filter(o => o.date === todayISO);
+    const todayOrders = displayOrders.filter(o => o.date === todayISO());
 
     // KPI «сьогодні» рахуємо саме з сьогоднішніх (без помічених на видалення) — щоб
     // виторг/к-сть узгоджувалися зі списком нижче.
@@ -136,7 +127,10 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                 </div>
                 <Card t={t} style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     {todayOrders.length === 0 ? (
-                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", color: t.inkMuted, fontSize: 13, padding: 24 }}>{tr("dashboard.empty")}</div>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: t.inkMuted, padding: 24, gap: 12 }}>
+                            <MIcon name="doc" size={40} color={t.line} />
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>{tr("dashboard.empty")}</div>
+                        </div>
                     ) : (
                     <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                         {todayOrders.map((o, i, arr) => (

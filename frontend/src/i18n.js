@@ -34,4 +34,20 @@ export const fmtMoney = (n, opts = {}) => (Number(n) || 0).toLocaleString(locale
 // Гривня — символ той самий у всіх мовах; локаль впливає лише на групування цифр.
 export const fmtCur = (n, opts = {}) => `${fmtMoney(n, opts)} ₴`;
 
+// ─── Спільні форматери замовлень (раніше дублювалися по екранах) ───────────────
+// Сума з рядка ("1 078,00 ₴") або числа → Number. Стійко до пробілів-роздільників і
+// коми як десяткового (uk/ru-локалі) — інакше "1 078,00" перетворилось би на 107800.
+export const parseMoney = (v) => {
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  const n = parseFloat(String(v).replace(/\s/g, '').replace(/[^\d.,-]/g, '').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+};
+// Локальна дата YYYY-MM-DD (без зсуву UTC).
+export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+// YYYY-MM-DD → DD.MM.YYYY (для показу).
+export const fmtDate = (iso) => iso ? String(iso).split('-').reverse().join('.') : '';
+// Людський лейбл замовлення: номер документа або короткий №<id>.
+export const orderNum = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : '');
+
 export default i18n;

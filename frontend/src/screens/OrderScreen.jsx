@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog } from '../components/ui';
-import { localeTag } from '../i18n';
+import { fmtMoney, todayISO, orderNum } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
 
-const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
 export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
-    // Лейбл: номер документа, якщо є; інакше короткий №<id>.
-    const orderLabel = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : "");
     // Набір GUID наявних товарів — для позначення «зниклих» позицій (видалених на бекенді).
     const prodIds = idSet(products);
     const productMissing = (p) => products.length > 0 && p?.id != null && !prodIds.has(p.id);
@@ -56,6 +53,17 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const total = orderItems.reduce((s, it) => s + it.product.price * it.qty, 0);
     const debt = Number(customer?.debt) || 0;
 
+    // Спільні поля локального запису замовлення (контрагент/позиції/дата/сума) — однакові
+    // в усіх місцях збереження: чернетка, видалення, відновлення, гілки конфлікту.
+    const orderFields = () => ({
+        customer: customer || null,
+        customerId: customer?.id || null,
+        client: customer?.name || tr("common.unknownClient"),
+        items: orderItems,
+        date: orderDate,
+        total: `${money(total)} ₴`,
+    });
+
     // Автозбереження невідправленого замовлення (проведене не чіпаємо — лише перегляд)
     useEffect(() => {
         if (locked || orderItems.length === 0 || !isDirty) return;
@@ -66,12 +74,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             const orderData = {
                 id: editOrderId || undefined,
                 num: num || undefined,
-                customer: customer || null,
-                customerId: customer?.id || null,
-                client: customer?.name || tr("common.unknownClient"),
-                items: orderItems,
-                date: orderDate,
-                total: `${money(total)} ₴`,
+                ...orderFields(),
                 status: queueStatus,
                 sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
                 baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
@@ -87,13 +90,12 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         if (!locked && orderItems.length > 0) {
             const queueStatus = status === "Відправлено" ? "Відправлено" : "Нове";
             const savedId = saveLocalOrder({
-                id: editOrderId || undefined, num: num || undefined, customer: customer || null, customerId: customer?.id || null,
-                client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
-                total: `${money(total)} ₴`, status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
+                id: editOrderId || undefined, num: num || undefined, ...orderFields(),
+                status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
                 baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
-            notify?.(tr("toast.saved", { label: orderLabel({ num, id: savedId }), date: orderDate.split("-").reverse().join(".") }));
+            notify?.(tr("toast.saved", { label: orderNum({ num, id: savedId }), date: orderDate.split("-").reverse().join(".") }));
         }
         if (isMounted.current) setOrderItems([]);
         if (goToOrdersList) goToOrdersList();
@@ -118,9 +120,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // Офлайн: ставимо видалення в чергу (op:'delete') — doSync виконає при синхронізації.
                 saveLocalOrder({
                     id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено', baseVersion,
-                    customer: customer || null, customerId: customer?.id || null,
-                    client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
-                    total: `${money(total)} ₴`, sColor: t.err,
+                    ...orderFields(), sColor: t.err,
                 });
             } else {
                 const r = await deleteOrder(editOrderId, baseVersion); // 1С ставить помітку на видалення
@@ -129,9 +129,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     saveLocalOrder({
                         id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено', baseVersion,
                         conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
-                        customer: customer || null, customerId: customer?.id || null,
-                        client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
-                        total: `${money(total)} ₴`, sColor: t.err,
+                        ...orderFields(), sColor: t.err,
                     });
                     markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
                     return;
@@ -140,7 +138,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             markHandled?.();
             if (isMounted.current) setOrderItems([]);
             refreshOrders?.();
-            const label = orderLabel({ num, id: editOrderId });
+            const label = orderNum({ num, id: editOrderId });
             notify?.(isNew ? tr("order.deleted", { label })
                 : !isOnline ? tr("order.deleteQueued", { label })
                 : tr("order.markedDeleted", { label }));
@@ -154,7 +152,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const handleUnmark = async () => {
         setShowMenu(false);
         if (status !== "Видалено" || !editOrderId) return;
-        const label = orderLabel({ num, id: editOrderId });
+        const label = orderNum({ num, id: editOrderId });
         try {
             if (!isOnline) {
                 // Офлайн: ставимо відновлення в чергу (op:'restore') — doSync виконає при
@@ -162,9 +160,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // (mergeOrders) → у списку одразу показується НЕ видаленим.
                 saveLocalOrder({
                     id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено', baseVersion,
-                    deletionMark: false, customer: customer || null, customerId: customer?.id || null,
-                    client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
-                    total: `${money(total)} ₴`, sColor: t.ok,
+                    deletionMark: false, ...orderFields(), sColor: t.ok,
                 });
             } else {
                 const r = await restoreOrder(editOrderId, baseVersion);
@@ -172,9 +168,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     saveLocalOrder({
                         id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено', baseVersion,
                         deletionMark: false, conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
-                        customer: customer || null, customerId: customer?.id || null,
-                        client: customer?.name || tr("common.unknownClient"), items: orderItems, date: orderDate,
-                        total: `${money(total)} ₴`, sColor: t.ok,
+                        ...orderFields(), sColor: t.ok,
                     });
                     markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
                     return;
@@ -215,8 +209,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         if (goToOrdersList) goToOrdersList();
     };
 
-    // Підпис біля заголовка: номер документа або №<id> для автозбереженого; для зовсім
-    // нового — порожньо (заголовок «Замовлення» вже все каже).
+    // Заголовок екрана = номер документа (або №<id> для автозбереженого). Для зовсім
+    // нового без номера — порожньо, тоді показуємо слово «Замовлення» як запасний варіант.
     const subLabel = num || (editOrderId ? `№${String(editOrderId).slice(0, 8)}` : "");
 
     // Дата замовлення (YYYY-MM-DD → DD.MM.YYYY) для режиму перегляду.
@@ -228,18 +222,20 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
             {/* Шапка — компактна (максимум місця під позиції) */}
             <div style={{ padding: "max(12px, env(safe-area-inset-top)) 16px 8px" }}>
-                {/* Рядок 1: назад + статус */}
+                {/* Рядок 1: назад + назва екрана + статус */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <button onClick={goToOrdersList} style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer" }}>
-                        <MIcon name="back" size={18} color={t.ink} />
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                        <button onClick={goToOrdersList} style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer" }}>
+                            <MIcon name="back" size={18} color={t.ink} />
+                        </button>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: t.ink }}>{tr("order.title")}</span>
+                    </div>
                     <div style={{ background: statusColor + "22", height: 26, padding: "0 11px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4, display: "flex", alignItems: "center" }}>● {tr(`status.${status}`).toUpperCase()}</div>
                 </div>
-                {/* Рядок 2: заголовок + єдина група контролів (номер · дата · меню) */}
+                {/* Рядок 2: заголовок (номер документа) + контроли (дата · меню) */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tr("order.title")}</div>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subLabel}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                        {subLabel && <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, fontWeight: 600, color: t.inkMuted }}>{subLabel}</div>}
                         {locked
                             ? <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</div>
                             : <input type="date" value={orderDate} onChange={e => { setOrderDate(e.target.value); pushDate?.(e.target.value); setIsDirty(true); }}
@@ -343,7 +339,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                             <MIcon name="minus" size={13} color={t.ink} w={2} />
                                         </button>
                                         <div style={{ minWidth: 24, textAlign: "center", fontFamily: F_NUM, fontSize: 13.5, fontWeight: 700 }}>{it.qty}</div>
-                                        <button onClick={() => updateQty(idx, 1)} style={{ width: 30, height: 30, background: t.btnBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 8px 8px 0", border: "none", cursor: "pointer" }}>
+                                        <button onClick={() => updateQty(idx, 1)} style={{ width: 30, height: 30, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 8px 8px 0", border: "none", cursor: "pointer" }}>
                                             <MIcon name="plus" size={13} color="#fff" w={2} />
                                         </button>
                                     </div>

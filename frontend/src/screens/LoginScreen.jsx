@@ -70,9 +70,6 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp }) => {
 
             {/* Картка скану QR */}
             <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 20, padding: 20, width: "100%", maxWidth: 340 }}>
-                <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    <span style={{ color: t.inkSoft, fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase" }}>{tr("login.qrTitle")}</span>
-                </div>
                 <div style={{ width: "100%", aspectRatio: "1", background: t.surfaceMuted, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", border: `2px dashed ${scanned ? t.ok : loading ? t.accent : t.line}`, transition: "border-color .3s", position: "relative", overflow: "hidden" }}>
                     {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>

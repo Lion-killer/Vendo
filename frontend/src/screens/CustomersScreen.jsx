@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ListPlaceholder } from '../components/ui';
-import { localeTag } from '../i18n';
+import { fmtMoney } from '../i18n';
 
-const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { maximumFractionDigits: 0 });
+const money = (n) => fmtMoney(n, { maximumFractionDigits: 0 });
 
 // Картка клієнта (нижня шторка) — деталі + контактні особи.
 const ClientCard = ({ t, c, onClose }) => {
@@ -37,7 +37,6 @@ const ClientCard = ({ t, c, onClose }) => {
 
                 <div style={{ marginTop: 8 }}>
                     <Field label={tr("customers.code")} value={c.code} />
-                    <Field label={tr("customers.name")} value={c.name} />
                     <Field label={tr("customers.address")} value={c.address} />
                     <Field label={tr("customers.phone")} value={c.phone} tel />
                 </div>

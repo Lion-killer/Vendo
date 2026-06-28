@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder } from '../components/ui';
-import { localeTag } from '../i18n';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W } from '../components/ui';
+import { fmtMoney } from '../i18n';
 import { scanBarcode } from '../api/scanner';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
@@ -39,7 +39,7 @@ const flattenProducts = (node, trail = []) => {
     if (node.children) node.children.forEach(c => { out = out.concat(flattenProducts(c, [...trail, c.name])); });
     return out;
 };
-const money = (n) => (Number(n) || 0).toLocaleString(localeTag(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
 const ProductRow = ({ t, p, qty, onAdd }) => {
@@ -68,7 +68,7 @@ const ProductRow = ({ t, p, qty, onAdd }) => {
                         <MIcon name="minus" size={15} color={qty > 0 ? t.ink : t.inkMuted} w={2} />
                     </button>
                     <div style={{ width: 28, textAlign: "center", fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: qty > 0 ? t.ink : t.inkMuted }}>{qty}</div>
-                    <button disabled={out} onClick={() => onAdd(p, 1)} style={{ width: 32, height: 36, background: t.btnBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 9px 9px 0", border: "none", cursor: out ? "default" : "pointer" }}>
+                    <button disabled={out} onClick={() => onAdd(p, 1)} style={{ width: 32, height: 36, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 9px 9px 0", border: "none", cursor: out ? "default" : "pointer" }}>
                         <MIcon name="plus" size={15} color="#fff" w={2} />
                     </button>
                 </div>
@@ -100,7 +100,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify, connecting }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify, connecting, offsetTop = 0 }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -145,18 +145,22 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
+            {/* Власні дії каталогу — фіксований кластер ліворуч від глобального TopActions.
+                Вирівняні через спільний TOP_ACTIONS_W; обидва зсуваються на offsetTop під
+                банером помилки. Жодного резервування місця в потоці шапки. */}
+            <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: TOP_ACTIONS_W + 24, zIndex: 1500, display: "flex", gap: 6, alignItems: "center" }}>
+                <button onClick={handleScan} aria-label="Сканувати штрихкод" style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
+                    <MIcon name="barcode" size={18} color={t.ink} />
+                </button>
+                <button onClick={() => onNav("orders", { keepOrder: true })} style={{ padding: "0 12px", height: 38, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                    <MIcon name="cart" size={16} color="#fff" /> {cartCount}
+                </button>
+            </div>
+
             {/* Шапка */}
             <div style={{ padding: "max(16px, env(safe-area-inset-top)) 16px 12px", background: t.bg }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 22, height: 38 }}>
                     <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>{tr("nav.catalog")}</div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginRight: 150 }}>{/* лишаємо місце глобальному TopActions (App) */}
-                        <button onClick={handleScan} aria-label="Сканувати штрихкод" style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
-                            <MIcon name="barcode" size={18} color={t.ink} />
-                        </button>
-                        <button onClick={() => onNav("orders", { keepOrder: true })} style={{ padding: "0 12px", height: 38, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
-                            <MIcon name="cart" size={16} color="#fff" /> {cartCount}
-                        </button>
-                    </div>
                 </div>
 
                 {/* Пошук по всьому дереву */}

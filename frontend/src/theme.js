@@ -2,8 +2,7 @@
 // Нова мова: нейтральне полотно, один акцент (індиго), семантичні статуси,
 // крупніша типографіка, мінімум градієнтів. Inter (UI) + IBM Plex Mono (числа).
 //
-// Кожен об'єкт містить НОВІ токени редизайну + АЛІАСИ під старі імена
-// (text/primary/border…), щоб екрани, які ще не переписані, рендерились коректно.
+// Усі екрани переведені на ці токени — alias-шару під старі імена більше немає.
 
 const lightCore = {
     bg: "#F7F7F5",
@@ -28,6 +27,7 @@ const lightCore = {
     invBg: "#15161B",   // інверсний контейнер (hero / плаваючі смуги)
     btnBg: "#15161B",   // основні залиті кнопки
     statusInk: "#000000",
+    overlay: "rgba(0,0,0,0.45)", // скрим під нижніми шторками/діалогами
 };
 
 const darkCore = {
@@ -53,36 +53,11 @@ const darkCore = {
     invBg: "#262834",
     btnBg: "#7B88FF",
     statusInk: "#F3F3F1",
+    overlay: "rgba(0,0,0,0.45)", // скрим під нижніми шторками/діалогами
 };
 
-// Аліаси під старі імена токенів (для ще не переписаних екранів).
-const aliases = (c) => ({
-    surfaceVariant: c.surfaceMuted,
-    primary: c.accent,
-    primaryDark: c.accentInk,
-    primaryLight: c.accent,
-    onPrimary: "#FFFFFF",
-    secondary: c.accent,
-    onSecondary: "#FFFFFF",
-    tertiary: c.warn,
-    text: c.ink,
-    textSecondary: c.inkSoft,
-    textMuted: c.inkMuted,
-    border: c.line,
-    error: c.err,
-    success: c.ok,
-    warning: c.warn,
-    cardShadow: "none",
-    navBg: c.surface,
-    navBorder: c.line,
-    statusBar: c.invBg,
-    chip: c.accentSoft,
-    chipText: c.accentInk,
-    overlay: "rgba(0,0,0,0.45)",
-});
-
-export const LIGHT = { ...lightCore, ...aliases(lightCore) };
-export const DARK = { ...darkCore, ...aliases(darkCore) };
+export const LIGHT = lightCore;
+export const DARK = darkCore;
 
 // Шрифти
 export const F_UI = `'Inter', -apple-system, system-ui, sans-serif`;

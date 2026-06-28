@@ -70,7 +70,13 @@ export const ICON = {
   x: <><path d="M6 6l12 12M18 6L6 18" /></>,
   logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></>,
   moon: <><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></>,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8h.01" /></>,
+  calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></>,
 };
+
+// Ширина плаваючого кластера TopActions (2×38 + gap 8) — екрани з власними кнопками
+// в шапці резервують це місце справа, щоб не наїхати на нього. Єдине джерело правди.
+export const TOP_ACTIONS_W = 84;
 
 // ─── Зум-зображення: pinch + панорамування + подвійний тап + колесо (#30) ──────
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));

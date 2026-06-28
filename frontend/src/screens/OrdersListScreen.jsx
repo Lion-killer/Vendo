@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '../components/Icon';
-import { ScrollRow, ListPlaceholder } from '../components/ui';
+import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/ui';
+import { orderNum, fmtDate as fmtDmy } from '../i18n';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
@@ -103,7 +103,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                         conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
                         customer: o.customer || null, customerId: o.customerId || null,
                         client: o.client || o.customer?.name || tr('common.unknownClient'),
-                        items: o.items || [], date: o.date, total: o.total, sColor: t.error,
+                        items: o.items || [], date: o.date, total: o.total, sColor: t.err,
                     });
                     setOrderToDelete(null); recompute(); return;
                 }
@@ -114,7 +114,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                     id: o.id, num: o.num, op: 'delete', status: 'Видалено', baseVersion: o.version,
                     customer: o.customer || null, customerId: o.customerId || null,
                     client: o.client || o.customer?.name || tr('common.unknownClient'),
-                    items: o.items || [], date: o.date, total: o.total, sColor: t.error,
+                    items: o.items || [], date: o.date, total: o.total, sColor: t.err,
                 });
             }
 
@@ -133,48 +133,29 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
         recompute();
     }, [appOrders, startDate, endDate]);
 
+    // Чіп пресета періоду (інлайн-стилі, як сегментований фільтр на інших екранах).
+    const chip = (active) => ({
+        whiteSpace: "nowrap", padding: "6px 12px", borderRadius: 16, fontSize: 11, fontWeight: 700,
+        border: `1px solid ${active ? t.accent : t.line}`, background: active ? t.accent : t.surfaceMuted,
+        color: active ? "#fff" : t.ink, cursor: "pointer", display: "inline-flex", alignItems: "center",
+        gap: 5, fontFamily: "inherit",
+    });
+
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingBottom: "20px", position: "relative", overflow: "hidden" }}>
             {/* Header */}
-            <div style={{ background: t.surface, padding: "16px 16px 12px", borderBottom: `1px solid ${t.border}`, paddingTop: "max(16px, env(safe-area-inset-top))" }}>
+            <div style={{ background: t.surface, padding: "16px 16px 12px", borderBottom: `1px solid ${t.line}`, paddingTop: "max(16px, env(safe-area-inset-top))" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
-                    <h2 style={{ color: t.text, fontSize: 20, fontWeight: 800, margin: 0 }}>{tr("nav.ordersList")}</h2>
+                    <h2 style={{ color: t.ink, fontSize: 20, fontWeight: 700, margin: 0 }}>{tr("nav.ordersList")}</h2>
                 </div>
 
                 {/* Розумні пресети + "Свій період" (точний вибір розкриває поля дат) */}
                 <ScrollRow fade={t.surface} gap={8} style={{ paddingBottom: 4 }}>
-                    <style dangerouslySetInnerHTML={{
-                        __html: `
-                        .smart-filter-btn {
-                            white-space: nowrap;
-                            padding: 6px 12px;
-                            border-radius: 16px;
-                            font-size: 11px;
-                            font-weight: 700;
-                            border: 1px solid ${t.border};
-                            background: ${t.surfaceVariant};
-                            color: ${t.text};
-                            cursor: pointer;
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 5px;
-                            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                        }
-                        .smart-filter-btn.active {
-                            background: ${t.primary};
-                            color: #fff;
-                            border-color: ${t.primary};
-                        }
-                        .smart-filter-btn:active {
-                            opacity: 0.7;
-                            transform: scale(0.95);
-                        }
-                    `}} />
                     {PRESETS.map(p => (
-                        <button key={p.id} className={`smart-filter-btn ${presetActive(p.id) ? 'active' : ''}`} onClick={() => setSmartFilter(p.id)}>{tr(`ordersList.${p.id}`)}</button>
+                        <button key={p.id} style={chip(presetActive(p.id))} onClick={() => setSmartFilter(p.id)}>{tr(`ordersList.${p.id}`)}</button>
                     ))}
-                    <button className={`smart-filter-btn ${showCustom ? 'active' : ''}`} onClick={() => setShowCustom(v => !v)}>
-                        <Icon name="calendar" size={13} color={showCustom ? "#fff" : t.text} /> {tr("ordersList.custom")}
+                    <button style={chip(showCustom)} onClick={() => setShowCustom(v => !v)}>
+                        <MIcon name="calendar" size={13} color={showCustom ? "#fff" : t.ink} /> {tr("ordersList.custom")}
                     </button>
                 </ScrollRow>
 
@@ -182,21 +163,21 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 {showCustom && (
                     <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12 }}>
                         <div style={{ flex: 1 }}>
-                            <p style={{ color: t.textMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>{tr("ordersList.fromDate")}</p>
+                            <p style={{ color: t.inkMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>{tr("ordersList.fromDate")}</p>
                             <input
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                style={{ width: "100%", background: t.surfaceVariant, borderRadius: 10, padding: "8px 10px", border: `1px solid ${t.border}`, color: t.text, fontFamily: "inherit", outline: "none" }}
+                                style={{ width: "100%", background: t.surfaceMuted, borderRadius: 10, padding: "8px 10px", border: `1px solid ${t.line}`, color: t.ink, fontFamily: "inherit", outline: "none" }}
                             />
                         </div>
                         <div style={{ flex: 1 }}>
-                            <p style={{ color: t.textMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>{tr("ordersList.toDate")}</p>
+                            <p style={{ color: t.inkMuted, fontSize: 10, margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase" }}>{tr("ordersList.toDate")}</p>
                             <input
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                style={{ width: "100%", background: t.surfaceVariant, borderRadius: 10, padding: "8px 10px", border: `1px solid ${t.border}`, color: t.text, fontFamily: "inherit", outline: "none" }}
+                                style={{ width: "100%", background: t.surfaceMuted, borderRadius: 10, padding: "8px 10px", border: `1px solid ${t.line}`, color: t.ink, fontFamily: "inherit", outline: "none" }}
                             />
                         </div>
                     </div>
@@ -207,35 +188,35 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 80px" }}>
                 {orders.length === 0 ? (
                     <ListPlaceholder loading={connecting && appOrders.length === 0} t={t}>
-                        <Icon name="orders" size={48} color={t.border} />
-                        <p style={{ color: t.textMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>{tr("ordersList.empty")}</p>
+                        <MIcon name="doc" size={48} color={t.line} />
+                        <p style={{ color: t.inkMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>{tr("ordersList.empty")}</p>
                     </ListPlaceholder>
                 ) : (
                     orders.map(o => {
                       const refs = (products.length > 0 && customers.length > 0)
                           ? checkOrderRefs(o, idSet(products), idSet(customers)) : { ok: true };
                       return (
-                        <div key={o.id} onClick={() => onNav("orders", { order: o })} style={{ background: t.surface, borderRadius: 16, padding: "14px 16px", border: `1px solid ${o.deletionMark ? t.error + "55" : t.border}`, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", boxShadow: t.cardShadow, opacity: o.deletionMark ? 0.6 : 1 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surfaceVariant, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <Icon name="orders" size={20} color={t.primary} />
+                        <div key={o.id} onClick={() => onNav("orders", { order: o })} style={{ background: t.surface, borderRadius: 16, padding: "14px 16px", border: `1px solid ${o.deletionMark ? t.err + "55" : t.line}`, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", opacity: o.deletionMark ? 0.6 : 1 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surfaceMuted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                    <MIcon name="doc" size={20} color={t.accent} />
                                 </div>
-                                <div>
+                                <div style={{ minWidth: 0 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                                        <p style={{ color: t.text, fontSize: 14, fontWeight: 800, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{o.num || `№${String(o.id || '').slice(0, 8)}`}</p>
-                                        <span style={{ fontSize: 10, color: t.textMuted }}>{o.date}</span>
-                                        {!refs.ok && <span title={tr("ordersList.tipStale")} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("ordersList.badgeStale")}</span>}
-                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
-                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 800, color: t.error, background: t.error + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeError")}</span>
-                                            : o._pending && <span title={tr("ordersList.tipWaiting")} style={{ fontSize: 9.5, fontWeight: 800, color: t.textMuted, background: t.textMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeWaiting")}</span>}
+                                        <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</p>
+                                        <span style={{ fontSize: 10, color: t.inkMuted }}>{fmtDmy(o.date)}</span>
+                                        {!refs.ok && <span title={tr("ordersList.tipStale")} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("ordersList.badgeStale")}</span>}
+                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
+                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeError")}</span>
+                                            : o._pending && <span title={tr("ordersList.tipWaiting")} style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeWaiting")}</span>}
                                     </div>
-                                    <p style={{ color: t.textMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600 }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>
+                                    <p style={{ color: t.inkMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>
                                 </div>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                                 <div style={{ textAlign: "right" }}>
-                                    <p style={{ color: t.text, fontSize: 14, fontWeight: 900, margin: "0 0 2px" }}>{o.total}</p>
-                                    <span style={{ fontSize: 11, fontWeight: 800, color: o.sColor }}>{tr(`status.${o.status}`)}</span>
+                                    <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: "0 0 2px", whiteSpace: "nowrap" }}>{o.total}</p>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: o.sColor }}>{tr(`status.${o.status}`)}</span>
                                 </div>
                                 {(() => {
                                     const blocked = o.status === "Проведено" || o.status === "Видалено";
@@ -243,8 +224,8 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                         <button
                                             onClick={(e) => { e.stopPropagation(); if (!blocked) setOrderToDelete(o); }}
                                             title={blocked ? (o.status === "Видалено" ? tr("ordersList.tipAlreadyMarked") : tr("ordersList.tipCantDeletePosted")) : tr("ordersList.tipDelete")}
-                                            style={{ background: blocked ? t.surfaceVariant : t.error + "15", border: "none", padding: 8, borderRadius: 10, cursor: blocked ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: blocked ? 0.45 : 1, transition: "background .2s" }}>
-                                            <Icon name="trash" size={18} color={blocked ? t.textMuted : t.error} />
+                                            style={{ background: blocked ? t.surfaceMuted : t.err + "15", border: "none", padding: 8, borderRadius: 10, cursor: blocked ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: blocked ? 0.45 : 1, transition: "background .2s" }}>
+                                            <MIcon name="trash" size={18} color={blocked ? t.inkMuted : t.err} />
                                         </button>
                                     );
                                 })()}
@@ -258,43 +239,25 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             {/* FAB */}
             <button
                 onClick={() => onNav("orders", { newOrder: true })}
-                style={{ position: "absolute", bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, background: `linear-gradient(135deg, ${t.primary}, ${t.secondary})`, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 20px ${t.primary}66`, zIndex: 10 }}
+                style={{ position: "absolute", bottom: 20, right: 20, width: 56, height: 56, borderRadius: 28, background: t.accent, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 20px ${t.accent}66`, zIndex: 10 }}
             >
-                <Icon name="plus" size={24} color="#fff" />
+                <MIcon name="plus" size={24} color="#fff" w={2} />
             </button>
 
-            {/* Delete Confirmation Modal */}
-            {orderToDelete && (
-                <div onClick={() => setOrderToDelete(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(2px)" }}>
-                    <div onClick={(e) => e.stopPropagation()} style={{ background: t.surface, borderRadius: 20, padding: 24, width: "100%", maxWidth: 320, boxShadow: t.cardShadow }}>
-                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-                            <div style={{ width: 48, height: 48, borderRadius: 24, background: t.error + "22", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Icon name="trash" size={24} color={t.error} />
-                            </div>
-                        </div>
-                        {(() => {
-                            const label = orderToDelete.num || `№${String(orderToDelete.id || '').slice(0, 8)}`;
-                            const draft = isDraftStatus(orderToDelete);
-                            return (
-                                <>
-                                    <h3 style={{ color: t.text, fontSize: 18, fontWeight: 800, textAlign: "center", margin: "0 0 8px" }}>{draft ? tr("ordersList.delTitleDraft") : tr("ordersList.delTitleMark")}</h3>
-                                    <p style={{ color: t.textMuted, fontSize: 14, textAlign: "center", margin: "0 0 24px" }}>
-                                        {draft ? tr("ordersList.delBodyDraft", { label }) : tr("ordersList.delBodyMark", { label })}
-                                    </p>
-                                    <div style={{ display: "flex", gap: 12 }}>
-                                        <button onClick={() => setOrderToDelete(null)} style={{ flex: 1, padding: "12px", background: t.surfaceVariant, border: "none", borderRadius: 12, color: t.text, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-                                            {tr("common.cancel")}
-                                        </button>
-                                        <button onClick={handleDelete} style={{ flex: 1, padding: "12px", background: t.error, border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", boxShadow: `0 4px 12px ${t.error}66` }}>
-                                            {draft ? tr("ordersList.confirmDelete") : tr("ordersList.confirmMark")}
-                                        </button>
-                                    </div>
-                                </>
-                            );
-                        })()}
-                    </div>
-                </div>
-            )}
+            {/* Підтвердження видалення/помітки — спільний діалог застосунку */}
+            {orderToDelete && (() => {
+                const label = orderNum(orderToDelete);
+                const draft = isDraftStatus(orderToDelete);
+                return (
+                    <ConfirmDialog t={t} icon="trash"
+                        title={draft ? tr("ordersList.delTitleDraft") : tr("ordersList.delTitleMark")}
+                        body={draft ? tr("ordersList.delBodyDraft", { label }) : tr("ordersList.delBodyMark", { label })}
+                        confirmLabel={draft ? tr("ordersList.confirmDelete") : tr("ordersList.confirmMark")}
+                        cancelLabel={tr("common.cancel")}
+                        onConfirm={handleDelete}
+                        onCancel={() => setOrderToDelete(null)} />
+                );
+            })()}
         </div>
     );
 };

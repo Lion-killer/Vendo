@@ -9,7 +9,6 @@
   "status": { "Нове": "New", "Відправлено": "Sent", "Проведено": "Posted", "Видалено": "Deleted" },
   "login": {
     "subtitle": "Sales representative system",
-    "qrTitle": "QR-code authentication",
     "scanning": "Scanning…",
     "confirmed": "Confirmed",
     "reading": "Reading…",
@@ -63,7 +62,6 @@
     "all": "All",
     "withDebt": "With debt",
     "code": "Code",
-    "name": "Name",
     "address": "Address",
     "phone": "Phone",
     "contacts": "Contact persons",
