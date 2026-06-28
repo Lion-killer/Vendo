@@ -4,6 +4,7 @@
   "error": { "loadBanner": "Loading errors: {{what}}", "details": "Details" },
   "log": { "title": "Error log", "showAll": "All", "onlyErrors": "Errors only", "sending": "Sending…", "clear": "Clear", "clearConfirm": "Clear the error log?", "empty": "No errors" },
   "syncHist": { "title": "Sync history", "onlyErrors": "Errors only", "all": "All", "empty": "No syncs yet", "clear": "Clear history", "clearConfirm": "Clear sync history?", "open": "Open", "op_new": "new", "op_edit": "edit", "op_delete": "delete", "op_restore": "restore" },
+  "help": { "title": "Help", "ukOnly": "The guide is currently available in Ukrainian." },
   "common": { "unknownClient": "Unknown client", "user": "User", "today": "today", "all": "All →", "nothing": "Nothing found", "scannerError": "Could not open the scanner. Please allow camera access.", "cancel": "Cancel" },
   "status": { "Нове": "New", "Відправлено": "Sent", "Проведено": "Posted", "Видалено": "Deleted" },
   "login": {
@@ -146,6 +147,7 @@
     "off": "Off",
     "openLog": "Error log",
     "openSyncHistory": "Sync history",
+    "openHelp": "Help",
     "clearData": "Clear data",
     "clearDataConfirm": "Clear all local data? Authorization is kept, data will reload from the server.",
     "clearDataPending": "Warning: there are unsent orders ({{count}}). Clearing will delete them PERMANENTLY. Sync first. Clear anyway?",

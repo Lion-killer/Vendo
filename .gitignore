@@ -5,6 +5,10 @@ node_modules/
 frontend/dist/
 frontend/build_err.txt
 
+# Згенерована копія довідки (канон — docs/user-guide; копіюється скриптом перед збіркою)
+frontend/src/help/
+frontend/public/help-images/
+
 # Локальні env (адреса бекенду тощо); приклад — frontend/.env.example
 frontend/.env
 frontend/.env.local

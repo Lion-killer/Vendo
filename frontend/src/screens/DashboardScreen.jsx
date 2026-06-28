@@ -29,7 +29,7 @@ const syncLabel = (ts, tr) => {
     return d === 1 ? tr("sync.yesterday") : tr("sync.dayAgo", { count: d });
 };
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData, onOpenSyncHistory }) => {
+export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData, onOpenSyncHistory, onOpenHelp }) => {
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
     const [clearConfirm, setClearConfirm] = useState(null); // {body} коли відкрито діалог очистки
@@ -204,6 +204,10 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                             <MIcon name="send" size={20} color={t.ink} />
                             <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.openLog")}</span>
                             {hasErrors && <span style={{ width: 9, height: 9, borderRadius: "50%", background: t.err }} />}
+                        </button>
+                        <button onClick={() => { setShowProfile(false); onOpenHelp && onOpenHelp(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                            <MIcon name="info" size={20} color={t.ink} />
+                            <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.openHelp")}</span>
                         </button>
                         {onClearData && (
                             <button onClick={() => {

@@ -18,6 +18,7 @@ import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, n
 import { idSet, checkOrderRefs, mergeOrders } from './api/refs';
 import { addSyncRun } from './api/syncHistory';
 import { SyncHistoryPanel } from './components/SyncHistoryPanel';
+import { HelpScreen } from './screens/HelpScreen';
 
 // Сума з рядка ("4 280 ₴") або числа → Number.
 const parseMoney = (v) => typeof v === 'number' ? v : (Number(String(v || '').replace(/[^\d.-]/g, '')) || 0);
@@ -62,6 +63,7 @@ export default function App() {
   const [loadError, setLoadError] = useState(null); // {what, message} — постійна помилка завантаження (банер), null = немає
   const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
   const [showSyncHistory, setShowSyncHistory] = useState(false); // відкрита панель історії синхронізацій
+  const [showHelp, setShowHelp] = useState(false); // відкрита вбудована довідка
   const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
   const fetchingRef = useRef(false); // мережеве перечитування в процесі — не накладати цикли (повільний сервер)
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
@@ -295,6 +297,7 @@ export default function App() {
     let handle, cancelled = false;
     import('@capacitor/app').then(async ({ App: CapApp }) => {
       const h = await CapApp.addListener('backButton', () => {
+        if (showHelp) { setShowHelp(false); return; }
         if (showLog) { setShowLog(false); return; }
         if (screen !== 'dashboard' && screen !== 'login') { handleNav('dashboard'); return; }
         CapApp.exitApp();
@@ -302,7 +305,7 @@ export default function App() {
       if (cancelled) h.remove(); else handle = h;
     }).catch(() => {});
     return () => { cancelled = true; if (handle) handle.remove(); };
-  }, [screen, showLog]);
+  }, [screen, showLog, showHelp]);
 
   const handleLogin = (name, token) => {
     const resolvedName = name || tr("common.user");
@@ -441,7 +444,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
@@ -453,7 +456,7 @@ export default function App() {
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
-      {!showLog && !showSyncHistory && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
+      {!showLog && !showSyncHistory && !showHelp && ["dashboard", "catalog", "customers", "ordersList"].includes(screen) &&
         <TopActions t={t} online={isOnline} connecting={connecting} syncing={syncing} pending={getLocalOrders().length} onSync={doSync} offsetTop={loadError ? 42 : 0} />}
 
       {/* Плаваюче повідомлення (збереження/відправка) — на рівні App, переживає навігацію */}
@@ -464,6 +467,9 @@ export default function App() {
 
       {/* Історія синхронізацій: прогони + per-order результат, перехід у замовлення */}
       {showSyncHistory && <SyncHistoryPanel t={t} onClose={() => setShowSyncHistory(false)} onOpenOrder={openOrderFromHistory} />}
+
+      {/* Вбудована довідка (markdown із docs/user-guide) */}
+      {showHelp && <HelpScreen t={t} onClose={() => setShowHelp(false)} />}
     </>
   );
 }

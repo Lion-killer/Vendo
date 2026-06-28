@@ -2,6 +2,9 @@
   "name": "vendo-frontend",
   "version": "0.0.0",
   "scripts": {
+    "copy-help": "node scripts/copy-help.mjs",
+    "predev": "node scripts/copy-help.mjs",
+    "prebuild": "node scripts/copy-help.mjs",
     "dev": "vite",
     "build": "vite build",
     "test": "node --test"
@@ -17,7 +20,8 @@
     "i18next": "^26.3.2",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
-    "react-i18next": "^17.0.8"
+    "react-i18next": "^17.0.8",
+    "react-markdown": "^8.0.7"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
