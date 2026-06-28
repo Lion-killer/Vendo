@@ -13,14 +13,14 @@ Run from the project root unless noted. `start.bat` launches both servers in sep
 **Backend** (`cd backend`):
 - `npm start` — start API on http://localhost:3000 (`node server.js`; no watch/reload — restart manually after edits, since `require` caches modules)
 - API contract docs: **Swagger UI at http://localhost:3000/api/docs**, spec at `/api/openapi.json` (hand-maintained `backend/openapi.json` — keep in sync with `routes/api.js` when the contract changes; Swagger UI loads from CDN, needs internet).
-- No tests or lint configured.
+- `npm test` — unit tests via stdlib `node --test` (no deps). Pure order helpers live in `lib/orders.js` (`computeTotal`, `formatUAH`, `colorFor`, `pickLang`, `msg`); tested in `lib/orders.test.mjs`. DB-coupled code (`hydrateOrder`/`normalizeItems`) stays in `routes/api.js` and isn't unit-tested. No lint configured.
 - Uses `better-sqlite3` (native module). After a Node major-version change or moving `node_modules` between machines, run `npm install` / `npm rebuild better-sqlite3` to rebuild the binary.
 - To reset the database to seed state, stop the server and delete `data/vendo.db` (and any `-wal`/`-shm` files); it re-seeds from `data/db.json` on next start.
 
 **Frontend** (`cd frontend`):
 - `npm run dev -- --host` — Vite dev server on http://localhost:5173 (`--host` exposes it on the LAN for device/emulator testing)
 - `npm run build` — production build into `dist/`
-- No tests or lint configured.
+- `npm test` — unit tests via stdlib `node --test` (`src/**/*.test.mjs`): `detectLang`, locale parity (uk/ru/en), `localOrders.newId`. No lint configured.
 
 If `npm run dev`/`build` fails with `'vite' is not recognized`, the `node_modules/.bin` shims are missing (e.g. after copying `node_modules` between drives) — run `npm install` to regenerate them, or invoke directly via `node node_modules/vite/bin/vite.js build`.
 
