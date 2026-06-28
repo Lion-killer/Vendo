@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W } from '../components/ui';
-import { fmtMoney } from '../i18n';
+import { fmtMoney, fmtDate, todayISO } from '../i18n';
 import { scanBarcode } from '../api/scanner';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
@@ -100,7 +100,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editCustomer, isOnline, notify, connecting, offsetTop = 0 }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, isOnline, notify, connecting, offsetTop = 0 }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -176,7 +176,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                     <div onClick={() => onNav("orders", { keepOrder: true })} style={{ marginTop: 10, background: t.accentSoft, border: `1px solid ${t.accent}22`, borderRadius: 12, padding: "9px 12px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                         <MIcon name="cart" size={16} color={t.accentInk} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editOrderId ? tr("catalog.orderCtx", { id: editOrderId }) : tr("dashboard.newOrder")}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: t.accentInk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{editNum ? `${tr("catalog.orderCtx", { id: editNum })} · ${fmtDate(editDate || todayISO())}` : tr("dashboard.newOrder")}</div>
                             {editCustomer?.name && <div style={{ fontSize: 11.5, color: t.accentInk, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>{editCustomer.name}</div>}
                         </div>
                     </div>

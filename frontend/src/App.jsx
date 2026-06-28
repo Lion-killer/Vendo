@@ -66,6 +66,7 @@ export default function App() {
   const fetchingRef = useRef(false); // мережеве перечитування в процесі — не накладати цикли (повільний сервер)
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
   const orderBaseline = useRef(""); // знімок замовлення на момент відкриття (щоб зберігати лише за змінами)
+  const navStack = useRef([]); // стек попередніх екранів для апаратного «назад»
 
   const t = isDark ? DARK : LIGHT;
 
@@ -293,18 +294,22 @@ export default function App() {
       const h = await CapApp.addListener('backButton', () => {
         if (showHelp) { setShowHelp(false); return; }
         if (showLog) { setShowLog(false); return; }
-        if (screen !== 'dashboard' && screen !== 'login') { handleNav('dashboard'); return; }
-        CapApp.exitApp();
+        if (showSyncHistory) { setShowSyncHistory(false); return; }
+        if (closeLightbox()) return;      // відкритий лайтбокс фото — спершу закриваємо його
+        if (screen === 'dashboard') { CapApp.exitApp(); return; } // головна — вихід із додатку
+        if (navigateBack()) return;       // інакше — на попередній екран зі стека
+        CapApp.exitApp();                 // стек порожній — виходимо
       });
       if (cancelled) h.remove(); else handle = h;
     }).catch(() => {});
     return () => { cancelled = true; if (handle) handle.remove(); };
-  }, [screen, showLog, showHelp]);
+  }, [screen, showLog, showHelp, showSyncHistory]);
 
   const handleLogin = (name, token) => {
     const resolvedName = name || tr("common.user");
     saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
     setUserName(resolvedName);
+    navStack.current = []; // нова сесія — чистий стек навігації
     setScreen("dashboard");
   };
 
@@ -315,6 +320,7 @@ export default function App() {
     setOrderItems([]);
     setEditOrderId(null);
     setEditCustomer(null);
+    navStack.current = [];
     setScreen("login");
   };
 
@@ -350,7 +356,22 @@ export default function App() {
     notify(tr("toast.copied"));
   };
 
+  // Апаратний «назад»: повертаємось на попередній екран зі стека (а не завжди на головну).
+  // Порожній стек (ми на стартовому екрані) → false, тоді дозволяємо вихід із додатку.
+  const navigateBack = () => {
+    if (navStack.current.length === 0) return false;
+    if (screen === "orders") saveLeavingDraft(); // зберегти чернетку при виході з замовлення
+    setScreen(navStack.current.pop());
+    return true;
+  };
+
   const handleNav = (s, params = {}) => {
+    // Корінь навігації — завжди «Головна». Тап по таб-бару (params.root) скидає історію:
+    // для Головної — порожньо (з неї «назад» = вихід), для решти табів — база [dashboard],
+    // тож «назад» веде на Головну, а вже звідти — вихід. Інші переходи штовхають поточний
+    // екран у стек (не штовхаємо при переході на той самий екран).
+    if (params.root) navStack.current = s === "dashboard" ? [] : ["dashboard"];
+    else if (s !== screen) navStack.current.push(screen);
     // Вихід з екрана замовлення (окрім переходу в каталог за товарами) — зберігаємо чернетку.
     if (screen === "orders" && !(s === "catalog" && params.keepOrder)) {
       saveLeavingDraft();
@@ -442,14 +463,14 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
           {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
-        {isLoggedIn && screen !== "orders" && <BottomNav active={screen} onNav={handleNav} t={t} />}
+        {isLoggedIn && screen !== "orders" && <BottomNav active={screen} onNav={(s) => handleNav(s, { root: true })} t={t} />}
       </div>
 
       {/* Індикатор онлайн/офлайн — завжди в правому верхньому куті, однакове положення на всіх екранах */}
