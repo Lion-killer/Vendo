@@ -6,7 +6,7 @@ import { scanQr, parseQr } from '../api/scanner';
 import { clearImageCache } from '../api/imageCache';
 import { purgeOnDeviceSwitch } from '../api/deviceData';
 
-export const LoginScreen = ({ t, onLogin }) => {
+export const LoginScreen = ({ t, onLogin, onOpenHelp }) => {
     const { t: tr } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -56,6 +56,13 @@ export const LoginScreen = ({ t, onLogin }) => {
 
     return (
         <div style={{ flex: 1, background: t.bg, color: t.ink, display: "flex", flexDirection: "column", alignItems: "center", padding: "max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))", position: "relative" }}>
+
+            {/* Довідка — для нового агента до сканування QR */}
+            {onOpenHelp && (
+                <button onClick={onOpenHelp} aria-label={tr("help.title")} style={{ position: "absolute", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
+                    <Icon name="info" size={20} color={t.inkMuted} />
+                </button>
+            )}
 
             <div style={{ flex: 1.2 }} />
 
