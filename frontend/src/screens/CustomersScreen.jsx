@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ListPlaceholder } from '../components/ui';
-import { fmtMoney } from '../i18n';
+import { fmtMoney, fmtDate, orderNum } from '../i18n';
+import { mergeOrders } from '../api/refs';
+import { getLocalOrders } from '../api/localOrders';
 
 const money = (n) => fmtMoney(n, { maximumFractionDigits: 0 });
 
 // Картка клієнта (нижня шторка) — деталі + контактні особи.
-const ClientCard = ({ t, c, onClose }) => {
+const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
     const { t: tr } = useTranslation();
     const debt = Number(c.debt) || 0;
+    // Замовлення цього контрагента (серверні + локальні, новіші згори) — історія по клієнту (#13).
+    const customerOrders = mergeOrders(orders, getLocalOrders())
+        .filter(o => (o.customerId || o.customer?.id) === c.id);
     // Кілька контактних осіб (#11) — поки бекенд віддає одну; підтримуємо й масив c.contacts.
     const contacts = Array.isArray(c.contacts) ? c.contacts
         : (c.contact || c.phone) ? [{ name: c.contact || tr("customers.contactPerson"), phone: c.phone }] : [];
@@ -48,6 +53,23 @@ const ClientCard = ({ t, c, onClose }) => {
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: i < contacts.length - 1 ? `1px solid ${t.lineSoft}` : "none" }}>
                         <span style={{ fontSize: 13.5, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name || tr("customers.contactPerson")}</span>
                         {p.phone && <a href={`tel:${p.phone}`} style={{ fontSize: 13, fontWeight: 600, color: t.accent, fontFamily: F_NUM, textDecoration: "none", flexShrink: 0 }}>{p.phone}</a>}
+                    </div>
+                ))}
+
+                {/* Історія замовлень за клієнтом (#13) — тап відкриває замовлення */}
+                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "18px 0 8px" }}>{tr("customers.orders")} · {customerOrders.length}</div>
+                {customerOrders.length === 0 ? (
+                    <div style={{ fontSize: 13, color: t.inkMuted, paddingBottom: 8 }}>{tr("customers.noOrders")}</div>
+                ) : customerOrders.map(o => (
+                    <div key={o.id} onClick={() => onNav?.("orders", { order: o })} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: `1px solid ${t.lineSoft}`, cursor: "pointer" }}>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 13.5, fontWeight: 600, fontFamily: F_NUM, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</div>
+                            <div style={{ fontSize: 11, color: t.inkMuted, marginTop: 1 }}>{fmtDate(o.date)}</div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, fontFamily: F_NUM }}>{o.total}</div>
+                            <div style={{ fontSize: 10.5, fontWeight: 600, color: o.sColor || t.inkMuted, marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -95,7 +117,7 @@ const ClientRow = ({ t, c, onClick }) => {
     );
 };
 
-export const CustomersScreen = ({ t, customers = [], isOnline, connecting }) => {
+export const CustomersScreen = ({ t, customers = [], orders = [], onNav, isOnline, connecting }) => {
     const { t: tr } = useTranslation();
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
@@ -165,7 +187,7 @@ export const CustomersScreen = ({ t, customers = [], isOnline, connecting }) => 
                 <div style={{ height: 16 }} />
             </div>
 
-            {selected && <ClientCard t={t} c={selected} onClose={() => setSelected(null)} />}
+            {selected && <ClientCard t={t} c={selected} orders={orders} onNav={onNav} onClose={() => setSelected(null)} />}
         </div>
     );
 };

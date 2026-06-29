@@ -68,6 +68,8 @@
     "phone": "Телефон",
     "contacts": "Контактные лица",
     "noContacts": "Не указано",
+    "orders": "Заказы",
+    "noOrders": "Заказов ещё нет",
     "contactPerson": "Контактное лицо",
     "debt": "Долг {{sum}} ₴",
     "overpay": "Переплата {{sum}} ₴",

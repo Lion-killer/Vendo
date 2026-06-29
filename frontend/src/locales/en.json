@@ -66,6 +66,8 @@
     "phone": "Phone",
     "contacts": "Contact persons",
     "noContacts": "Not specified",
+    "orders": "Orders",
+    "noOrders": "No orders yet",
     "contactPerson": "Contact person",
     "debt": "Debt {{sum}} ₴",
     "overpay": "Overpayment {{sum}} ₴",
