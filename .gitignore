@@ -13,11 +13,6 @@ frontend/public/help-images/
 frontend/.env
 frontend/.env.local
 
-# SQLite database (runtime data; re-seeds from db.json)
-backend/data/*.db
-backend/data/*.db-shm
-backend/data/*.db-wal
-
 # Capacitor / Android build artifacts
 frontend/android/.gradle/
 frontend/android/**/build/
@@ -29,7 +24,7 @@ frontend/android/app/src/main/assets/public/
 TradeUkr/
 
 # 1C: згенерований файл налаштувань порівняння/об'єднання
-1c-config/MergeSettings*.xml
+backend/1c-config/**/MergeSettings*.xml
 
 # Design-tool handoff: зберігаємо .jsx-джерела, ігноруємо важкий бандл і артефакти
 design/**/*standalone*.html

@@ -5,7 +5,7 @@ echo ==============================================
 echo.
 
 echo [1/2] Starting Backend API Server (Port 3000)...
-start "Vendo Backend" cmd /k "cd backend && npm start"
+start "Vendo Backend" cmd /k "cd backend\mock && npm start"
 
 timeout /t 2 /nobreak > nul
 
