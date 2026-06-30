@@ -4,10 +4,10 @@
 
 ## Контракт API — основа
 
-Серцем проєкту є **єдиний REST-контракт**, проти якого написаний застосунок. Канонічне джерело — [`backend/openapi.json`](backend/openapi.json) (Swagger UI на `/api/docs`). Бекенд **змінний**: підійде будь-яка реалізація контракту. Доступні варіанти:
+Серцем проєкту є **єдиний REST-контракт**, проти якого написаний застосунок. Канонічне джерело — [`backend/mock/openapi.json`](backend/mock/openapi.json) (Swagger UI на `/api/docs`). Бекенд **змінний**: підійде будь-яка реалізація контракту. Доступні варіанти:
 
-- **Демо-сервер** `backend/` (Node + Express + SQLite) — еталонна реалізація контракту для локальної розробки/тесту; авторизація імітована, дані з фікстури.
-- **Інтеграція з 1С** `1c-config/` — один із можливих варіантів: HTTP-сервіс у міні-конфігурації, що об'єднується з «Управление торговлей для Украины» 2.3 (реальні номенклатура/ціни/залишки/контрагенти/замовлення, авторизація через одноразовий код → bearer-токен).
+- **Демо-сервер** `backend/mock/` (Node + Express, in-memory) — еталонна реалізація контракту для локальної розробки/тесту; авторизація імітована, дані з фікстури `db.json`.
+- **Інтеграція з 1С** `backend/1c-config/` — один із можливих варіантів: HTTP-сервіс у міні-конфігурації, що об'єднується з «Управление торговлей для Украины» 2.3 (реальні номенклатура/ціни/залишки/контрагенти/замовлення, авторизація через одноразовий код → bearer-токен).
 
 Контракт первинний; будь-який інший сервіс, що його реалізує, теж працюватиме.
 
@@ -15,7 +15,7 @@
 
 | Частина | Технології |
 |---|---|
-| **Demo backend** | Node.js + Express 5, SQLite (`better-sqlite3`) |
+| **Demo backend** | Node.js + Express 5, in-memory (сід із `db.json`) |
 | **1C backend** | HTTP-сервіс 1С (BSL), УТ для України 2.3, платформа 8.3.x (режим сумісності 8.2.13) |
 | **Frontend** | React 17, Vite 8, i18next (uk/ru/en), inline-стилі (без CSS-фреймворку) |
 | **Mobile** | Capacitor 8 (Android): App, Filesystem, Share, BarcodeScanner |
@@ -24,14 +24,15 @@
 
 ```
 Vendo/
-├─ backend/                # демо REST API над SQLite
-│  ├─ server.js            # точка входу (порт 3000)
-│  ├─ db.js                # схема SQLite + одноразовий сід із db.json
-│  ├─ routes/api.js        # ендпоінти (prepared statements)
-│  ├─ openapi.json         # контракт (Swagger UI на /api/docs)
-│  └─ data/db.json         # сід-фікстура
-├─ 1c-config/src/          # міні-конфігурація 1С (XML-вивантаження)
-│  └─ HTTPServices/венд_МобильноеПриложение/   # HTTP-сервіс: /auth, /products, /orders…
+├─ backend/                # контейнер бекендів одного REST-контракту
+│  ├─ mock/                # мок-бекенд: Node + Express, in-memory (для dev/тесту)
+│  │  ├─ server.js         #   точка входу (порт 3000)
+│  │  ├─ db.js             #   in-memory стор (сід із db.json при старті)
+│  │  ├─ routes/api.js     #   ендпоінти (prepared statements)
+│  │  ├─ openapi.json      #   контракт (Swagger UI на /api/docs)
+│  │  └─ data/db.json      #   сід-фікстура
+│  └─ 1c-config/TradeUkr23/src/   # справжній бекенд: міні-конфіг 1С для УТ 2.3
+│     └─ HTTPServices/венд_МобильноеПриложение/   # HTTP-сервіс: /auth, /products, /orders…
 ├─ frontend/               # React + Vite (+ Android-проект Capacitor)
 │  └─ src/
 │     ├─ App.jsx           # оркестратор: навігація, стан, offline/sync-логіка
@@ -57,10 +58,10 @@ start.bat
 
 ### Вручну
 ```bash
-cd backend && npm install && npm start      # API на :3000, контракт на /api/docs
+cd backend/mock && npm install && npm start  # API на :3000, контракт на /api/docs
 cd frontend && npm install && npm run dev -- --host
 ```
-При першому запуску `db.js` сідить `data/vendo.db` із `data/db.json`.
+При старті `db.js` сідить дані з `data/db.json` у пам'ять (без файлу БД).
 
 ### Збірка та Android
 ```bash
@@ -83,7 +84,7 @@ npx cap sync android   # синхронізувати веб-збірку + на
 
 ## API
 
-Базовий шлях: `/api` (демо) або `…/hs/vendo` (1С). Повний контракт — `backend/openapi.json` (Swagger UI на `/api/docs`).
+Базовий шлях: `/api` (демо) або `…/hs/vendo` (1С). Повний контракт — `backend/mock/openapi.json` (Swagger UI на `/api/docs`).
 
 | Метод | Шлях | Опис |
 |---|---|---|
@@ -109,9 +110,7 @@ npx cap sync android   # синхронізувати веб-збірку + на
 - **Діагностика.** Журнал роботи додатку з надсиланням розробнику через «Поділитися» (zip); історія синхронізацій (прогони + per-order результат); `ErrorBoundary` замість «білого екрана».
 - **Локалізація** uk/ru/en (автовизначення + ручне перемикання), формати дат/чисел/валюти.
 
-## Скидання демо-бази
+## Скидання демо-даних
 
-Зупиніть backend і видаліть файли БД — пересіються з `db.json`:
-```bash
-rm backend/data/vendo.db backend/data/vendo.db-wal backend/data/vendo.db-shm
-```
+Дані тримаються в пам'яті — просто **перезапустіть** backend: при старті він заново
+сідить із `db.json` (чистий стан). Файлів БД немає.

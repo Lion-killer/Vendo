@@ -4,18 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Vendo is a mobile-first B2B order-taking app for field sales representatives (Ukrainian UI: catalog, customers, orders). It is a prototype with mock-seeded data. Two independent Node projects — `backend/` (Express API over SQLite) and `frontend/` (React + Vite, wrapped with Capacitor for Android) — plus `design/vendo-app.jsx`, the original single-file mockup that the `frontend/src` screens were split out from.
+Vendo is a mobile-first B2B order-taking app for field sales representatives (Ukrainian UI: catalog, customers, orders). It is a prototype with mock-seeded data. `backend/` is a container for interchangeable backends behind one REST contract: `backend/mock/` (a Node/Express demo API, in-memory seeded from `db.json` — the contract reference for local dev) and `backend/1c-config/` (the real 1C HTTP-service mini-config, merged into «Управление торговлей для Украины» 2.3). `frontend/` (React + Vite, wrapped with Capacitor for Android) is a separate Node project — plus `design/vendo-app.jsx`, the original single-file mockup that the `frontend/src` screens were split out from.
 
 ## Commands
 
 Run from the project root unless noted. `start.bat` launches both servers in separate terminals (backend first, then frontend with `--host`).
 
-**Backend** (`cd backend`):
+**Backend — mock server** (`cd backend/mock`):
 - `npm start` — start API on http://localhost:3000 (`node server.js`; no watch/reload — restart manually after edits, since `require` caches modules)
-- API contract docs: **Swagger UI at http://localhost:3000/api/docs**, spec at `/api/openapi.json` (hand-maintained `backend/openapi.json` — keep in sync with `routes/api.js` when the contract changes; Swagger UI loads from CDN, needs internet).
+- API contract docs: **Swagger UI at http://localhost:3000/api/docs**, spec at `/api/openapi.json` (hand-maintained `backend/mock/openapi.json` — keep in sync with `routes/api.js` when the contract changes; Swagger UI loads from CDN, needs internet).
 - `npm test` — unit tests via stdlib `node --test` (no deps). Pure order helpers live in `lib/orders.js` (`computeTotal`, `formatUAH`, `colorFor`, `pickLang`, `msg`); tested in `lib/orders.test.mjs`. DB-coupled code (`hydrateOrder`/`normalizeItems`) stays in `routes/api.js` and isn't unit-tested. No lint configured.
-- Uses `better-sqlite3` (native module). After a Node major-version change or moving `node_modules` between machines, run `npm install` / `npm rebuild better-sqlite3` to rebuild the binary.
-- To reset the database to seed state, stop the server and delete `data/vendo.db` (and any `-wal`/`-shm` files); it re-seeds from `data/db.json` on next start.
+- Pure Node — no native modules/build (`express` + `cors` only). State is **in-memory**, seeded from `data/db.json` at startup; a restart resets to a clean seed (the mock deliberately doesn't persist).
 
 **Frontend** (`cd frontend`):
 - `npm run dev -- --host` — Vite dev server on http://localhost:5173 (`--host` exposes it on the LAN for device/emulator testing)
@@ -28,19 +27,19 @@ If `npm run dev`/`build` fails with `'vite' is not recognized`, the `node_module
 
 ## Architecture
 
-### Backend — SQLite API (`backend/routes/api.js`, `backend/db.js`)
-- `backend/db.js` owns the database: opens `data/vendo.db` (`better-sqlite3`, WAL mode, foreign keys on), creates the schema, and **seeds once from `data/db.json` if the DB is empty**. `db.json` is now only a seed fixture, not the live store — runtime reads/writes go to SQLite. Tables: `products`, `customers`, `categories`, `orders`, `order_items` (FK → `orders` with `ON DELETE CASCADE`), `meta` (key/value, holds `lastOrderSeq`).
-- `routes/api.js` uses prepared statements (`q.*`) and is synchronous (`better-sqlite3` has no async API — and because each statement runs to completion, concurrent requests are effectively serialized, so there are no lost-update races).
+### Backend — in-memory store (`backend/mock/routes/api.js`, `backend/mock/db.js`)
+- `backend/mock/db.js` is the **in-memory store**: loads `data/db.json` at startup into arrays (`products`, `customers`, `categories`, `orders`, plus `meta.lastOrderSeq`) and exports them with lookup helpers (`productById`/`customerById`/`orderById`). Mutations live in memory; a restart re-seeds — no persistence. `db.json` is the seed fixture.
+- `routes/api.js` operates on those arrays — single-threaded synchronous JS, so mutations are atomic (no transactions/locks needed). Orders keep **embedded items** (`{ productId, qty, price }`, price frozen at order time), hydrated on read.
 - `POST /api/auth` is a stub that returns a fixed mock user/token; nothing validates the token.
 - Endpoints: `GET /products|categories|customers`, `GET /orders` (optional `startDate`/`endDate` query filter, inclusive string compare on `YYYY-MM-DD`), `POST /orders`, `PUT /orders/:num`, `DELETE /orders/:num`.
 
-**Order data is normalized in storage, denormalized on read.** This is the key backend convention:
-- Stored across `orders` + `order_items` as references: `{ num, customerId, date, status }` and `{ orderNum, productId, qty, price }`. No embedded product/customer copies.
-- `hydrateOrder()` rebuilds the full object the frontend expects (`customer`, `client`, `items[].product`, `total`, `sColor`) by querying `customers`/`products`. All GET/POST/PUT responses return hydrated orders.
-- **Price is frozen per line item** (`order_items.price` is a snapshot taken at order time via `normalizeItems`). `computeTotal` and the hydrated `product.price` use this stored price, so editing a product's catalog price does NOT change historical order totals. Product name/img/sku, however, are pulled live by `productId`.
-- Create/update of an order run inside a `db.transaction(...)` so the order row and its items commit atomically (and replacing items = `deleteItems` + re-insert).
-- Order numbers come from `nextOrderNum()`, which increments the persistent `meta.lastOrderSeq` (never reused after deletes). Do not revert to length-based numbering.
-- `sColor` is derived from `status` via `STATUS_COLORS`; `categories.expanded` is stored as 0/1 and cast back to boolean on read — never trust a client-sent color/flag.
+**Order data is stored by reference, denormalized on read.** This is the key backend convention:
+- An order holds `{ id, num, customerId, date, status, deletionMark, version, items }` where each item is a reference `{ productId, qty, price }`. No embedded product/customer copies.
+- `hydrateOrder()` rebuilds the full object the frontend expects (`customer`, `client`, `items[].product`, `total`, `sColor`) by looking up `customers`/`products`. All GET/POST/PUT responses return hydrated orders.
+- **Price is frozen per line item** (`items[].price` is a snapshot taken at order time via `normalizeItems`). `computeTotal` and the hydrated `product.price` use this stored price, so editing a product's catalog price does NOT change historical order totals. Product name/img/sku, however, are pulled live by `productId`.
+- Create/update mutate the in-memory order in place (replacing items = reassign `order.items`); single-threaded JS makes it atomic.
+- Order numbers come from `nextOrderNum()`, which increments `meta.lastOrderSeq` (resets on restart since in-memory). Do not revert to length-based numbering.
+- `sColor` is derived from `status` via `STATUS_COLORS`; `categories.expanded` comes through as a boolean — never trust a client-sent color/flag.
 
 When changing the order response shape, keep it compatible with what the screens read (see below), or update both sides.
 

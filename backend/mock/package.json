@@ -1,8 +1,8 @@
 {
-  "name": "backend",
+  "name": "vendo-mock-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Демо-реалізація REST-контракту Vendo (in-memory, сід із db.json)",
+  "main": "server.js",
   "scripts": {
     "test": "node --test"
   },
@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^12.11.1",
     "cors": "^2.8.6",
     "express": "^5.2.1"
   }

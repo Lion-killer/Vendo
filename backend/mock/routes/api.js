@@ -1,35 +1,14 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
-const db = require('../db');
+const store = require('../db');
 
 const router = express.Router();
-
-// --- Підготовлені запити ---
-const q = {
-    products: db.prepare('SELECT id, name, sku, barcode, price, stock, unit, category, categoryId, img FROM products'),
-    productById: db.prepare('SELECT id, name, sku, barcode, price, stock, unit, category, categoryId, img FROM products WHERE id = ?'),
-    customers: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers'),
-    customerById: db.prepare('SELECT id, name, code, address, contact, phone, contacts, debt, status FROM customers WHERE id = ?'),
-    categories: db.prepare('SELECT id, name, parentId, icon, count, expanded FROM categories'),
-    orders: db.prepare('SELECT id, num, customerId, date, status, deletionMark, version FROM orders ORDER BY date DESC, num DESC'),
-    orderById: db.prepare('SELECT id, num, customerId, date, status, deletionMark, version FROM orders WHERE id = ?'),
-    itemsByOrder: db.prepare('SELECT productId, qty, price FROM order_items WHERE orderId = ? ORDER BY id'),
-    insertOrder: db.prepare('INSERT INTO orders (id, num, customerId, date, status, version) VALUES (@id, @num, @customerId, @date, @status, @version)'),
-    updateOrder: db.prepare('UPDATE orders SET customerId = @customerId, status = @status, date = @date, version = @version WHERE id = @id'),
-    deleteOrder: db.prepare('DELETE FROM orders WHERE id = ?'),
-    markOrderDeletion: db.prepare('UPDATE orders SET deletionMark = 1, version = @version WHERE id = @id'),
-    setOrderDeletion: db.prepare('UPDATE orders SET deletionMark = @mark, version = @version WHERE id = @id'),
-    insertItem: db.prepare('INSERT INTO order_items (orderId, productId, qty, price) VALUES (@orderId, @productId, @qty, @price)'),
-    deleteItems: db.prepare('DELETE FROM order_items WHERE orderId = ?'),
-    getMeta: db.prepare('SELECT value FROM meta WHERE key = ?'),
-    setMeta: db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)')
-};
-
-// --- Допоміжні функції для замовлень ---
 
 // Чисті хелпери (кольори статусів, локалізація, формат суми, підрахунок) — у lib/orders.js,
 // щоб їх можна було юніт-тестувати без БД (#21).
 const { colorFor, msg, formatUAH, computeTotal } = require('../lib/orders');
+
+// --- Допоміжні функції для замовлень ---
 
 // Нормалізуємо вхідні позиції до { productId, qty, price }.
 // Ціну ФІКСУЄМО на момент замовлення (snapshot): подальша зміна прайсу в каталозі
@@ -38,7 +17,7 @@ const { colorFor, msg, formatUAH, computeTotal } = require('../lib/orders');
 const normalizeItems = (orderItems) => (orderItems || [])
     .map(it => {
         const productId = it.productId ?? it.product?.id;
-        const current = productId != null ? q.productById.get(productId) : null;
+        const current = productId != null ? store.productById(productId) : null;
         const price = it.price ?? it.product?.price ?? (current ? current.price : 0);
         return { productId, qty: it.qty, price };
     })
@@ -48,17 +27,16 @@ const normalizeItems = (orderItems) => (orderItems || [])
 // повний об'єкт, який очікує фронтенд. Назва/іконка/sku — актуальні за productId,
 // ціна — snapshot із замовлення.
 const hydrateOrder = (order) => {
-    const customer = order.customerId != null ? q.customerById.get(order.customerId) || null : null;
-    const rows = q.itemsByOrder.all(order.id);
-    const items = rows.map(it => {
-        const current = q.productById.get(it.productId);
+    const customer = order.customerId != null ? store.customerById(order.customerId) : null;
+    const items = (order.items || []).map(it => {
+        const current = store.productById(it.productId);
         const product = current
             ? { ...current, price: it.price }
             : { id: it.productId, name: "Товар недоступний", sku: "", img: "❓", price: it.price };
         return { product, qty: it.qty };
     });
     // Помічене на видалення показуємо окремим статусом "Видалено" (реальний статус
-    // лишається в БД для логіки; deletionMark теж віддаємо).
+    // лишається для логіки; deletionMark теж віддаємо).
     const displayStatus = order.deletionMark ? "Видалено" : order.status;
     return {
         id: order.id,
@@ -69,20 +47,17 @@ const hydrateOrder = (order) => {
         deletionMark: !!order.deletionMark,
         version: order.version, // токен версії (як ВерсияДанных у 1С) — для виявлення конфліктів
         client: customer ? customer.name : "Невідомий клієнт",
-        customer,
+        customer: customer || null,
         items,
-        total: formatUAH(computeTotal(rows)),
+        total: formatUAH(computeTotal(order.items || [])),
         sColor: colorFor(displayStatus)
     };
 };
 
-// Стійка генерація номера через персистентний лічильник meta.lastOrderSeq
-// (ніколи не повторюється після видалень).
+// Стійка генерація номера через лічильник (ніколи не повторюється після видалень).
 const nextOrderNum = () => {
-    const row = q.getMeta.get('lastOrderSeq');
-    const seq = (row ? parseInt(row.value, 10) : 2025) + 1;
-    q.setMeta.run('lastOrderSeq', String(seq));
-    return `ЗМ-${seq}`;
+    store.meta.lastOrderSeq += 1;
+    return `ЗМ-${store.meta.lastOrderSeq}`;
 };
 
 // --- Роути ---
@@ -92,13 +67,13 @@ router.post('/auth', (req, res) => {
     res.json({ success: true, user: { name: "Олексій К.", role: "sales_rep" }, token: "mock_token_123" });
 });
 
-// GET/HEAD /health — найдешевша перевірка доступності. Без авторизації й без звернень
-// до БД: лише підтверджує, що процес живий. Використовується клієнтом для online-пінгу.
+// GET/HEAD /health — найдешевша перевірка доступності. Без авторизації: лише підтверджує,
+// що процес живий. Використовується клієнтом для online-пінгу.
 router.head('/health', (req, res) => res.status(200).end());
 router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
 router.get('/products', (req, res) => {
-    res.json(q.products.all());
+    res.json(store.products);
 });
 
 // GET /products/:id/image — у 1С повертає Номенклатура.ОсновноеИзображение (бінарно).
@@ -109,26 +84,21 @@ router.get('/products/:id/image', (req, res) => {
 });
 
 router.get('/categories', (req, res) => {
-    res.json(q.categories.all().map(c => ({ ...c, expanded: !!c.expanded })));
+    res.json(store.categories);
 });
 
 router.get('/customers', (req, res) => {
-    res.json(q.customers.all().map(c => ({
-        ...c,
-        contacts: c.contacts ? JSON.parse(c.contacts) : undefined
-    })));
+    res.json(store.customers);
 });
 
 router.get('/orders', (req, res) => {
-    let orders = q.orders.all().map(hydrateOrder);
     const { startDate, endDate } = req.query;
+    let orders = [...store.orders]
+        .sort((a, b) => (b.date.localeCompare(a.date)) || (String(b.num).localeCompare(String(a.num))))
+        .map(hydrateOrder);
 
-    if (startDate) {
-        orders = orders.filter(o => o.date >= startDate);
-    }
-    if (endDate) {
-        orders = orders.filter(o => o.date <= endDate);
-    }
+    if (startDate) orders = orders.filter(o => o.date >= startDate);
+    if (endDate) orders = orders.filter(o => o.date <= endDate);
 
     res.json(orders);
 });
@@ -137,7 +107,7 @@ router.post('/orders', (req, res) => {
     const { id: clientId, orderItems, customerId, status, date, baseVersion } = req.body;
 
     const id = clientId || randomUUID();
-    const existing = q.orderById.get(id);
+    const existing = store.orderById(id);
 
     // Виявлення конфлікту (оптимістична конкуренція): якщо клієнт редагував від певної
     // версії (baseVersion — як ВерсияДанных у 1С), а на сервері запис відтоді змінився —
@@ -150,66 +120,54 @@ router.post('/orders', (req, res) => {
         });
     }
 
+    const version = randomUUID(); // новий токен версії при кожному записі (імітує ВерсияДанных)
+    const items = normalizeItems(orderItems);
+
     // Upsert за GUID: повторна відправка тієї ж чернетки (той самий id) не дублює
     // (ідемпотентність offline-черги, #6). num присвоюється раз і не змінюється.
-    const upsert = db.transaction(() => {
-        const version = randomUUID(); // новий токен версії при кожному записі (імітує ВерсияДанных)
-        if (existing) {
-            q.updateOrder.run({
-                id,
-                customerId: customerId ?? existing.customerId,
-                status: status || existing.status,
-                date: date || existing.date,
-                version
-            });
-            q.deleteItems.run(id);
-        } else {
-            q.insertOrder.run({
-                id,
-                num: nextOrderNum(),
-                customerId: customerId ?? null,
-                date: date || new Date().toISOString().split('T')[0],
-                status: status || "Відправлено",
-                version
-            });
-        }
-        normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderId: id, ...it }));
-    });
+    let order;
+    if (existing) {
+        existing.customerId = customerId ?? existing.customerId;
+        existing.status = status || existing.status;
+        existing.date = date || existing.date;
+        existing.version = version;
+        existing.items = items;
+        order = existing;
+    } else {
+        order = {
+            id,
+            num: nextOrderNum(),
+            customerId: customerId ?? null,
+            date: date || new Date().toISOString().split('T')[0],
+            status: status || "Відправлено",
+            deletionMark: false,
+            version,
+            items,
+        };
+        store.orders.push(order);
+    }
 
-    upsert();
-    res.json({ success: true, order: hydrateOrder(q.orderById.get(id)) });
+    res.json({ success: true, order: hydrateOrder(order) });
 });
 
 router.put('/orders/:id', (req, res) => {
     const { id } = req.params;
     const { orderItems, customerId, status, date, deletionMark } = req.body;
 
-    const existing = q.orderById.get(id);
+    const existing = store.orderById(id);
     if (!existing) {
         return res.status(404).json({ success: false, message: msg(req, 'notFound') });
     }
 
-    const update = db.transaction(() => {
-        const version = randomUUID();
-        q.updateOrder.run({
-            id,
-            customerId: customerId ?? existing.customerId,
-            status: status || existing.status,
-            date: date || existing.date,
-            version
-        });
-        if (orderItems) {
-            q.deleteItems.run(id);
-            normalizeItems(orderItems).forEach(it => q.insertItem.run({ orderId: id, ...it }));
-        }
-        // Зняття/встановлення помітки на видалення (напр. "Зняти помітку").
-        if (deletionMark !== undefined) {
-            q.setOrderDeletion.run({ id, mark: deletionMark ? 1 : 0, version });
-        }
-    });
+    existing.customerId = customerId ?? existing.customerId;
+    existing.status = status || existing.status;
+    existing.date = date || existing.date;
+    existing.version = randomUUID();
+    if (orderItems) existing.items = normalizeItems(orderItems);
+    // Зняття/встановлення помітки на видалення (напр. "Зняти помітку").
+    if (deletionMark !== undefined) existing.deletionMark = !!deletionMark;
 
-    update();
-    res.json({ success: true, order: hydrateOrder(q.orderById.get(id)) });
+    res.json({ success: true, order: hydrateOrder(existing) });
 });
 
 // Видалити повністю можна лише нове (невідправлене) замовлення. Відправлене/проведене
@@ -217,7 +175,7 @@ router.put('/orders/:id', (req, res) => {
 // в списку до фізичного вилучення в обліковій системі.
 router.delete('/orders/:id', (req, res) => {
     const { id } = req.params;
-    const existing = q.orderById.get(id);
+    const existing = store.orderById(id);
     if (!existing) {
         return res.status(404).json({ success: false, message: msg(req, 'notFound') });
     }
@@ -228,13 +186,15 @@ router.delete('/orders/:id', (req, res) => {
     }
 
     if (existing.status === "Нове") {
-        q.deleteOrder.run(id);   // order_items видаляються каскадно
+        const i = store.orders.indexOf(existing);
+        if (i >= 0) store.orders.splice(i, 1);
         return res.json({ success: true, deleted: true, message: msg(req, 'deleted') });
     }
 
     // Відправлене — помітка на видалення (як ПометкаУдаления в 1С).
-    q.markOrderDeletion.run({ id, version: randomUUID() });
-    res.json({ success: true, marked: true, order: hydrateOrder(q.orderById.get(id)), message: msg(req, 'marked') });
+    existing.deletionMark = true;
+    existing.version = randomUUID();
+    res.json({ success: true, marked: true, order: hydrateOrder(existing), message: msg(req, 'marked') });
 });
 
 module.exports = router;
