@@ -1,0 +1,86 @@
+// Випуск релізу одною командою: npm run release [-- patch|minor|major|auto] (типово auto).
+//
+//   0. auto: тип із conventional-комітів від останнього тега
+//      (`!`/BREAKING CHANGE → major; є feat → minor; інакше patch)
+//   1. npm version <type>   — bump у package.json + sync build.gradle + CHANGELOG.md
+//                             (хук "version") + коміт + git-тег vX.Y.Z (вимагає чистого дерева)
+//   2. gradle assembleRelease — веб-збірка (таска buildFrontend) + підписаний APK
+//   3. git push --follow-tags
+//   4. gh release create vX.Y.Z <apk> — нотатки = свіжа секція CHANGELOG.md
+//
+// Підпис: android/vendo-release.keystore + android/keystore.properties (поза git).
+// При першому запуску keystore генерується автоматично (keytool із JDK) — ЗРОБИ БЕКАП:
+// втрата keystore = нові APK не встановляться поверх старих (інший підпис).
+import { execSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync, copyFileSync, rmSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const androidDir = join(root, 'android');
+const run = (cmd, cwd = root) => execSync(cmd, { cwd, stdio: 'inherit' });
+const sh = (cmd) => execSync(cmd, { cwd: root }).toString().trim();
+
+let type = process.argv[2] || 'auto';
+if (!['patch', 'minor', 'major', 'auto'].includes(type)) {
+    console.error(`release: невідомий тип "${type}" (patch|minor|major|auto)`);
+    process.exit(1);
+}
+
+// auto: тип релізу з conventional-комітів від останнього тега.
+if (type === 'auto') {
+    let lastTag = '';
+    try { lastTag = sh('git describe --tags --abbrev=0'); } catch { /* перший реліз */ }
+    const range = lastTag ? `${lastTag}..HEAD` : 'HEAD';
+    const log = sh(`git log ${range} --no-merges --pretty=%B`);
+    const subjects = sh(`git log ${range} --no-merges --pretty=%s`).split('\n').filter(Boolean);
+    if (!subjects.length) {
+        console.error(`release: немає комітів від ${lastTag} — нічого релізити`);
+        process.exit(1);
+    }
+    type = /^[a-z]+(\([^)]*\))?!:/m.test(log) || /BREAKING CHANGE/.test(log) ? 'major'
+        : subjects.some(s => /^feat[(!:]/.test(s)) ? 'minor' : 'patch';
+    console.log(`release: auto → ${type} (${subjects.length} коміт(ів) від ${lastTag || 'початку'})`);
+}
+
+// Keystore: створити при першому релізі, далі перевикористовується.
+const ksFile = join(androidDir, 'vendo-release.keystore');
+const ksProps = join(androidDir, 'keystore.properties');
+if (!existsSync(ksFile)) {
+    const pw = randomBytes(24).toString('base64url');
+    console.log('release: keystore не знайдено — генерую новий (keytool із JDK)…');
+    run(`keytool -genkeypair -v -keystore "${ksFile}" -alias vendo -keyalg RSA -keysize 2048 -validity 10000 -storepass "${pw}" -keypass "${pw}" -dname "CN=Vendo"`);
+    writeFileSync(ksProps, `storeFile=../vendo-release.keystore\nstorePassword=${pw}\nkeyAlias=vendo\nkeyPassword=${pw}\n`);
+    console.log('\n⚠️  ЗРОБИ БЕКАП android/vendo-release.keystore і android/keystore.properties');
+    console.log('   (поза git; втрата = оновлення не встановляться поверх старих APK)\n');
+}
+
+// 1. Bump версії (npm сам відмовить, якщо git-дерево брудне).
+run(`npm version ${type}`);
+const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')); // свіжа, після bump
+const tag = `v${version}`;
+
+// 2. Збірка підписаного APK (buildFrontend усередині збере і веб).
+const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+run(`${gradlew} assembleRelease`, androidDir);
+const apkSrc = join(androidDir, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
+if (!existsSync(apkSrc)) {
+    console.error('release: не знайдено підписаний app-release.apk — перевір signingConfig');
+    process.exit(1);
+}
+const apk = join(root, `vendo-${tag}.apk`);
+copyFileSync(apkSrc, apk);
+
+// 3–4. Пуш і реліз на GitHub; нотатки — свіжа секція CHANGELOG.md (згенерована хуком version).
+run('git push origin main --follow-tags');
+const changelog = readFileSync(join(root, '..', 'CHANGELOG.md'), 'utf8');
+const section = changelog.match(/## v[\s\S]*?(?=\n## v|$)/)?.[0] || '';
+const notesFile = join(root, '.release-notes.md');
+writeFileSync(notesFile, section.replace(/^## .*\n/, '')); // заголовок = назва релізу, в нотатках зайвий
+try {
+    run(`gh release create ${tag} "${apk}" --title "Vendo ${tag}" --notes-file "${notesFile}"`);
+} finally {
+    rmSync(notesFile, { force: true });
+}
+console.log(`\nreleased: ${tag} → https://github.com/Lion-killer/Vendo/releases/tag/${tag}`);

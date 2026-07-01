@@ -25,6 +25,8 @@ If `npm run dev`/`build` fails with `'vite' is not recognized`, the `node_module
 
 **Capacitor / Android**: `webDir` is `dist`, so `npm run build` before `npx cap sync`. App id `com.vendo.app`.
 
+**Releases** (`cd frontend`): `npm run release` (or `-- patch|minor|major`; default `auto` derives the bump from conventional commits since the last tag: `!`/BREAKING → major, `feat` → minor, else patch) — bumps `package.json` (single version source; the npm `version` hook runs `scripts/sync-version.mjs` to write Android `versionName`/`versionCode` and `scripts/changelog.mjs` to prepend a section to root `CHANGELOG.md`), builds a signed APK (keystore `android/keystore.properties`, gitignored, auto-generated on first release — back it up), pushes the tag, creates a GitHub Release whose notes are the fresh CHANGELOG section. The app checks GitHub Releases once per session (`src/api/updates.js`, anonymous — repo is public) and shows an update button in the profile menu that opens the APK in the system browser. `__APP_VERSION__` is injected by Vite from `package.json`. The full chat-triggered procedure (docs review before build, preflight checks) lives in `.claude/skills/release/SKILL.md` — saying «випусти реліз» runs it.
+
 ## Architecture
 
 ### Backend — in-memory store (`backend/mock/routes/api.js`, `backend/mock/db.js`)

@@ -1,12 +1,61 @@
 {
-  "lang": { "title": "Language", "uk": "Ukrainian", "ru": "Russian", "en": "English" },
-  "nav": { "dashboard": "Home", "catalog": "Catalog", "customers": "Clients", "ordersList": "Orders" },
-  "error": { "loadBanner": "Loading errors: {{what}}", "details": "Details" },
-  "log": { "title": "Error log", "showAll": "All", "onlyErrors": "Errors only", "sending": "Sending…", "clear": "Clear", "clearConfirm": "Clear the error log?", "empty": "No errors" },
-  "syncHist": { "title": "Sync history", "onlyErrors": "Errors only", "all": "All", "empty": "No syncs yet", "clear": "Clear history", "clearConfirm": "Clear sync history?", "open": "Open", "op_new": "new", "op_edit": "edit", "op_delete": "delete", "op_restore": "restore" },
-  "help": { "title": "Help", "ukOnly": "The guide is currently available in Ukrainian." },
-  "common": { "unknownClient": "Unknown client", "user": "User", "today": "today", "all": "All →", "nothing": "Nothing found", "scannerError": "Could not open the scanner. Please allow camera access.", "cancel": "Cancel" },
-  "status": { "Нове": "New", "Відправлено": "Sent", "Проведено": "Posted", "Видалено": "Deleted" },
+  "lang": {
+    "title": "Language",
+    "uk": "Ukrainian",
+    "ru": "Russian",
+    "en": "English"
+  },
+  "nav": {
+    "dashboard": "Home",
+    "catalog": "Catalog",
+    "customers": "Clients",
+    "ordersList": "Orders"
+  },
+  "error": {
+    "loadBanner": "Loading errors: {{what}}",
+    "details": "Details"
+  },
+  "log": {
+    "title": "Error log",
+    "showAll": "All",
+    "onlyErrors": "Errors only",
+    "sending": "Sending…",
+    "clear": "Clear",
+    "clearConfirm": "Clear the error log?",
+    "empty": "No errors"
+  },
+  "syncHist": {
+    "title": "Sync history",
+    "onlyErrors": "Errors only",
+    "all": "All",
+    "empty": "No syncs yet",
+    "clear": "Clear history",
+    "clearConfirm": "Clear sync history?",
+    "open": "Open",
+    "op_new": "new",
+    "op_edit": "edit",
+    "op_delete": "delete",
+    "op_restore": "restore"
+  },
+  "help": {
+    "title": "Help",
+    "ukOnly": "The guide is currently available in Ukrainian."
+  },
+  "common": {
+    "unknownClient": "Unknown client",
+    "user": "User",
+    "today": "today",
+    "all": "All →",
+    "nothing": "Nothing found",
+    "scannerError": "Could not open the scanner. Please allow camera access.",
+    "cancel": "Cancel"
+  },
+  "status": {
+    "Нове": "New",
+    "Відправлено": "Sent",
+    "Проведено": "Posted",
+    "Видалено": "Deleted"
+  },
   "login": {
     "subtitle": "Sales representative system",
     "scanning": "Scanning…",
@@ -158,7 +207,8 @@
     "sendLog_share": "Opened ✓",
     "sendLog_clipboard": "Copied",
     "sendLog_fail": "Failed",
-    "logout": "Log out"
+    "logout": "Log out",
+    "update": "Update to v{{version}}"
   },
   "toast": {
     "saved": "Saved {{label}} · {{date}}",

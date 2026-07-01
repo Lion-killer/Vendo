@@ -4,6 +4,10 @@ import { MIcon, Card, F_NUM, ConfirmDialog } from '../components/ui';
 import { localeTag, fmtMoney as fmtCurLocale, parseMoney, todayISO, orderNum, setLang, SUPPORTED } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
+import { checkForUpdate } from '../api/updates';
+
+// Версія з package.json, вшита Vite'ом на збірці (define у vite.config.js).
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 
 const fmtMoney = (n) => fmtCurLocale(n, { maximumFractionDigits: 0 });
 
@@ -26,6 +30,10 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
     const [clearConfirm, setClearConfirm] = useState(null); // {body} коли відкрито діалог очистки
+
+    // Перевірка оновлень (#37): раз за сесію, у фоні; офлайн/помилка — мовчки null.
+    const [update, setUpdate] = useState(null);
+    useEffect(() => { checkForUpdate(APP_VERSION).then(setUpdate).catch(() => { }); }, []);
 
     // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
     // ("щойно" → "1 хв тому" → …). Хвилинна гранулярність — навантаження мінімальне.
@@ -169,6 +177,13 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                                 <div style={{ color: t.ink, fontSize: 17, marginTop: 2, fontWeight: 800 }}>{userName}</div>
                             </div>
                         </div>
+                        {/* Оновлення (#37): відкриваємо APK у системному браузері — він сам качає і пропонує встановити */}
+                        {update && (
+                            <button onClick={() => window.open(update.url, '_blank')} style={{ width: "100%", height: 50, borderRadius: 14, background: t.accentSoft, border: `1px solid ${t.accent}55`, color: t.accent, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                                <MIcon name="download" size={20} color={t.accent} />
+                                <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.update", { version: update.version })}</span>
+                            </button>
+                        )}
                         {/* Перемикач мови (#26): ручний вибір, негайне застосування без перезавантаження */}
                         <div style={{ marginBottom: 10 }}>
                             <div style={{ color: t.inkMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: .5, margin: "0 4px 6px" }}>{tr("lang.title")}</div>
@@ -215,6 +230,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.errSoft, border: `1px solid ${t.err}33`, color: t.err, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
                             <MIcon name="logout" size={20} color={t.err} /> {tr("profile.logout")}
                         </button>
+                        <div style={{ textAlign: "center", marginTop: 12, fontSize: 11.5, color: t.inkMuted, fontFamily: F_NUM }}>Vendo v{APP_VERSION}</div>
                     </div>
                 </div>
             )}

@@ -20,6 +20,11 @@ frontend/android/local.properties
 frontend/android/.idea/
 frontend/android/app/src/main/assets/public/
 
+# Ключ підпису release-APK (створює scripts/release.mjs; втрата = оновлення не встановляться)
+frontend/android/*.keystore
+frontend/android/keystore.properties
+frontend/vendo-v*.apk
+
 # 1C metadata export (reference only, large; not part of the app)
 TradeUkr/
 

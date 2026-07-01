@@ -69,6 +69,22 @@ cd frontend
 npm run build          # → dist/
 npx cap sync android   # синхронізувати веб-збірку + нативні плагіни в Android-проект
 ```
+
+### Реліз і оновлення додатка
+```bash
+cd frontend
+npm run release                        # авто: !/BREAKING → major, feat → minor, інакше patch
+npm run release -- patch|minor|major   # або явний тип
+```
+Версія живе в `frontend/package.json` (єдине джерело): `npm version` синхронізує
+`versionName`/`versionCode` в Android, генерує розділ у `CHANGELOG.md`
+(з conventional-комітів від останнього тега) і ставить git-тег; той самий розділ
+стає нотатками GitHub-релізу. Підпис — локальний keystore
+(`android/keystore.properties`, поза git; створюється при першому релізі —
+**зробіть бекап**). Застосунок сам перевіряє
+[GitHub Releases](https://github.com/Lion-killer/Vendo/releases) раз за сесію
+(анонімно, репозиторій публічний) і показує кнопку оновлення в меню профілю —
+APK відкривається в браузері, система пропонує встановити.
 ### Адреса бекенду
 
 Резолвиться в [`src/api/client.js`](frontend/src/api/client.js) у такому порядку:
