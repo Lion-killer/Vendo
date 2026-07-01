@@ -64,13 +64,22 @@ if (!existsSync(ksFile)) {
     console.log('   (поза git; втрата = оновлення не встановляться поверх старих APK)\n');
 }
 
-// 1. Bump версії (npm сам відмовить, якщо git-дерево брудне).
-run(`npm version ${type}`);
+// 1. Bump версії. npm version у підкаталозі репо НЕ комітить і не тегує (шукає .git
+// поряд із package.json), тож git-частину робимо явно; хук "version" при цьому
+// відпрацьовує (sync-version + changelog + git add їхніх файлів).
+if (sh('git status --porcelain')) {
+    console.error('release: робоче дерево брудне — закоміть або прибери зміни');
+    process.exit(1);
+}
+run(`npm version ${type} --no-git-tag-version`);
 const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')); // свіжа, після bump
 const tag = `v${version}`;
+run('git add package.json package-lock.json');
+run(`git commit -m "release: ${tag}"`);
+run(`git tag ${tag}`);
 
 // 2. Збірка підписаного APK (buildFrontend усередині збере і веб).
-const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+const gradlew = `"${join(androidDir, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew')}"`;
 run(`${gradlew} assembleRelease`, androidDir);
 const apkSrc = join(androidDir, 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
 if (!existsSync(apkSrc)) {
