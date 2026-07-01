@@ -1,13 +1,18 @@
 // Генерація CHANGELOG.md (корінь репо): розділ нової версії з conventional-комітів
 // від останнього тега. Викликається npm-хуком "version" (після bump, до коміту) —
 // нова версія вже в package.json, тож розділ потрапляє в реліз-коміт.
+//
+// Погодження перед публікацією: `--draft` друкує чернетку розділу (без запису).
+// Якщо існує frontend/.changelog-draft.md (погоджений/відредагований текст) —
+// у розділ іде ВІН, а не автогенерація; файл після цього видаляється.
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const changelogPath = join(root, '..', 'CHANGELOG.md');
+const draftPath = join(root, '.changelog-draft.md');
 const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 
 const sh = (cmd) => execSync(cmd, { cwd: root }).toString().trim();
@@ -29,17 +34,28 @@ for (const s of subjects) {
     else groups['Інше'].push(line);
 }
 
-const date = new Date().toISOString().slice(0, 10);
-let section = `## v${version} — ${date}\n`;
+// Тіло розділу (без заголовка версії — він додається при записі).
+let generated = '';
 if (!lastTag) {
     // Перший реліз: не вивалювати всю історію (сотні комітів) — один підсумковий рядок.
-    section += '\n- Перший реліз Vendo.\n';
+    generated = '- Перший реліз Vendo.\n';
 } else {
     for (const [title, items] of Object.entries(groups)) {
         if (!items.length) continue;
-        section += `\n### ${title}\n\n${items.map(i => `- ${i}`).join('\n')}\n`;
+        generated += `### ${title}\n\n${items.map(i => `- ${i}`).join('\n')}\n\n`;
     }
 }
+
+// --draft: показати чернетку для погодження і вийти (нічого не писати).
+if (process.argv.includes('--draft')) {
+    process.stdout.write(generated);
+    process.exit(0);
+}
+
+// Погоджений текст (якщо є) перемагає автогенерацію.
+const approved = existsSync(draftPath) ? readFileSync(draftPath, 'utf8').trim() + '\n' : null;
+const date = new Date().toISOString().slice(0, 10);
+const section = `## v${version} — ${date}\n\n` + (approved ?? generated).trimEnd() + '\n';
 
 const header = '# Changelog\n\nІсторія версій Vendo. Генерується з комітів при релізі (`npm run release`).\n';
 const existing = existsSync(changelogPath) ? readFileSync(changelogPath, 'utf8') : header;
@@ -48,4 +64,5 @@ const body = existing.startsWith(header)
     ? header + '\n' + section + existing.slice(header.length)
     : header + '\n' + section + '\n' + existing;
 writeFileSync(changelogPath, body);
-console.log(`changelog: v${version} — ${subjects.length} коміт(ів) від ${lastTag || 'початку'}`);
+rmSync(draftPath, { force: true }); // чернетка використана — прибрати
+console.log(`changelog: v${version} — ${approved ? 'погоджений текст' : `автогенерація, ${subjects.length} коміт(ів)`} від ${lastTag || 'початку'}`);

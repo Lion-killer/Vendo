@@ -25,6 +25,10 @@ frontend/android/*.keystore
 frontend/android/keystore.properties
 frontend/vendo-v*.apk
 
+# Транзитні файли релізу (чернетка чейнджлогу на погодження, нотатки для gh)
+frontend/.changelog-draft.md
+frontend/.release-notes.md
+
 # 1C metadata export (reference only, large; not part of the app)
 TradeUkr/
 
