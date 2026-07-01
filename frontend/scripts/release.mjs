@@ -22,6 +22,14 @@ const androidDir = join(root, 'android');
 const run = (cmd, cwd = root) => execSync(cmd, { cwd, stdio: 'inherit' });
 const sh = (cmd) => execSync(cmd, { cwd: root }).toString().trim();
 
+// JDK потрібен і keytool'у, і gradle'у. Якщо JAVA_HOME не задано — беремо вбудований
+// в Android Studio (JBR); execSync успадковує process.env, тож gradle його побачить.
+if (!process.env.JAVA_HOME) {
+    const jbr = 'C:\\Program Files\\Android\\Android Studio\\jbr';
+    if (existsSync(join(jbr, 'bin'))) process.env.JAVA_HOME = jbr;
+}
+const keytool = process.env.JAVA_HOME ? `"${join(process.env.JAVA_HOME, 'bin', 'keytool')}"` : 'keytool';
+
 let type = process.argv[2] || 'auto';
 if (!['patch', 'minor', 'major', 'auto'].includes(type)) {
     console.error(`release: невідомий тип "${type}" (patch|minor|major|auto)`);
@@ -50,7 +58,7 @@ const ksProps = join(androidDir, 'keystore.properties');
 if (!existsSync(ksFile)) {
     const pw = randomBytes(24).toString('base64url');
     console.log('release: keystore не знайдено — генерую новий (keytool із JDK)…');
-    run(`keytool -genkeypair -v -keystore "${ksFile}" -alias vendo -keyalg RSA -keysize 2048 -validity 10000 -storepass "${pw}" -keypass "${pw}" -dname "CN=Vendo"`);
+    run(`${keytool} -genkeypair -v -keystore "${ksFile}" -alias vendo -keyalg RSA -keysize 2048 -validity 10000 -storepass "${pw}" -keypass "${pw}" -dname "CN=Vendo"`);
     writeFileSync(ksProps, `storeFile=../vendo-release.keystore\nstorePassword=${pw}\nkeyAlias=vendo\nkeyPassword=${pw}\n`);
     console.log('\n⚠️  ЗРОБИ БЕКАП android/vendo-release.keystore і android/keystore.properties');
     console.log('   (поза git; втрата = оновлення не встановляться поверх старих APK)\n');
