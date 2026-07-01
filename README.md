@@ -1,6 +1,10 @@
+<img src="frontend/public/app-icon.png" alt="Vendo" width="96" align="left" />
+
 # Vendo
 
 Мобільний застосунок для торгових представників (B2B) — каталог товарів, контрагенти та оформлення замовлень «у полі». Український інтерфейс, **offline-first** логіка, збірка під Android через Capacitor.
+
+<br clear="left" />
 
 ## Контракт API — основа
 
