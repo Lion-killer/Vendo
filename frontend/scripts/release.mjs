@@ -76,7 +76,7 @@ const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const tag = `v${version}`;
 run('git add package.json package-lock.json');
 run(`git commit -m "release: ${tag}"`);
-run(`git tag ${tag}`);
+run(`git tag -a ${tag} -m "Vendo ${tag}"`); // анотований — його бачить і --follow-tags
 
 // 2. Збірка підписаного APK (buildFrontend усередині збере і веб).
 const gradlew = `"${join(androidDir, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew')}"`;
@@ -90,7 +90,8 @@ const apk = join(root, `vendo-${tag}.apk`);
 copyFileSync(apkSrc, apk);
 
 // 3–4. Пуш і реліз на GitHub; нотатки — свіжа секція CHANGELOG.md (згенерована хуком version).
-run('git push origin main --follow-tags');
+run('git push origin main');
+run(`git push origin ${tag}`); // тег явно — не покладаємось на --follow-tags
 const changelog = readFileSync(join(root, '..', 'CHANGELOG.md'), 'utf8');
 const section = changelog.match(/## v[\s\S]*?(?=\n## v|$)/)?.[0] || '';
 const notesFile = join(root, '.release-notes.md');
