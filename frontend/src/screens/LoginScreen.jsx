@@ -58,8 +58,8 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
     const busy = loading || scanned;
 
     return (
-        // overflowY: з банером відв'язки та/або помилкою скану контент вищий за малі екрани
-        // (360×800) — без прокрутки кнопки внизу обрізаються; спейсери flex колапсують самі.
+        // overflowY — запобіжник для дуже малих екранів (повідомлення рендеряться всередині
+        // рамки сканера й висоту не збільшують, тож у нормі прокрутки немає).
         <div style={{ flex: 1, background: t.bg, color: t.ink, display: "flex", flexDirection: "column", alignItems: "center", padding: "max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))", position: "relative", overflowY: "auto" }}>
 
             <div style={{ flex: 1.2 }} />
@@ -73,21 +73,9 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
 
             <div style={{ height: 36 }} />
 
-            {/* Причина розлогінення (відв'язка пристрою): постійний банер до успішного входу */}
-            {notice && (
-                <div style={{ background: t.warnSoft, border: `1px solid ${t.warn}55`, borderRadius: 12, padding: "12px 16px", width: "100%", maxWidth: 340, marginBottom: 16, flexShrink: 0 }}>
-                    <div style={{ color: t.warn, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{tr(notice)}</div>
-                    {onOpenLog && (
-                        <button onClick={onOpenLog} style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.warn, fontSize: 12.5, fontWeight: 700, textDecoration: "underline", padding: 0 }}>
-                            {tr("log.title")} ›
-                        </button>
-                    )}
-                </div>
-            )}
-
             {/* Картка скану QR */}
             <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 20, padding: 20, width: "100%", maxWidth: 340, flexShrink: 0 }}>
-                <div style={{ width: "100%", aspectRatio: "1", background: t.surfaceMuted, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", border: `2px dashed ${scanned ? t.ok : loading ? t.accent : t.line}`, transition: "border-color .3s", position: "relative", overflow: "hidden" }}>
+                <div style={{ width: "100%", aspectRatio: "1", background: t.surfaceMuted, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", border: `2px dashed ${scanned ? t.ok : loading ? t.accent : notice ? t.warn : error ? t.err : t.line}`, transition: "border-color .3s", position: "relative", overflow: "hidden" }}>
                     {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                             <div style={{ width: 42, height: 42, border: `3px solid ${t.line}`, borderTopColor: t.accent, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
@@ -100,6 +88,22 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
                             </div>
                             <span style={{ color: t.ok, fontSize: 13, fontWeight: 700 }}>{tr("login.confirmed")}</span>
                         </div>
+                    ) : (notice || error) ? (
+                        // Повідомлення живуть УСЕРЕДИНІ рамки сканера (як стани сканування) —
+                        // висота екрана не росте, і на малих екранах нічого не обрізається.
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: 20, textAlign: "center" }}>
+                            {notice && (
+                                <>
+                                    <span style={{ color: t.warn, fontSize: 13.5, fontWeight: 700 }}>{tr(notice)}</span>
+                                    {onOpenLog && (
+                                        <button onClick={onOpenLog} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.warn, fontSize: 12.5, fontWeight: 700, textDecoration: "underline", padding: 0 }}>
+                                            {tr("log.title")} ›
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                            {error && <span style={{ color: t.err, fontSize: 13, fontWeight: 600 }}>{error}</span>}
+                        </div>
                     ) : (
                         <Icon name="qr" size={76} color={t.inkMuted} />
                     )}
@@ -109,9 +113,6 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
                     ))}
                 </div>
             </div>
-
-            {/* Помилка */}
-            {error && <div style={{ marginTop: 16, background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12, padding: "10px 16px", color: t.err, fontSize: 13, fontWeight: 600, textAlign: "center", width: "100%", maxWidth: 340, flexShrink: 0 }}>{error}</div>}
 
             <div style={{ flex: 1 }} />
 
