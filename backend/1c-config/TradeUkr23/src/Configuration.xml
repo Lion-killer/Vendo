@@ -48,7 +48,7 @@
 			</UsePurposes>
 			<ScriptVariant>Russian</ScriptVariant>
 			<DefaultRoles>
-				<xr:Item xsi:type="xr:MDObjectRef">Role.венд_ОсновнаяРоль</xr:Item>
+				<xr:Item xsi:type="xr:MDObjectRef">Role.венд_HTTPСервис</xr:Item>
 			</DefaultRoles>
 			<Vendor>Vendo</Vendor>
 			<Version>1.0.0.1</Version>
@@ -250,7 +250,7 @@
 			<Language>Русский</Language>
 			<Language>Українська</Language>
 			<Language>English</Language>
-			<Role>венд_ОсновнаяРоль</Role>
+			<Role>венд_HTTPСервис</Role>
 			<HTTPService>венд_МобильноеПриложение</HTTPService>
 			<Catalog>венд_МобильныеУстройства</Catalog>
 			<Constant>венд_АдресМобильногоСервиса</Constant>
