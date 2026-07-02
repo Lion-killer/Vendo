@@ -26,6 +26,16 @@ const h = (extra = {}) => {
     return headers;
 };
 
+// #40: 401 на запит, надісланий із ПОТОЧНИМ токеном, означає що токен відкликано на
+// сервері (перегенерація коду прив'язки) — детермінований сигнал «пристрій відв'язано».
+// 401 від запиту зі старим токеном (гонка при перелогіні) ігнорується. App реєструє
+// обробник, який виводить на екран входу.
+let onAuthReject = null;
+export const setOnAuthReject = (fn) => { onAuthReject = fn; };
+const maybeAuthReject = (sentToken) => {
+    if (sentToken && sentToken === token() && onAuthReject) onAuthReject();
+};
+
 // fetch із таймаутом — без нього недоступний бекенд висить до системного TCP-таймауту
 // (~30 с) і офлайн виявляється надто пізно.
 // Бойова 1С повільна й обробляє запити послідовно — одиничний запит легітимно триває
@@ -44,6 +54,7 @@ const tfetch = async (url, opts = {}, timeout = TIMEOUT) => {
         const res = await fetch(url, { ...opts, signal: ctrl.signal });
         const ms = Date.now() - started;
         (res.ok ? logInfo : logWarn)(`${method} ${path} → ${res.status}`, `${ms}ms`);
+        if (res.status === 401) maybeAuthReject(opts.headers && opts.headers['X-Auth-Token']);
         return res;
     } catch (e) {
         logError(`${method} ${path} → помилка мережі`, e && e.name === 'AbortError' ? `таймаут ${timeout}ms` : String(e && e.message || e));
@@ -101,7 +112,9 @@ export const fetchAuthedBlobRaw = async (relPath) => {
     try {
         const url = `${apiUrl()}${relPath}`;
         if (Capacitor.isNativePlatform()) {
-            const res = await CapacitorHttp.get({ url, headers: h(), responseType: 'blob' });
+            const headers = h();
+            const res = await CapacitorHttp.get({ url, headers, responseType: 'blob' });
+            if (res.status === 401) maybeAuthReject(headers['X-Auth-Token']);
             if (res.status < 200 || res.status >= 300 || !res.data) return null;
             const ct = res.headers && (res.headers['Content-Type'] || res.headers['content-type']);
             return base64ToBlob(res.data, ct);

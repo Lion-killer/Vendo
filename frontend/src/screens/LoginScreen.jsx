@@ -6,7 +6,10 @@ import { scanQr, parseQr } from '../api/scanner';
 import { clearImageCache } from '../api/imageCache';
 import { purgeOnDeviceSwitch } from '../api/deviceData';
 
-export const LoginScreen = ({ t, onLogin, onOpenHelp }) => {
+// notice — i18n-ключ причини, чому користувача вивело на екран входу (#40: відв'язка
+// пристрою). Постійний банер + кнопка журналу помилок, щоб лог можна було надіслати
+// ще до (пере)авторизації.
+export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
     const { t: tr } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -67,6 +70,18 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp }) => {
             </div>
 
             <div style={{ height: 36 }} />
+
+            {/* Причина розлогінення (відв'язка пристрою): постійний банер до успішного входу */}
+            {notice && (
+                <div style={{ background: t.warnSoft, border: `1px solid ${t.warn}55`, borderRadius: 12, padding: "12px 16px", width: "100%", maxWidth: 340, marginBottom: 16 }}>
+                    <div style={{ color: t.warn, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{tr(notice)}</div>
+                    {onOpenLog && (
+                        <button onClick={onOpenLog} style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.warn, fontSize: 12.5, fontWeight: 700, textDecoration: "underline", padding: 0 }}>
+                            {tr("log.title")} ›
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* Картка скану QR */}
             <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 20, padding: 20, width: "100%", maxWidth: 340 }}>

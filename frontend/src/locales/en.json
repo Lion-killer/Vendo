@@ -68,7 +68,8 @@
     "help": "How to use it — guide",
     "errScanner": "Could not open the scanner. Please allow camera access.",
     "errUnauthorized": "Device not authorized",
-    "errAuth": "Authentication error. Check your connection."
+    "errAuth": "Authentication error. Check your connection.",
+    "revoked": "Device unpaired — scan a new QR code"
   },
   "dashboard": {
     "revenueToday": "Revenue today",

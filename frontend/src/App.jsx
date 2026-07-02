@@ -10,7 +10,7 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject } from './api/client';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
@@ -58,6 +58,9 @@ export default function App() {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
+  // #40: чому користувача викинуло на екран входу (i18n-ключ). Персистентний банер на
+  // LoginScreen (переживає перезапуск, на відміну від снека) — стирається при вході.
+  const [loginNotice, setLoginNotice] = useState(() => localStorage.getItem('vendo_login_notice') || "");
   const [loadError, setLoadError] = useState(null); // {what, message} — постійна помилка завантаження (банер), null = немає
   const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
   const [showSyncHistory, setShowSyncHistory] = useState(false); // відкрита панель історії синхронізацій
@@ -67,6 +70,8 @@ export default function App() {
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
   const orderBaseline = useRef(""); // знімок замовлення на момент відкриття (щоб зберігати лише за змінами)
   const navStack = useRef([]); // стек попередніх екранів для апаратного «назад»
+  const screenRef = useRef(screen); // актуальний екран для колбеків поза React (обробник 401)
+  screenRef.current = screen;
 
   const t = isDark ? DARK : LIGHT;
 
@@ -260,7 +265,14 @@ export default function App() {
     setSyncing(false);
   };
 
+  const isLoggedIn = screen !== "login";
+
   useEffect(() => {
+    // #40: на екрані логіну не синкаємо — токена ще немає, кожен запит закінчився б 401
+    // (шум у лозі, зайве навантаження на повільну 1С). Перший fetch — одразу після входу
+    // (isLoggedIn стає true), вже з новим токеном.
+    if (!isLoggedIn) return;
+
     // Повернення звʼязку/додатку на передній план — одразу тягнемо свіже.
     const handleOnline = () => fetchFromNetwork(true);
     const handleOffline = () => setIsOnline(false);
@@ -283,7 +295,7 @@ export default function App() {
       document.removeEventListener('visibilitychange', handleVisible);
       clearInterval(syncInterval);
     };
-  }, []);
+  }, [isLoggedIn]);
 
   // Апаратна кнопка «Назад» (Android): без обробника Capacitor одразу виходить із додатку.
   // Перехоплюємо й навігуємо всередині: журнал → закрити; підекран → на головну; головна/
@@ -307,6 +319,8 @@ export default function App() {
 
   const handleLogin = (name, token) => {
     const resolvedName = name || tr("common.user");
+    localStorage.removeItem('vendo_login_notice');
+    setLoginNotice("");
     saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
     setUserName(resolvedName);
     navStack.current = []; // нова сесія — чистий стек навігації
@@ -323,6 +337,25 @@ export default function App() {
     navStack.current = [];
     setScreen("login");
   };
+
+  // #40: сервер відхилив ПОТОЧНИЙ токен (401) — пристрій відв'язано (перегенерація коду
+  // прив'язки в 1С). Виходимо на екран входу з поясненням; чернетки й офлайн-черга
+  // лишаються (handleLogout їх не стирає, purgeOnDeviceSwitch для того ж пристрою — теж).
+  // Пояснення — постійний банер на екрані входу (не снек: той зникає за 3 с, і причину
+  // можна пропустити), звідти ж доступний журнал помилок для надсилання лога.
+  const sessionRevoked = () => {
+    if (screenRef.current === "login") return; // повторні 401 того самого циклу
+    logWarn("Пристрій відв'язано сервером (401 із чинним токеном) — вихід на екран входу");
+    localStorage.setItem('vendo_login_notice', 'login.revoked'); // i18n-ключ, не текст (мова може змінитися)
+    setLoginNotice('login.revoked');
+    handleLogout();
+  };
+  const sessionRevokedRef = useRef(sessionRevoked);
+  sessionRevokedRef.current = sessionRevoked;
+  useEffect(() => {
+    setOnAuthReject(() => sessionRevokedRef.current());
+    return () => setOnAuthReject(null);
+  }, []);
 
   // #34: очистити всі локальні дані, ОКРІМ авторизації/налаштувань. Видаляємо все з
   // localStorage, крім keep-списку (підхід «все крім дозволеного» ловить і ключі через
@@ -429,7 +462,6 @@ export default function App() {
     });
   };
 
-  const isLoggedIn = screen !== "login";
   // Зсув плаваючих верхніх кластерів (глобальний TopActions + власні дії каталогу) на
   // висоту банера помилки, щоб вони лишались вирівняними з посунутим донизу контентом.
   const topOffset = loadError ? 42 : 0;
@@ -461,7 +493,7 @@ export default function App() {
 
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
-          {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} />}
+          {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
