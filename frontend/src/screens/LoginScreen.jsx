@@ -58,12 +58,14 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
     const busy = loading || scanned;
 
     return (
-        <div style={{ flex: 1, background: t.bg, color: t.ink, display: "flex", flexDirection: "column", alignItems: "center", padding: "max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))", position: "relative" }}>
+        // overflowY: з банером відв'язки та/або помилкою скану контент вищий за малі екрани
+        // (360×800) — без прокрутки кнопки внизу обрізаються; спейсери flex колапсують самі.
+        <div style={{ flex: 1, background: t.bg, color: t.ink, display: "flex", flexDirection: "column", alignItems: "center", padding: "max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom))", position: "relative", overflowY: "auto" }}>
 
             <div style={{ flex: 1.2 }} />
 
             {/* Бренд */}
-            <div style={{ textAlign: "center" }}>
+            <div style={{ textAlign: "center", flexShrink: 0 }}>
                 <img src="/app-icon.png" alt="Vendo" width={76} height={76} style={{ display: "block", borderRadius: 22, margin: "0 auto 18px" }} />
                 <h1 style={{ color: t.ink, fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: -0.6 }}>Vendo</h1>
                 <p style={{ color: t.inkMuted, fontSize: 14, margin: "6px 0 0", fontWeight: 500 }}>{tr("login.subtitle")}</p>
@@ -73,7 +75,7 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
 
             {/* Причина розлогінення (відв'язка пристрою): постійний банер до успішного входу */}
             {notice && (
-                <div style={{ background: t.warnSoft, border: `1px solid ${t.warn}55`, borderRadius: 12, padding: "12px 16px", width: "100%", maxWidth: 340, marginBottom: 16 }}>
+                <div style={{ background: t.warnSoft, border: `1px solid ${t.warn}55`, borderRadius: 12, padding: "12px 16px", width: "100%", maxWidth: 340, marginBottom: 16, flexShrink: 0 }}>
                     <div style={{ color: t.warn, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{tr(notice)}</div>
                     {onOpenLog && (
                         <button onClick={onOpenLog} style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: t.warn, fontSize: 12.5, fontWeight: 700, textDecoration: "underline", padding: 0 }}>
@@ -84,7 +86,7 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
             )}
 
             {/* Картка скану QR */}
-            <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 20, padding: 20, width: "100%", maxWidth: 340 }}>
+            <div style={{ background: t.surface, border: `1px solid ${t.line}`, borderRadius: 20, padding: 20, width: "100%", maxWidth: 340, flexShrink: 0 }}>
                 <div style={{ width: "100%", aspectRatio: "1", background: t.surfaceMuted, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", border: `2px dashed ${scanned ? t.ok : loading ? t.accent : t.line}`, transition: "border-color .3s", position: "relative", overflow: "hidden" }}>
                     {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -109,12 +111,12 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
             </div>
 
             {/* Помилка */}
-            {error && <div style={{ marginTop: 16, background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12, padding: "10px 16px", color: t.err, fontSize: 13, fontWeight: 600, textAlign: "center", width: "100%", maxWidth: 340 }}>{error}</div>}
+            {error && <div style={{ marginTop: 16, background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12, padding: "10px 16px", color: t.err, fontSize: 13, fontWeight: 600, textAlign: "center", width: "100%", maxWidth: 340, flexShrink: 0 }}>{error}</div>}
 
             <div style={{ flex: 1 }} />
 
             {/* Кнопка */}
-            <button onClick={handleScan} disabled={busy} style={{ width: "100%", maxWidth: 340, height: 54, borderRadius: 14, background: busy ? t.surfaceMuted : t.accent, border: "none", cursor: busy ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit", transition: "background .2s" }}>
+            <button onClick={handleScan} disabled={busy} style={{ width: "100%", maxWidth: 340, height: 54, borderRadius: 14, background: busy ? t.surfaceMuted : t.accent, border: "none", cursor: busy ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit", transition: "background .2s", flexShrink: 0 }}>
                 <Icon name="qr" size={20} color={busy ? t.inkMuted : "#fff"} />
                 <span style={{ color: busy ? t.inkMuted : "#fff", fontSize: 15, fontWeight: 700, letterSpacing: 0.3 }}>
                     {loading ? tr("login.reading") : scanned ? tr("login.success") : tr("login.scan")}
@@ -125,7 +127,7 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
 
             {/* Довідка — помітний акцент для нового агента (до сканування QR) */}
             {onOpenHelp && (
-                <div style={{ width: "100%", maxWidth: 340, marginTop: 18, textAlign: "center" }}>
+                <div style={{ width: "100%", maxWidth: 340, marginTop: 18, textAlign: "center", flexShrink: 0 }}>
                     <div style={{ color: t.inkMuted, fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>{tr("login.firstTime")}</div>
                     <button onClick={onOpenHelp} style={{ width: "100%", height: 48, borderRadius: 14, background: t.accentSoft, border: `1.5px solid ${t.accent}55`, color: t.accentInk, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit", fontSize: 14.5, fontWeight: 700 }}>
                         <Icon name="info" size={19} color={t.accentInk} /> {tr("login.help")}
