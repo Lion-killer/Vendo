@@ -16,6 +16,62 @@ export const cmpVer = (a, b) => {
 
 let cached; // одна перевірка за сесію (undefined = ще не питали, null = оновлення немає)
 
+// Повноекранний промпт оновлення показуємо раз за сесію —
+// повернення на головний екран не дублює його.
+let promptShown = false;
+export const isUpdatePromptShown = () => promptShown;
+export const markUpdatePromptShown = () => { promptShown = true; };
+
+// Успішно завантажений APK цієї сесії — щоб повторна спроба (після надання
+// дозволу на встановлення) не перекачувала 35+ МБ.
+let downloaded = null; // { version, path }
+
+// Нативне завантаження APK із прогресом і запуск системного встановлення.
+// onProgress(0..100). Повертає:
+//  'installing' — системний діалог встановлення відкрито;
+//  'permission' — немає дозволу «встановлення невідомих застосунків» (APK уже
+//                 завантажено; відкрий налаштування через openInstallSettings і повтори);
+//  'web'        — не натив (браузер): відкрито URL, більше нічого не робимо.
+// Помилки мережі/файлової системи кидаються виключенням.
+export async function downloadAndInstall(update, onProgress) {
+    const { Capacitor, registerPlugin } = await import('@capacitor/core');
+    if (!Capacitor.isNativePlatform()) {
+        window.open(update.url, '_blank');
+        return 'web';
+    }
+    const { Filesystem, Directory } = await import('@capacitor/filesystem');
+    const Installer = registerPlugin('ApkInstaller');
+
+    if (!downloaded || downloaded.version !== update.version) {
+        const path = `vendo-update-${update.version}.apk`;
+        let sub;
+        try {
+            if (onProgress) {
+                sub = await Filesystem.addListener('progress', e => {
+                    if (e.contentLength > 0) onProgress(Math.min(100, Math.round(e.bytes / e.contentLength * 100)));
+                });
+            }
+            const res = await Filesystem.downloadFile({ url: update.url, path, directory: Directory.Cache, progress: !!onProgress });
+            downloaded = { version: update.version, path: res.path };
+        } finally {
+            if (sub) sub.remove();
+        }
+    } else if (onProgress) {
+        onProgress(100); // файл уже в кеші з попередньої спроби
+    }
+
+    const { allowed } = await Installer.canInstall();
+    if (!allowed) return 'permission';
+    await Installer.install({ path: downloaded.path });
+    return 'installing';
+}
+
+// Системні налаштування «встановлення невідомих застосунків» для цього застосунку.
+export async function openInstallSettings() {
+    const { registerPlugin } = await import('@capacitor/core');
+    await registerPlugin('ApkInstaller').openInstallSettings();
+}
+
 // → { version, notes, url } якщо на GitHub є новіша версія, інакше null. Помилки мережі → null.
 export async function checkForUpdate(current) {
     if (cached !== undefined) return cached;

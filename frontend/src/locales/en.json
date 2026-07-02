@@ -208,7 +208,15 @@
     "sendLog_clipboard": "Copied",
     "sendLog_fail": "Failed",
     "logout": "Log out",
-    "update": "Update to v{{version}}"
+    "update": "Update to v{{version}}",
+    "updateTitle": "New version available",
+    "updateLater": "Later",
+    "updDownloading": "Downloading… {{percent}}%",
+    "updInstalling": "Confirm the installation in the system dialog. Your data and login will be kept.",
+    "updNoPermission": "Installing apps from this source is not allowed. Open settings, allow installs for Vendo and try again.",
+    "updOpenSettings": "Open settings",
+    "updRetry": "Try again",
+    "updError": "Failed to download the update. Check your connection and try again."
   },
   "toast": {
     "saved": "Saved {{label}} · {{date}}",

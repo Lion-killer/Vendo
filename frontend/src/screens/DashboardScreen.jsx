@@ -4,7 +4,8 @@ import { MIcon, Card, F_NUM, ConfirmDialog } from '../components/ui';
 import { localeTag, fmtMoney as fmtCurLocale, parseMoney, todayISO, orderNum, setLang, SUPPORTED } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
-import { checkForUpdate } from '../api/updates';
+import ReactMarkdown from 'react-markdown';
+import { checkForUpdate, isUpdatePromptShown, markUpdatePromptShown, downloadAndInstall, openInstallSettings } from '../api/updates';
 
 // Версія з package.json, вшита Vite'ом на збірці (define у vite.config.js).
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
@@ -32,8 +33,36 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     const [clearConfirm, setClearConfirm] = useState(null); // {body} коли відкрито діалог очистки
 
     // Перевірка оновлень (#37): раз за сесію, у фоні; офлайн/помилка — мовчки null.
+    // Знайдене оновлення показуємо повноекранним промптом із чейнджлогом (раз за сесію);
+    // кнопка в меню профілю лишається для «пізніше».
     const [update, setUpdate] = useState(null);
-    useEffect(() => { checkForUpdate(APP_VERSION).then(setUpdate).catch(() => { }); }, []);
+    const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+    // Фази встановлення: null (пропозиція) → downloading → installing (системний діалог)
+    // або permission (немає дозволу «невідомі джерела») / error.
+    const [updPhase, setUpdPhase] = useState(null);
+    const [updProgress, setUpdProgress] = useState(0);
+    useEffect(() => {
+        checkForUpdate(APP_VERSION).then(u => {
+            setUpdate(u);
+            if (u && !isUpdatePromptShown()) {
+                markUpdatePromptShown();
+                setShowUpdatePrompt(true);
+            }
+        }).catch(() => { });
+    }, []);
+
+    const startUpdate = async () => {
+        setUpdPhase('downloading');
+        setUpdProgress(0);
+        try {
+            const r = await downloadAndInstall(update, setUpdProgress);
+            if (r === 'permission') setUpdPhase('permission');
+            else if (r === 'installing') setUpdPhase('installing');
+            else { setUpdPhase(null); setShowUpdatePrompt(false); } // web-фолбек: URL відкрито
+        } catch (e) {
+            setUpdPhase('error');
+        }
+    };
 
     // Раз на хвилину перемальовуємо, щоб відносний підпис синхронізації «капав»
     // ("щойно" → "1 хв тому" → …). Хвилинна гранулярність — навантаження мінімальне.
@@ -165,6 +194,81 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                 </Card>
             </div>
 
+            {/* Повноекранний промпт оновлення (#37): версія + чейнджлог релізу при старті */}
+            {showUpdatePrompt && update && (
+                <div style={{ position: "fixed", inset: 0, background: t.bg, zIndex: 300, display: "flex", flexDirection: "column", padding: "max(24px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 28 }}>
+                        <div style={{ width: 72, height: 72, borderRadius: 22, background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <MIcon name="download" size={34} color={t.accent} />
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 800, marginTop: 16, color: t.ink }}>{tr("profile.updateTitle")}</div>
+                        <div style={{ fontFamily: F_NUM, fontSize: 14, color: t.inkMuted, marginTop: 4 }}>Vendo v{APP_VERSION} → v{update.version}</div>
+                    </div>
+                    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", margin: "18px 0", padding: "0 6px", fontSize: 14, lineHeight: 1.55, color: t.ink }}>
+                        <ReactMarkdown components={{
+                            h3: ({ children }) => <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: .6, color: t.inkMuted, margin: "14px 0 6px" }}>{children}</div>,
+                            ul: ({ children }) => <ul style={{ margin: 0, paddingLeft: 20 }}>{children}</ul>,
+                            li: ({ children }) => <li style={{ margin: "4px 0" }}>{children}</li>,
+                            p: ({ children }) => <p style={{ margin: "6px 0" }}>{children}</p>,
+                        }}>{update.notes}</ReactMarkdown>
+                    </div>
+                    {updPhase === 'downloading' && (
+                        <div style={{ flexShrink: 0 }}>
+                            <div style={{ height: 8, borderRadius: 4, background: t.surfaceMuted, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${updProgress}%`, background: t.accent, borderRadius: 4, transition: "width .3s" }} />
+                            </div>
+                            <div style={{ textAlign: "center", marginTop: 10, fontSize: 13.5, fontWeight: 600, color: t.inkMuted, fontFamily: F_NUM }}>
+                                {tr("profile.updDownloading", { percent: updProgress })}
+                            </div>
+                        </div>
+                    )}
+                    {updPhase === 'installing' && (
+                        <div style={{ flexShrink: 0, textAlign: "center", fontSize: 14, color: t.inkMuted, padding: "0 8px" }}>
+                            {tr("profile.updInstalling")}
+                            <button onClick={() => { setShowUpdatePrompt(false); setUpdPhase(null); }} style={{ width: "100%", height: 48, borderRadius: 14, background: "none", border: "none", color: t.inkMuted, fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 10 }}>
+                                {tr("profile.updateLater")}
+                            </button>
+                        </div>
+                    )}
+                    {updPhase === 'permission' && (
+                        <div style={{ flexShrink: 0 }}>
+                            <div style={{ fontSize: 13.5, lineHeight: 1.5, color: t.warn, background: t.warn + "18", border: `1px solid ${t.warn}44`, borderRadius: 12, padding: "10px 12px", marginBottom: 10 }}>
+                                {tr("profile.updNoPermission")}
+                            </div>
+                            <button onClick={() => openInstallSettings()} style={{ width: "100%", height: 52, borderRadius: 14, background: t.accent, border: "none", color: "#fff", fontSize: 15.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                {tr("profile.updOpenSettings")}
+                            </button>
+                            <button onClick={startUpdate} style={{ width: "100%", height: 48, borderRadius: 14, background: "none", border: "none", color: t.accent, fontSize: 14.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>
+                                {tr("profile.updRetry")}
+                            </button>
+                        </div>
+                    )}
+                    {updPhase === 'error' && (
+                        <div style={{ flexShrink: 0 }}>
+                            <div style={{ fontSize: 13.5, lineHeight: 1.5, color: t.err, background: t.err + "18", border: `1px solid ${t.err}44`, borderRadius: 12, padding: "10px 12px", marginBottom: 10 }}>
+                                {tr("profile.updError")}
+                            </div>
+                            <button onClick={startUpdate} style={{ width: "100%", height: 52, borderRadius: 14, background: t.accent, border: "none", color: "#fff", fontSize: 15.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                {tr("profile.updRetry")}
+                            </button>
+                            <button onClick={() => { setShowUpdatePrompt(false); setUpdPhase(null); }} style={{ width: "100%", height: 48, borderRadius: 14, background: "none", border: "none", color: t.inkMuted, fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6 }}>
+                                {tr("profile.updateLater")}
+                            </button>
+                        </div>
+                    )}
+                    {!updPhase && (
+                        <>
+                            <button onClick={startUpdate} style={{ width: "100%", height: 52, borderRadius: 14, background: t.accent, border: "none", color: "#fff", fontSize: 15.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
+                                {tr("profile.update", { version: update.version })}
+                            </button>
+                            <button onClick={() => setShowUpdatePrompt(false)} style={{ width: "100%", height: 48, borderRadius: 14, background: "none", border: "none", color: t.inkMuted, fontSize: 14.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 6, flexShrink: 0 }}>
+                                {tr("profile.updateLater")}
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
+
             {/* Меню профілю (#47) */}
             {showProfile && (
                 <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
@@ -179,7 +283,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         </div>
                         {/* Оновлення (#37): відкриваємо APK у системному браузері — він сам качає і пропонує встановити */}
                         {update && (
-                            <button onClick={() => window.open(update.url, '_blank')} style={{ width: "100%", height: 50, borderRadius: 14, background: t.accentSoft, border: `1px solid ${t.accent}55`, color: t.accent, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                            <button onClick={() => { setShowProfile(false); setUpdPhase(null); setShowUpdatePrompt(true); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.accentSoft, border: `1px solid ${t.accent}55`, color: t.accent, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
                                 <MIcon name="download" size={20} color={t.accent} />
                                 <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.update", { version: update.version })}</span>
                             </button>
