@@ -89,7 +89,8 @@ const shareReport = async (text) => {
             const stamp = new Date().toISOString().replace(/[:.]/g, '-');
             const zipped = zipSync({ [`vendo-log-${stamp}.log`]: strToU8(text) }, { level: 6 });
             const { Filesystem, Directory } = await import('@capacitor/filesystem');
-            const fileName = `vendo-log-${Date.now()}.zip`;
+            // Той самий читабельний штамп, що й у .log всередині — файли легко розрізняти.
+            const fileName = `vendo-log-${stamp}.zip`;
             // Без encoding → Filesystem трактує data як base64 і пише байти.
             await Filesystem.writeFile({ path: fileName, data: u8ToBase64(zipped), directory: Directory.Cache });
             const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
