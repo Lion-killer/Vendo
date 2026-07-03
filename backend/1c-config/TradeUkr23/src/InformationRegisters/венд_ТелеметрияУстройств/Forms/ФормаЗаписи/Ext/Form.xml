@@ -3,7 +3,15 @@
 	<Title>
 		<v8:item>
 			<v8:lang>ru</v8:lang>
-			<v8:content>@{ru=Телеметрия устройства; uk=Телеметрія пристрою; en=Device telemetry}</v8:content>
+			<v8:content>Телеметрия устройства</v8:content>
+		</v8:item>
+		<v8:item>
+			<v8:lang>uk</v8:lang>
+			<v8:content>Телеметрія пристрою</v8:content>
+		</v8:item>
+		<v8:item>
+			<v8:lang>en</v8:lang>
+			<v8:content>Device telemetry</v8:content>
 		</v8:item>
 	</Title>
 	<AutoTitle>false</AutoTitle>
@@ -142,7 +150,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=Сохранить лог в файл; uk=Зберегти лог у файл; en=Save log to file}</v8:content>
+					<v8:content>Сохранить лог в файл</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Зберегти лог у файл</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Save log to file</v8:content>
 				</v8:item>
 			</Title>
 			<Action>СохранитьВФайл</Action>

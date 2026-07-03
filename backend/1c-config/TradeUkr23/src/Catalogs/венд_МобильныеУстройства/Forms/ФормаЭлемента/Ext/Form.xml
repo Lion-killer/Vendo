@@ -92,7 +92,15 @@
 					<Title>
 						<v8:item>
 							<v8:lang>ru</v8:lang>
-							<v8:content>@{ru=Запросить лог (при следующем сеансе связи); uk=Запросити лог (за наступного сеансу зв'язку); en=Request log (on next contact)}</v8:content>
+							<v8:content>Запросить лог (при следующем сеансе связи)</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Запросити лог (за наступного сеансу зв'язку)</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Request log (on next contact)</v8:content>
 						</v8:item>
 					</Title>
 					<ContextMenu name="ЗапроситьЛогКонтекстноеМеню" id="62" />
