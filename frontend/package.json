@@ -5,7 +5,7 @@
     "copy-help": "node scripts/copy-help.mjs",
     "predev": "node scripts/copy-help.mjs",
     "prebuild": "node scripts/copy-help.mjs",
-    "version": "node scripts/sync-version.mjs && node scripts/changelog.mjs && git add android/app/build.gradle ../CHANGELOG.md",
+    "version": "node scripts/sync-version.mjs && node scripts/changelog.mjs && git add android/app/build.gradle ../CHANGELOG.md ../backend/1c-config/TradeUkr23/src/Configuration.xml",
     "release": "node scripts/release.mjs",
     "dev": "vite",
     "build": "vite build",
