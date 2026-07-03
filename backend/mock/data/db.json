@@ -1592,5 +1592,8 @@
   ],
   "meta": {
     "lastOrderSeq": 2042
+  },
+  "telemetry": {
+    "requestLog": false
   }
 }

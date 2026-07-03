@@ -44,6 +44,21 @@
         "responses": { "200": { "description": "Сервіс живий" } }
       }
     },
+    "/telemetry": {
+      "post": {
+        "tags": ["Діагностика"],
+        "summary": "Снапшот стану пристрою (телеметрія)",
+        "description": "Шлеться при старті додатка, періодично (~15 хв) і після синхронізації замовлень. Поля log/logErrors присутні лише коли з попереднього відправлення з'явилися нові помилки (мережеві таймаути не рахуються) або на запит оператора (requestLog у відповіді → позачерговий снапшот із повним логом). 1С пише запис у періодичний регістр відомостей; отримання лога гасить прапорець «Запросити лог» на пристрої. Всі запити додатка також несуть заголовок X-App-Version (пасивна телеметрія активності/версії).",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TelemetrySnapshot" } } }
+        },
+        "responses": {
+          "200": { "description": "Прийнято", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "requestLog": { "type": "boolean", "description": "true — оператор запросив повний лог: надіслати позачерговий снапшот із log" } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
     "/products": {
       "get": {
         "tags": ["Довідники"], "summary": "Номенклатура пристрою (ціна за типом цін, залишок за складом)",
@@ -130,6 +145,18 @@
       "Conflict": { "description": "Конфлікт версій (запис змінили на сервері після ваших правок)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Conflict" } } } }
     },
     "schemas": {
+      "TelemetrySnapshot": {
+        "type": "object", "required": ["version"],
+        "properties": {
+          "version": { "type": "string", "example": "0.3.2", "description": "Версія додатка" },
+          "model": { "type": "string", "example": "SM-G980F", "description": "Модель пристрою (з User-Agent)" },
+          "os": { "type": "string", "example": "Android 13" },
+          "lastSyncAt": { "type": "string", "format": "date-time", "nullable": true, "description": "Час останньої успішної синхронізації даних" },
+          "pendingOrders": { "type": "integer", "description": "Черга невідправлених замовлень (локальні чернетки/правки)" },
+          "log": { "type": "string", "description": "Плоский текст журналу додатка (без стискання; ≤ ~2 МБ). Лише при нових помилках або на запит оператора" },
+          "logErrors": { "type": "integer", "description": "К-сть нових помилок цього відвантаження (мережеві таймаути не рахуються)" }
+        }
+      },
       "AuthRequest": {
         "type": "object", "required": ["deviceId", "pairingCode"],
         "properties": {

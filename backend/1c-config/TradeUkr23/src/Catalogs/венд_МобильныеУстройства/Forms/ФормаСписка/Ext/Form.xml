@@ -36,6 +36,44 @@
 				</Title>
 				<ExtendedTooltip name="НастроитьURLСервисаРасширеннаяПодсказка" id="2"/>
 			</Button>
+			<Button name="ОчиститьТелеметрию" id="42">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.ОчиститьТелеметрию</CommandName>
+				<Title>
+					<v8:item>
+						<v8:lang>ru</v8:lang>
+						<v8:content>Очистить телеметрию (30+ дней)</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>uk</v8:lang>
+						<v8:content>Очистити телеметрію (30+ днів)</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>en</v8:lang>
+						<v8:content>Purge telemetry (30+ days)</v8:content>
+					</v8:item>
+				</Title>
+				<ExtendedTooltip name="ОчиститьТелеметриюРасширеннаяПодсказка" id="43"/>
+			</Button>
+			<Button name="ОткрытьТелеметрию" id="45">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.ОткрытьТелеметрию</CommandName>
+				<Title>
+					<v8:item>
+						<v8:lang>ru</v8:lang>
+						<v8:content>Телеметрия (журнал)</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>uk</v8:lang>
+						<v8:content>Телеметрія (журнал)</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>en</v8:lang>
+						<v8:content>Telemetry (journal)</v8:content>
+					</v8:item>
+				</Title>
+				<ExtendedTooltip name="ОткрытьТелеметриюРасширеннаяПодсказка" id="46"/>
+			</Button>
 		</ChildItems>
 	</AutoCommandBar>
 	<ChildItems>
@@ -72,6 +110,120 @@
 					<ContextMenu name="ЗаблокированоКонтекстноеМеню" id="19"/>
 					<ExtendedTooltip name="ЗаблокированоРасширеннаяПодсказка" id="20"/>
 				</CheckBoxField>
+				<InputField name="Активность" id="23">
+					<DataPath>Список.Активность</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Активность</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Активність</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Last activity</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="АктивностьКонтекстноеМеню" id="24"/>
+					<ExtendedTooltip name="АктивностьРасширеннаяПодсказка" id="25"/>
+				</InputField>
+				<InputField name="Версия" id="26">
+					<DataPath>Список.Версия</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Версия</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Версія</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Version</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ВерсияКонтекстноеМеню" id="27"/>
+					<ExtendedTooltip name="ВерсияРасширеннаяПодсказка" id="28"/>
+				</InputField>
+				<InputField name="Модель" id="29">
+					<DataPath>Список.Модель</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Модель</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Модель</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Model</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="МодельКонтекстноеМеню" id="30"/>
+					<ExtendedTooltip name="МодельРасширеннаяПодсказка" id="31"/>
+				</InputField>
+				<InputField name="Синхронизация" id="32">
+					<DataPath>Список.Синхронизация</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Синхронизация</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Синхронізація</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Last sync</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="СинхронизацияКонтекстноеМеню" id="33"/>
+					<ExtendedTooltip name="СинхронизацияРасширеннаяПодсказка" id="34"/>
+				</InputField>
+				<InputField name="Очередь" id="35">
+					<DataPath>Список.Очередь</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Очередь</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Черга</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Queue</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ОчередьКонтекстноеМеню" id="36"/>
+					<ExtendedTooltip name="ОчередьРасширеннаяПодсказка" id="37"/>
+				</InputField>
+				<InputField name="Ошибки" id="38">
+					<DataPath>Список.Ошибки</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Ошибки</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Помилки</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Errors</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ОшибкиКонтекстноеМеню" id="39"/>
+					<ExtendedTooltip name="ОшибкиРасширеннаяПодсказка" id="40"/>
+				</InputField>
 			</ChildItems>
 		</Table>
 	</ChildItems>
@@ -82,9 +234,26 @@
 			</Type>
 			<MainAttribute>true</MainAttribute>
 			<Settings xsi:type="DynamicList">
-				<MainTable>Catalog.венд_МобильныеУстройства</MainTable>
-				<ManualQuery>false</ManualQuery>
+				<ManualQuery>true</ManualQuery>
 				<DynamicDataRead>true</DynamicDataRead>
+				<QueryText>ВЫБРАТЬ
+	Устройства.Ссылка КАК Ссылка,
+	Устройства.ПометкаУдаления КАК ПометкаУдаления,
+	Устройства.Наименование КАК Наименование,
+	Устройства.ИдентификаторУстройства КАК ИдентификаторУстройства,
+	Устройства.Менеджер КАК Менеджер,
+	Устройства.Заблокировано КАК Заблокировано,
+	Телеметрия.ПоследняяАктивность КАК Активность,
+	Телеметрия.Версия КАК Версия,
+	Телеметрия.Модель КАК Модель,
+	Телеметрия.ПоследняяСинхронизация КАК Синхронизация,
+	Телеметрия.Очередь КАК Очередь,
+	Телеметрия.Ошибки КАК Ошибки
+ИЗ
+	Справочник.венд_МобильныеУстройства КАК Устройства
+		ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.венд_ТелеметрияУстройств.СрезПоследних КАК Телеметрия
+		ПО Телеметрия.Устройство = Устройства.Ссылка</QueryText>
+				<MainTable>Catalog.венд_МобильныеУстройства</MainTable>
 			</Settings>
 		</Attribute>
 	</Attributes>
@@ -105,6 +274,40 @@
 				</v8:item>
 			</Title>
 			<Action>НастроитьURLСервиса</Action>
+		</Command>
+		<Command name="ОчиститьТелеметрию" id="44">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Очистить телеметрию (30+ дней)</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Очистити телеметрію (30+ днів)</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Purge telemetry (30+ days)</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ОчиститьТелеметрию</Action>
+		</Command>
+		<Command name="ОткрытьТелеметрию" id="47">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Телеметрия (журнал)</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Телеметрія (журнал)</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Telemetry (journal)</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ОткрытьТелеметрию</Action>
 		</Command>
 	</Commands>
 </Form>

@@ -11,6 +11,7 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject } from './api/client';
+import { sendTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
@@ -263,6 +264,7 @@ export default function App() {
     if (skipped) parts.push(tr("toast.syncSkipped", { count: skipped }));
     notify(parts.length ? tr("toast.syncResult", { parts: parts.join(", ") }) : tr("toast.syncNothing"));
     setSyncing(false);
+    sendTelemetry(); // #42: снапшот після синхронізації (fire-and-forget)
   };
 
   const isLoggedIn = screen !== "login";
@@ -283,17 +285,20 @@ export default function App() {
     document.addEventListener('visibilitychange', handleVisible);
 
     loadData();
+    sendTelemetry(); // #42: снапшот при старті сесії
 
     // Фонова синхронізація: тихо перечитуємо дані кожні 20с (цей же запит визначає
     // онлайн/офлайн). Так нові товари/замовлення з сервера підтягуються самі, поки
     // додаток онлайн, — а не лише при переході офлайн→онлайн, як було раніше.
     const syncInterval = setInterval(() => { fetchFromNetwork(true); }, 20000);
+    const telemetryInterval = setInterval(() => { sendTelemetry(); }, 15 * 60 * 1000); // #42
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', handleVisible);
       clearInterval(syncInterval);
+      clearInterval(telemetryInterval);
     };
   }, [isLoggedIn]);
 

@@ -43,10 +43,14 @@ const maxSeq = (seed.orders || []).reduce((max, o) => {
 }, 2025);
 const meta = { lastOrderSeq: seed.meta?.lastOrderSeq ?? maxSeq };
 
+// Телеметрія (#42): requestLog — прапорець «запросити повний лог» (в 1С живе на пристрої,
+// тут — у сіді для тестування UI); last — останній прийнятий снапшот (лише для дебагу).
+const telemetry = { requestLog: !!seed.telemetry?.requestLog, last: null };
+
 console.log('In-memory store seeded from db.json');
 
 module.exports = {
-    products, customers, categories, orders, meta,
+    products, customers, categories, orders, meta, telemetry,
     productById: (id) => products.find(p => p.id === id) || null,
     customerById: (id) => customers.find(c => c.id === id) || null,
     orderById: (id) => orders.find(o => o.id === id) || null,

@@ -23,6 +23,8 @@ const h = (extra = {}) => {
     // #26: мова інтерфейсу → бекенд локалізує message-рядки (uk/ru/en).
     const lang = localStorage.getItem('vendo_lang');
     if (lang) headers['Accept-Language'] = lang;
+    // #42: пасивна телеметрія — 1С тротльовано оновлює активність/версію пристрою.
+    if (typeof __APP_VERSION__ !== 'undefined') headers['X-App-Version'] = __APP_VERSION__;
     return headers;
 };
 
@@ -174,6 +176,14 @@ export const restoreOrder = async (id, baseVersion) =>
         method: 'PUT',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ deletionMark: false, baseVersion }),
+    })).json();
+
+// #42: снапшот телеметрії (стан пристрою; опційно лог). Відповідь: { ok, requestLog }.
+export const postTelemetry = async (payload) =>
+    (await tfetch(`${apiUrl()}/telemetry`, {
+        method: 'POST',
+        headers: h({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
     })).json();
 
 // Найдешевший пінг доступності: HEAD /health (без авторизації, без БД, без тіла) —

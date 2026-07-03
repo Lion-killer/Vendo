@@ -72,6 +72,19 @@ router.post('/auth', (req, res) => {
 router.head('/health', (req, res) => res.status(200).end());
 router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
+// POST /telemetry (#42) — снапшот стану пристрою. У 1С пишеться в періодичний регістр
+// відомостей; мок лише тримає останній снапшот у пам'яті й логує в консоль.
+// Відповідь несе requestLog: якщо оператор запросив повний лог — додаток надішле
+// позачерговий снапшот із полем log; отримання лога гасить прапорець.
+router.post('/telemetry', (req, res) => {
+    const b = req.body || {};
+    store.telemetry.last = { ...b, deviceId: req.headers['x-device-id'] || null, receivedAt: new Date().toISOString() };
+    console.log(`telemetry: v${b.version || '?'} ${b.model || '?'} queue=${b.pendingOrders ?? '?'}` +
+        (b.log ? ` errors=${b.logErrors ?? 0} log=${b.log.length}b` : ''));
+    if (b.log) store.telemetry.requestLog = false; // лог отримано — запит виконано
+    res.json({ ok: true, requestLog: store.telemetry.requestLog });
+});
+
 router.get('/products', (req, res) => {
     res.json(store.products);
 });

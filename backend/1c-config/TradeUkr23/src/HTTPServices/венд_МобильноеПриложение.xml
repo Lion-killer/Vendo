@@ -278,6 +278,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="ebe9dc8c-46a1-4aa2-8b01-6ba887e6c4f4">
+				<Properties>
+					<Name>Telemetry</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Telemetry</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/telemetry</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="5c6ee42a-d9c6-40cc-896e-98e1f705fdc0">
+						<Properties>
+							<Name>Post</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Post</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>POST</HTTPMethod>
+							<Handler>TelemetryPost</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 		</ChildObjects>
 	</HTTPService>
 </MetaDataObject>
