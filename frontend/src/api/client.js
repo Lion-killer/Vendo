@@ -56,7 +56,10 @@ const tfetch = async (url, opts = {}, timeout = TIMEOUT) => {
         const res = await fetch(url, { ...opts, signal: ctrl.signal });
         const ms = Date.now() - started;
         (res.ok ? logInfo : logWarn)(`${method} ${path} → ${res.status}`, `${ms}ms`);
-        if (res.status === 401) maybeAuthReject(opts.headers && opts.headers['X-Auth-Token']);
+        // authReject:false — запит не бере участі в детекторі відв'язки (#40): 401 такого
+        // запиту може означати не відкликаний токен, а відсутнє право на метод у 1С
+        // (телеметрія на старішій конфігурації) — з сесії за це не викидаємо.
+        if (res.status === 401 && opts.authReject !== false) maybeAuthReject(opts.headers && opts.headers['X-Auth-Token']);
         return res;
     } catch (e) {
         logError(`${method} ${path} → помилка мережі`, e && e.name === 'AbortError' ? `таймаут ${timeout}ms` : String(e && e.message || e));
@@ -179,11 +182,14 @@ export const restoreOrder = async (id, baseVersion) =>
     })).json();
 
 // #42: снапшот телеметрії (стан пристрою; опційно лог). Відповідь: { ok, requestLog }.
+// authReject:false — телеметрія допоміжна: її 401 (немає права на метод у старішій 1С)
+// не повинен викидати користувача з сесії, як це робить 401 основних даних (#40).
 export const postTelemetry = async (payload) =>
     (await tfetch(`${apiUrl()}/telemetry`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
+        authReject: false,
     })).json();
 
 // Найдешевший пінг доступності: HEAD /health (без авторизації, без БД, без тіла) —
