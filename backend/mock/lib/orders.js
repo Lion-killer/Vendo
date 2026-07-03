@@ -13,7 +13,10 @@ const colorFor = (status) => STATUS_COLORS[status] || "#F2C94C";
 const MESSAGES = {
     conflict: { uk: "Замовлення змінили на сервері після ваших правок", ru: "Заказ изменили на сервере после ваших правок", en: "The order was changed on the server after your edits" },
     notFound: { uk: "Замовлення не знайдено", ru: "Заказ не найден", en: "Order not found" },
-    noCustomer: { uk: "Не вибрано контрагента", ru: "Не выбран контрагент", en: "Customer is required" },
+    noCustomer: { uk: "Не вказано контрагента", ru: "Не указан контрагент", en: "Customer is required" },
+    customerNotFound: { uk: "Контрагента не знайдено в базі (id: %1)", ru: "Контрагент не найден в базе (id: %1)", en: "Customer not found (id: %1)" },
+    noProductId: { uk: "Позиція замовлення без ідентифікатора товару (productId)", ru: "Позиция заказа без идентификатора товара (productId)", en: "Order item has no product id (productId)" },
+    productNotFound: { uk: "Товар не знайдено в базі (id: %1)", ru: "Товар не найден в базе (id: %1)", en: "Product not found (id: %1)" },
     cantDeletePosted: { uk: "Проведене замовлення не можна видалити", ru: "Проведённый заказ нельзя удалить", en: "A posted order cannot be deleted" },
     deleted: { uk: "Замовлення видалено", ru: "Заказ удалён", en: "Order deleted" },
     marked: { uk: "Помічено на видалення", ru: "Помечено на удаление", en: "Marked for deletion" }

@@ -60,6 +60,24 @@ const nextOrderNum = () => {
     return `ЗМ-${store.meta.lastOrderSeq}`;
 };
 
+// Валідація позицій (контракт, як у 1С): позиція без productId або з невідомим товаром —
+// 400 на весь запит, а НЕ мовчазний пропуск рядка (інакше документ створюється неповним).
+// Повертає true, якщо відповідь-помилку вже надіслано.
+const rejectInvalidItems = (req, res, orderItems) => {
+    for (const it of (orderItems || [])) {
+        const productId = it.productId ?? it.product?.id;
+        if (productId == null) {
+            res.status(400).json({ success: false, message: msg(req, 'noProductId') });
+            return true;
+        }
+        if (!store.productById(productId)) {
+            res.status(400).json({ success: false, message: msg(req, 'productNotFound').replace('%1', String(productId)) });
+            return true;
+        }
+    }
+    return false;
+};
+
 // --- Роути ---
 
 router.post('/auth', (req, res) => {
@@ -133,11 +151,17 @@ router.post('/orders', (req, res) => {
         });
     }
 
-    // Замовлення без контрагента не приймаємо (як 1С: ЗаказПокупателя без Контрагент —
-    // некоректний документ). При upsert існуючого контрагент може прийти з нього.
-    if ((customerId ?? existing?.customerId) == null) {
+    // Замовлення без контрагента не приймаємо — як 1С: ЗаказПокупателя без Контрагент
+    // некоректний. «Не вказано» і «не знайдено» розрізняємо (друге — з id для діагностики).
+    // При upsert контрагент може прийти з наявного документа.
+    const effCustomerId = customerId ?? existing?.customerId;
+    if (effCustomerId == null) {
         return res.status(400).json({ success: false, message: msg(req, 'noCustomer') });
     }
+    if (!store.customerById(effCustomerId)) {
+        return res.status(400).json({ success: false, message: msg(req, 'customerNotFound').replace('%1', String(effCustomerId)) });
+    }
+    if (rejectInvalidItems(req, res, orderItems)) return;
 
     const version = randomUUID(); // новий токен версії при кожному записі (імітує ВерсияДанных)
     const items = normalizeItems(orderItems);
@@ -177,6 +201,12 @@ router.put('/orders/:id', (req, res) => {
     if (!existing) {
         return res.status(404).json({ success: false, message: msg(req, 'notFound') });
     }
+
+    // Невідомий контрагент при оновленні — 400, а не битий документ.
+    if (customerId != null && !store.customerById(customerId)) {
+        return res.status(400).json({ success: false, message: msg(req, 'customerNotFound').replace('%1', String(customerId)) });
+    }
+    if (orderItems && rejectInvalidItems(req, res, orderItems)) return;
 
     existing.customerId = customerId ?? existing.customerId;
     existing.status = status || existing.status;
