@@ -101,10 +101,11 @@
       "post": {
         "tags": ["Замовлення"],
         "summary": "Upsert замовлення за клієнтським GUID (ідемпотентно)",
-        "description": "Якщо `id` уже існує — оновлення (з перевіркою конфлікту за `baseVersion`); інакше — створення нового документа, що отримує посилання = клієнтський `id`. `total` ігнорується (сума рахується на сервері за зафіксованими цінами).",
+        "description": "Якщо `id` уже існує — оновлення (з перевіркою конфлікту за `baseVersion`); інакше — створення нового документа, що отримує посилання = клієнтський `id`. `total` ігнорується (сума рахується на сервері за зафіксованими цінами). Замовлення без контрагента (`customerId` відсутній і в тілі, і в наявному документі) відхиляється з 400.",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderInput" } } } },
         "responses": {
           "200": { "description": "Створено/оновлено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "400": { "description": "Некоректне замовлення (немає контрагента тощо)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/Conflict" }
         }

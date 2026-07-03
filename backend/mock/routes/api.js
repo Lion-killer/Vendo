@@ -133,6 +133,12 @@ router.post('/orders', (req, res) => {
         });
     }
 
+    // Замовлення без контрагента не приймаємо (як 1С: ЗаказПокупателя без Контрагент —
+    // некоректний документ). При upsert існуючого контрагент може прийти з нього.
+    if ((customerId ?? existing?.customerId) == null) {
+        return res.status(400).json({ success: false, message: msg(req, 'noCustomer') });
+    }
+
     const version = randomUUID(); // новий токен версії при кожному записі (імітує ВерсияДанных)
     const items = normalizeItems(orderItems);
 

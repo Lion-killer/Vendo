@@ -245,6 +245,9 @@ export default function App() {
           if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
           removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
+        // Без контрагента не відправляємо: 1С не прийме ЗаказПокупателя без Контрагент.
+        // Чернетка лишається в черзі з помилкою — користувач обирає клієнта й синкає знову.
+        if (!o.customerId) { setLocalOrderError(o.id, "Не вибрано контрагента"); skipped++; rec(o, 'skipped', "Не вибрано контрагента"); continue; }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; rec(o, 'skipped', "Посилання на видалені дані"); continue; }
         const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion, o.deletionMark);
         if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
