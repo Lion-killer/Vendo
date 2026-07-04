@@ -161,6 +161,9 @@ export default function App() {
     fetchingRef.current = true;
     if (!silent) setConnecting(true);
     try {
+      // Замовлення — без клієнтського фільтра дат: глибиною історії керує ЛИШЕ бекенд
+      // (картка пристрою, ГлубинаИсторииЗаказов; 0 = 30 днів). Так оператор може
+      // свідомо збільшити глибину конкретному пристрою — додаток це поважає.
       // allSettled, а не all: один повільний/таймнутий запит НЕ валить усе в офлайн.
       const [prodR, catR, custR, ordR] = await Promise.allSettled([
         fetchProducts(), fetchCategories(), fetchCustomers(), fetchOrders()
@@ -404,7 +407,11 @@ export default function App() {
     setProducts([]); setCategories([]); setCustomers([]); setOrders([]); setLoadError(null);
     setOrderItems([]); setEditOrderId(null); setEditCustomer(null);
     notify(tr('toast.dataCleared'));
-    loadData(); // перезавантажити з сервера у фоні
+    // Перезавантаження з сервера — ФОРСОВАНЕ (минаємо guard): на повільній 1С фоновий
+    // цикл майже завжди «в польоті», і звичайний виклик пропустився б — екран лишався б
+    // порожнім до наступного вдалого циклу. Кеш читати нема сенсу (щойно стерли).
+    collectionsFpRef.current = {};
+    fetchFromNetwork(false, true);
   };
 
   // Відкрити замовлення з історії синхронізацій (для вирішення конфлікту/помилки).
