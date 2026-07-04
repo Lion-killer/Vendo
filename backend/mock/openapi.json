@@ -155,8 +155,9 @@
           "os": { "type": "string", "example": "Android 13" },
           "lastSyncAt": { "type": "string", "format": "date-time", "nullable": true, "description": "Час останньої успішної синхронізації даних" },
           "pendingOrders": { "type": "integer", "description": "Черга невідправлених замовлень (локальні чернетки/правки)" },
+          "netErrors": { "type": "integer", "description": "Мережеві таймаути/збої за вікно від попереднього снапшота (окремо від logErrors; для видимості стійких проблем каналу). Йде кожним снапшотом" },
           "log": { "type": "string", "description": "Плоский текст журналу додатка (без стискання; ≤ ~2 МБ). Лише при нових помилках або на запит оператора" },
-          "logErrors": { "type": "integer", "description": "К-сть нових помилок цього відвантаження (мережеві таймаути не рахуються)" }
+          "logErrors": { "type": "integer", "description": "К-сть нових помилок цього відвантаження (мережеві таймаути не рахуються — їх рахує netErrors)" }
         }
       },
       "AuthRequest": {

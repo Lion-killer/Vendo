@@ -20,7 +20,7 @@
 			<Button name="СохранитьВФайл" id="1">
 				<Type>CommandBarButton</Type>
 				<CommandName>Form.Command.СохранитьВФайл</CommandName>
-				<ExtendedTooltip name="СохранитьВФайлРасширеннаяПодсказка" id="2"/>
+				<ExtendedTooltip name="СохранитьВФайлРасширеннаяПодсказка" id="2" />
 			</Button>
 		</ChildItems>
 	</AutoCommandBar>
@@ -30,67 +30,87 @@
 	<ChildItems>
 		<UsualGroup name="ГруппаШапка" id="3">
 			<Group>Horizontal</Group>
-			<ExtendedTooltip name="ГруппаШапкаРасширеннаяПодсказка" id="4"/>
+			<ExtendedTooltip name="ГруппаШапкаРасширеннаяПодсказка" id="4" />
 			<ChildItems>
 				<InputField name="Период" id="5">
 					<DataPath>Запись.Период</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="ПериодКонтекстноеМеню" id="6"/>
-					<ExtendedTooltip name="ПериодРасширеннаяПодсказка" id="7"/>
+					<ContextMenu name="ПериодКонтекстноеМеню" id="6" />
+					<ExtendedTooltip name="ПериодРасширеннаяПодсказка" id="7" />
 				</InputField>
 				<InputField name="Устройство" id="8">
 					<DataPath>Запись.Устройство</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="УстройствоКонтекстноеМеню" id="9"/>
-					<ExtendedTooltip name="УстройствоРасширеннаяПодсказка" id="10"/>
+					<ContextMenu name="УстройствоКонтекстноеМеню" id="9" />
+					<ExtendedTooltip name="УстройствоРасширеннаяПодсказка" id="10" />
 				</InputField>
 			</ChildItems>
 		</UsualGroup>
 		<UsualGroup name="ГруппаСостояние" id="11">
 			<Group>Horizontal</Group>
-			<ExtendedTooltip name="ГруппаСостояниеРасширеннаяПодсказка" id="12"/>
+			<ExtendedTooltip name="ГруппаСостояниеРасширеннаяПодсказка" id="12" />
 			<ChildItems>
 				<InputField name="ПоследняяАктивность" id="13">
 					<DataPath>Запись.ПоследняяАктивность</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="ПоследняяАктивностьКонтекстноеМеню" id="14"/>
-					<ExtendedTooltip name="ПоследняяАктивностьРасширеннаяПодсказка" id="15"/>
+					<ContextMenu name="ПоследняяАктивностьКонтекстноеМеню" id="14" />
+					<ExtendedTooltip name="ПоследняяАктивностьРасширеннаяПодсказка" id="15" />
 				</InputField>
 				<InputField name="Версия" id="16">
 					<DataPath>Запись.Версия</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="ВерсияКонтекстноеМеню" id="17"/>
-					<ExtendedTooltip name="ВерсияРасширеннаяПодсказка" id="18"/>
+					<ContextMenu name="ВерсияКонтекстноеМеню" id="17" />
+					<ExtendedTooltip name="ВерсияРасширеннаяПодсказка" id="18" />
 				</InputField>
 				<InputField name="Модель" id="19">
 					<DataPath>Запись.Модель</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="МодельКонтекстноеМеню" id="20"/>
-					<ExtendedTooltip name="МодельРасширеннаяПодсказка" id="21"/>
+					<ContextMenu name="МодельКонтекстноеМеню" id="20" />
+					<ExtendedTooltip name="МодельРасширеннаяПодсказка" id="21" />
 				</InputField>
 			</ChildItems>
 		</UsualGroup>
 		<UsualGroup name="ГруппаПоказатели" id="22">
 			<Group>Horizontal</Group>
-			<ExtendedTooltip name="ГруппаПоказателиРасширеннаяПодсказка" id="23"/>
+			<ExtendedTooltip name="ГруппаПоказателиРасширеннаяПодсказка" id="23" />
 			<ChildItems>
 				<InputField name="ПоследняяСинхронизация" id="24">
 					<DataPath>Запись.ПоследняяСинхронизация</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="ПоследняяСинхронизацияКонтекстноеМеню" id="25"/>
-					<ExtendedTooltip name="ПоследняяСинхронизацияРасширеннаяПодсказка" id="26"/>
+					<ContextMenu name="ПоследняяСинхронизацияКонтекстноеМеню" id="25" />
+					<ExtendedTooltip name="ПоследняяСинхронизацияРасширеннаяПодсказка" id="26" />
 				</InputField>
 				<InputField name="Очередь" id="27">
 					<DataPath>Запись.Очередь</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="ОчередьКонтекстноеМеню" id="28"/>
-					<ExtendedTooltip name="ОчередьРасширеннаяПодсказка" id="29"/>
+					<ContextMenu name="ОчередьКонтекстноеМеню" id="28" />
+					<ExtendedTooltip name="ОчередьРасширеннаяПодсказка" id="29" />
 				</InputField>
 				<InputField name="Ошибки" id="30">
 					<DataPath>Запись.Ошибки</DataPath>
 					<ReadOnly>true</ReadOnly>
-					<ContextMenu name="ОшибкиКонтекстноеМеню" id="31"/>
-					<ExtendedTooltip name="ОшибкиРасширеннаяПодсказка" id="32"/>
+					<ContextMenu name="ОшибкиКонтекстноеМеню" id="31" />
+					<ExtendedTooltip name="ОшибкиРасширеннаяПодсказка" id="32" />
+				</InputField>
+				<InputField name="СетевыеТаймауты" id="36">
+					<DataPath>Запись.СетевыеТаймауты</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Сетевые таймауты</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Мережеві таймаути</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Network timeouts</v8:content>
+						</v8:item>
+					</Title>
+					<ReadOnly>true</ReadOnly>
+					<ContextMenu name="СетевыеТаймаутыКонтекстноеМеню" id="37" />
+					<ExtendedTooltip name="СетевыеТаймаутыРасширеннаяПодсказка" id="38" />
 				</InputField>
 			</ChildItems>
 		</UsualGroup>
@@ -102,8 +122,8 @@
 			<AutoMaxWidth>false</AutoMaxWidth>
 			<Height>20</Height>
 			<HorizontalStretch>true</HorizontalStretch>
-			<ContextMenu name="ТекстЛогаКонтекстноеМеню" id="34"/>
-			<ExtendedTooltip name="ТекстЛогаРасширеннаяПодсказка" id="35"/>
+			<ContextMenu name="ТекстЛогаКонтекстноеМеню" id="34" />
+			<ExtendedTooltip name="ТекстЛогаРасширеннаяПодсказка" id="35" />
 		</InputField>
 	</ChildItems>
 	<Attributes>
