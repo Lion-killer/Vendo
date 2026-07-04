@@ -205,11 +205,20 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, stock, unit, s
 
 // ─── Індикатор онлайн/офлайн у стилі іконок-кнопок (bell/sync) ─────────────────
 // floating=true — фіксований у правому верхньому куті (для екранів без шапки з іконками).
-export const OnlineIndicator = ({ t, online, connecting, floating }) => {
-  // Стан передає сама іконка: connecting (wifi, жовте миготіння-«серцебиття») → online (wifi) → offline (wifiOff).
-  const icon = online || connecting ? "wifi" : "wifiOff";
-  const iconColor = connecting ? t.warn : online ? t.ok : t.err;
-  const label = connecting ? "Підключення…" : online ? "Онлайн" : "Офлайн";
+// Стани (пріоритет згори вниз):
+//   connecting — перше завантаження без кешу (wifi, жовтий пульс) → "Підключення…"
+//   offline    — пінг HEAD /health не проходить (wifiOff, червоний) → "Офлайн"
+//   syncing    — онлайн + ІДЕ активна відправка черги (doSync); wifi, жовтий пульс →
+//                "Синхронізація". Саме обмін, а не "є невідправлене": непорожню чергу
+//                показує червона крапка на кнопці синку + бейджі в списку (інакше
+//                чернетки/застряглі замовлення тримали б вічний жовтий).
+//   online     — онлайн, обмін не йде (wifi, зелений) → "Онлайн"
+export const OnlineIndicator = ({ t, online, connecting, syncing, floating }) => {
+  const state = connecting ? "connecting" : !online ? "offline" : syncing ? "syncing" : "online";
+  const icon = state === "offline" ? "wifiOff" : "wifi";
+  const iconColor = state === "offline" ? t.err : state === "online" ? t.ok : t.warn;
+  const label = { connecting: "Підключення…", offline: "Офлайн", syncing: "Синхронізація", online: "Онлайн" }[state];
+  const animate = state === "connecting" || state === "syncing";
   return (
     <div aria-label={label} style={{
       position: floating ? "fixed" : "relative",
@@ -217,7 +226,7 @@ export const OnlineIndicator = ({ t, online, connecting, floating }) => {
       width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`,
       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
     }}>
-      <div style={{ display: "flex", animation: connecting ? "pulse 1.8s ease-in-out infinite" : "none" }}>
+      <div style={{ display: "flex", animation: animate ? "pulse 1.8s ease-in-out infinite" : "none" }}>
         <MIcon name={icon} size={18} color={iconColor} />
       </div>
     </div>
@@ -233,7 +242,7 @@ export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync
         <div style={{ animation: syncing ? "spin 1s linear infinite" : "none", display: "flex" }}><MIcon name="sync" size={18} color={t.ink} /></div>
         {pending > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
       </button>
-      <OnlineIndicator t={t} online={online} connecting={connecting} />
+      <OnlineIndicator t={t} online={online} connecting={connecting} syncing={syncing} />
     </div>
   );
 };

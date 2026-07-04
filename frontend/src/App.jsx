@@ -10,7 +10,7 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer } from './api/client';
 import { sendTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
@@ -45,6 +45,7 @@ export default function App() {
   // Відновлюємо збережену сесію (#24): якщо вона є, пропускаємо екран логіну.
   const [screen, setScreen] = useState(() => getSession() ? "dashboard" : "login");
   const [isOnline, setIsOnline] = useState(true);
+  const onlineRef = useRef(true); // свіже значення для пінга (стан у замиканні ефекту застаріває)
   const [connecting, setConnecting] = useState(true); // true на старті: до першого завантаження показуємо спінер, а не «порожньо»
   const [userName, setUserName] = useState(() => getSession()?.userName || "");
   const [orderItems, setOrderItems] = useState([]);
@@ -170,7 +171,11 @@ export default function App() {
       ]);
       const all = [prodR, catR, custR, ordR];
       const okCount = all.filter(r => r.status === 'fulfilled').length;
-      if (okCount === 0) { setIsOnline(false); return false; } // справді недоступно — лишаємось на кеші
+      // Офлайн вирішує ЛИШЕ дешевий пінг HEAD /health (ефект нижче): таймаут важких
+      // запитів даних — це повільний сервер, не відсутність мережі. Успіх даних —
+      // позитивний сигнал (прапорець можна підняти, але опускати звідси — ні).
+      if (okCount === 0) { return false; } // лишаємось на кеші; офлайн визначить пінг
+      onlineRef.current = true;
       setIsOnline(true);
 
       // Оновлюємо лише ті колекції, що прийшли; rejected (мережевий таймаут) не затирає дані.
@@ -227,8 +232,7 @@ export default function App() {
       }
       return true;
     } catch (e) {
-      console.warn("Мережа недоступна — лишаємось на кеші.", e);
-      setIsOnline(false);
+      console.warn("Цикл даних не вдався — лишаємось на кеші (офлайн визначає пінг).", e);
       return false;
     } finally {
       fetchingRef.current = false;
@@ -311,7 +315,7 @@ export default function App() {
 
     // Повернення звʼязку/додатку на передній план — одразу тягнемо свіже.
     const handleOnline = () => fetchFromNetwork(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOffline = () => { onlineRef.current = false; setIsOnline(false); };
     const handleVisible = () => { if (document.visibilityState === 'visible') fetchFromNetwork(true); };
 
     window.addEventListener('online', handleOnline);
@@ -321,9 +325,22 @@ export default function App() {
     loadData();
     sendTelemetry(); // #42: снапшот при старті сесії
 
-    // Фонова синхронізація: тихо перечитуємо дані кожні 20с (цей же запит визначає
-    // онлайн/офлайн). Так нові товари/замовлення з сервера підтягуються самі, поки
-    // додаток онлайн, — а не лише при переході офлайн→онлайн, як було раніше.
+    // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (5 с таймаут, без БД):
+    // важкі запити даних можуть хвилинами таймаутити на повільній 1С — це «синхронізація
+    // повзе», а не офлайн. Повернення зв'язку після офлайну → одразу свіжий рефетч.
+    const ping = async () => {
+      const ok = await pingServer();
+      const was = onlineRef.current;
+      onlineRef.current = ok;
+      setIsOnline(ok);
+      if (ok && !was) fetchFromNetwork(true); // зв'язок повернувся — тягнемо свіже
+    };
+    ping();
+    const pingInterval = setInterval(ping, 15000);
+
+    // Фонова синхронізація: тихо перечитуємо дані кожні 20с. Так нові товари/замовлення
+    // з сервера підтягуються самі, поки додаток онлайн, — а не лише при переході
+    // офлайн→онлайн.
     const syncInterval = setInterval(() => { fetchFromNetwork(true); }, 20000);
     const telemetryInterval = setInterval(() => { sendTelemetry(); }, 15 * 60 * 1000); // #42
 
@@ -331,6 +348,7 @@ export default function App() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', handleVisible);
+      clearInterval(pingInterval);
       clearInterval(syncInterval);
       clearInterval(telemetryInterval);
     };
