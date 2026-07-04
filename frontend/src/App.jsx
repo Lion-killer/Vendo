@@ -13,6 +13,7 @@ import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject } from './api/client';
 import { sendTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
+import { dataGet, dataPut, clearDataCache } from './api/dataCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
@@ -68,6 +69,7 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(false); // відкрита вбудована довідка
   const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
   const fetchingRef = useRef(false); // мережеве перечитування в процесі — не накладати цикли (повільний сервер)
+  const collectionsFpRef = useRef({}); // JSON-відбитки колекцій: guard від зайвих setState/перезапису кешу, коли фоновий цикл приніс те саме
   const orderHandled = useRef(false); // OrderScreen уже зберіг/відправив — не дублювати на виході
   const orderBaseline = useRef(""); // знімок замовлення на момент відкриття (щоб зберігати лише за змінами)
   const navStack = useRef([]); // стек попередніх екранів для апаратного «назад»
@@ -124,12 +126,20 @@ export default function App() {
     return next;
   });
 
-  // 1) Миттєво показуємо кеш (offline-first), щоб UI не чекав мережі.
-  const loadFromCache = () => {
+  // 1) Показуємо кеш (offline-first), щоб UI не чекав мережі. Кеш — в IndexedDB
+  // (vendo_data): localStorage має ліміт ~5 МБ і на великому знімку кидав QuotaExceeded,
+  // а синхронна серіалізація фризила UI (див. api/dataCache.js).
+  const loadFromCache = async () => {
     try {
-      const cached = localStorage.getItem('cached_data_v2'); // v2: GUID-ідентифікація (старий кеш із цілими id ігноруємо)
-      if (!cached) return false;
-      const data = JSON.parse(cached);
+      let data = await dataGet('collections');
+      if (!data) {
+        // Одноразова міграція зі старого localStorage-кешу (cached_data_v2).
+        const legacy = localStorage.getItem('cached_data_v2');
+        if (!legacy) return false;
+        data = JSON.parse(legacy);
+        dataPut('collections', data); // у фоні; невдача не критична
+      }
+      localStorage.removeItem('cached_data_v2'); // легасі-ключ більше не потрібен (і не тисне на квоту)
       setProducts(arr(data.products));
       setCategories(arr(data.categories));
       setCustomers(arr(data.customers));
@@ -162,10 +172,23 @@ export default function App() {
 
       // Оновлюємо лише ті колекції, що прийшли; rejected (мережевий таймаут) не затирає дані.
       // arr() коерсить {success:false} до [], інакше .map на екрані валить у білий екран.
-      if (prodR.status === 'fulfilled') setProducts(arr(prodR.value));
-      if (catR.status === 'fulfilled') setCategories(arr(catR.value));
-      if (custR.status === 'fulfilled') setCustomers(arr(custR.value));
-      if (ordR.status === 'fulfilled') setOrders(arr(ordR.value));
+      // Guard незмінності: фоновий цикл (20 с) найчастіше приносить те саме — тоді ані
+      // setState (повний ре-рендер), ані перезапис кешу не потрібні. Відбиток — JSON;
+      // із серверним капом історії замовлень це десятки мс, а не секунди (#41).
+      let changed = false;
+      const applyIfChanged = (r, key, setter) => {
+        if (r.status !== 'fulfilled') return;
+        const val = arr(r.value);
+        const fp = JSON.stringify(val);
+        if (collectionsFpRef.current[key] === fp) return;
+        collectionsFpRef.current[key] = fp;
+        changed = true;
+        setter(val);
+      };
+      applyIfChanged(prodR, 'products', setProducts);
+      applyIfChanged(catR, 'categories', setCategories);
+      applyIfChanged(custR, 'customers', setCustomers);
+      applyIfChanged(ordR, 'orders', setOrders);
 
       // Банер серверної помилки — лише коли колекція ПРИЙШЛА, але не масивом ({success:false}).
       // Мережевий таймаут (rejected) тут не вважаємо помилкою даних (це повільність сервера).
@@ -188,11 +211,15 @@ export default function App() {
         const imgPaths = arr(prodR.value).filter(p => typeof p.img === 'string' && p.img.charAt(0) === '/').map(p => p.img);
         if (imgPaths.length) prefetchImages(imgPaths, fetchAuthedBlobRaw);
       }
-      // Кеш даних — лише з повного знімка (усі 4), щоб не зберігати часткове.
+      // Кеш даних — лише з повного знімка (усі 4), щоб не зберігати часткове; пишемо
+      // в IndexedDB асинхронно і лише якщо щось змінилось. Час синхронізації — незалежно
+      // від успіху запису кешу (це різні факти).
       if (okCount === 4) {
-        localStorage.setItem('cached_data_v2', JSON.stringify({
-          products: arr(prodR.value), categories: arr(catR.value), customers: arr(custR.value), orders: arr(ordR.value)
-        }));
+        if (changed) {
+          dataPut('collections', {
+            products: arr(prodR.value), categories: arr(catR.value), customers: arr(custR.value), orders: arr(ordR.value)
+          });
+        }
         localStorage.setItem('vendo_last_sync', String(Date.now())); // час останньої успішної синхронізації
       }
       return true;
@@ -208,7 +235,8 @@ export default function App() {
 
   // Запуск: спершу кеш (одразу), далі мережа у фоні (не блокує UI).
   const loadData = async () => {
-    loadFromCache();
+    collectionsFpRef.current = {}; // нова сесія/перезавантаження — перший знімок застосовується завжди
+    await loadFromCache();
     await fetchFromNetwork();
   };
 
@@ -372,6 +400,7 @@ export default function App() {
     const KEEP = ['vendo_token', 'vendo_device_id', 'vendo_api_url', 'vendo_session', 'vendo_theme', 'vendo_lang'];
     Object.keys(localStorage).forEach(k => { if (!KEEP.includes(k)) localStorage.removeItem(k); });
     clearImageCache();
+    clearDataCache();
     setProducts([]); setCategories([]); setCustomers([]); setOrders([]); setLoadError(null);
     setOrderItems([]); setEditOrderId(null); setEditCustomer(null);
     notify(tr('toast.dataCleared'));

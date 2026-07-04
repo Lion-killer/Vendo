@@ -60,10 +60,15 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
         mergeOrders(appOrders.filter(inRange), getLocalOrders().filter(inRange)));
     const [loading, setLoading] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState(null);
+    // Порційний рендер: сотні карток за раз підвішують WebView; малюємо перші PAGE_SIZE
+    // і рівно стільки ж додаємо кнопкою «Показати ще». Зміна періоду скидає порцію.
+    const PAGE_SIZE = 50;
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     useEffect(() => {
         localStorage.setItem('orders_startDate', startDate);
         localStorage.setItem('orders_endDate', endDate);
+        setVisibleCount(PAGE_SIZE);
     }, [startDate, endDate]);
 
     const setSmartFilter = (type) => {
@@ -192,7 +197,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                         <p style={{ color: t.inkMuted, fontSize: 14, fontWeight: 600, marginTop: 12 }}>{tr("ordersList.empty")}</p>
                     </ListPlaceholder>
                 ) : (
-                    orders.map(o => {
+                    orders.slice(0, visibleCount).map(o => {
                       const refs = (products.length > 0 && customers.length > 0)
                           ? checkOrderRefs(o, idSet(products), idSet(customers)) : { ok: true };
                       return (
@@ -233,6 +238,13 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                         </div>
                       );
                     })
+                )}
+                {orders.length > visibleCount && (
+                    <button
+                        onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                        style={{ width: "100%", padding: "12px 0", background: t.surface, border: `1px solid ${t.line}`, borderRadius: 16, color: t.accent, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                        {tr("ordersList.showMore", { count: orders.length - visibleCount })}
+                    </button>
                 )}
             </div>
 

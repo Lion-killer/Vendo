@@ -171,6 +171,7 @@
     "fromDate": "From:",
     "toDate": "To:",
     "empty": "No orders for the selected period",
+    "showMore": "Show more ({{count}})",
     "badgeStale": "STALE DATA",
     "tipStale": "References to deleted data",
     "tipWaiting": "Awaiting sync",

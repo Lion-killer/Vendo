@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon';
 import { auth } from '../api/client';
 import { scanQr, parseQr } from '../api/scanner';
 import { clearImageCache } from '../api/imageCache';
+import { clearDataCache } from '../api/dataCache';
 import { purgeOnDeviceSwitch } from '../api/deviceData';
 
 // notice — i18n-ключ причини, чому користувача вивело на екран входу (#40: відв'язка
@@ -33,8 +34,9 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
         const { deviceId, apiUrl, pairingCode } = parseQr(raw);
 
         // Зміна пристрою: якщо сканують QR ІНШОГО пристрою — стираємо всі дані попереднього
-        // (кеш, чернетки, чергу, історію, токен, сесію) + кеш фото. Чужі дані не вантажаться.
-        if (purgeOnDeviceSwitch(deviceId, localStorage)) clearImageCache();
+        // (чернетки, чергу, історію, токен, сесію) + кеш фото і кеш колекцій (IndexedDB).
+        // Чужі дані не вантажаться.
+        if (purgeOnDeviceSwitch(deviceId, localStorage)) { clearImageCache(); clearDataCache(); }
 
         if (apiUrl) localStorage.setItem('vendo_api_url', apiUrl);
         if (deviceId) localStorage.setItem('vendo_device_id', deviceId);
