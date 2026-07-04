@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput } from '../components/ui';
 import { fmtMoney, todayISO, orderNum } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
@@ -43,9 +43,10 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // Синхронізуємо дату при відкритті іншого замовлення (prop змінюється без розмонтування).
     useEffect(() => { setOrderDate(date || todayISO()); }, [date]);
 
-    const updateQty = (idx, delta) => {
+    const updateQty = (idx, delta) => setQty(idx, orderItems[idx].qty + delta);
+    const setQty = (idx, value) => {
         const next = [...orderItems];
-        next[idx] = { ...next[idx], qty: Math.max(1, next[idx].qty + delta) };
+        next[idx] = { ...next[idx], qty: Math.max(1, value) };
         setOrderItems(next);
         setIsDirty(true);
     };
@@ -338,7 +339,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                         <button onClick={() => updateQty(idx, -1)} style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer" }}>
                                             <MIcon name="minus" size={13} color={t.ink} w={2} />
                                         </button>
-                                        <div style={{ minWidth: 24, textAlign: "center", fontFamily: F_NUM, fontSize: 13.5, fontWeight: 700 }}>{it.qty}</div>
+                                        <QtyInput t={t} value={it.qty} onCommit={(v) => setQty(idx, v)} min={1} width={44} />
+
                                         <button onClick={() => updateQty(idx, 1)} style={{ width: 30, height: 30, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 8px 8px 0", border: "none", cursor: "pointer" }}>
                                             <MIcon name="plus" size={13} color="#fff" w={2} />
                                         </button>

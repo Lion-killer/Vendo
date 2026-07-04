@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput } from '../components/ui';
 import { fmtMoney, fmtDate, todayISO } from '../i18n';
 import { scanBarcode } from '../api/scanner';
 
@@ -67,7 +67,9 @@ const ProductRow = ({ t, p, qty, onAdd }) => {
                     <button disabled={out || qty <= 0} onClick={() => onAdd(p, -1)} style={{ width: 32, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: qty > 0 ? "pointer" : "default" }}>
                         <MIcon name="minus" size={15} color={qty > 0 ? t.ink : t.inkMuted} w={2} />
                     </button>
-                    <div style={{ width: 28, textAlign: "center", fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: qty > 0 ? t.ink : t.inkMuted }}>{qty}</div>
+                    {out
+                        ? <div style={{ width: 28, textAlign: "center", fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.inkMuted }}>{qty}</div>
+                        : <QtyInput t={t} value={qty} onCommit={(v) => onAdd(p, v - qty)} min={0} width={40} fontSize={14} color={qty > 0 ? t.ink : t.inkMuted} />}
                     <button disabled={out} onClick={() => onAdd(p, 1)} style={{ width: 32, height: 36, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 9px 9px 0", border: "none", cursor: out ? "default" : "pointer" }}>
                         <MIcon name="plus" size={15} color="#fff" w={2} />
                     </button>

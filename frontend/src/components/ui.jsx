@@ -339,6 +339,34 @@ export const Pill = ({ children, bg, fg }) => (
   <span style={{ fontSize: 10.5, fontWeight: 700, color: fg, background: bg, padding: "2px 7px", borderRadius: 6, letterSpacing: 0.2, whiteSpace: "nowrap" }}>{children}</span>
 );
 
+// Поле кількості з ручним вводом: тап по числу відкриває цифрову клавіатуру телефона,
+// значення комітиться на blur/Enter (не на кожне натискання). Чернетка-рядок дозволяє
+// тимчасово порожнє поле під час набору; порожнє/менше min → min. Виділяє текст при
+// фокусі — набране число одразу замінює старе. Для швидкого вводу великих кількостей
+// (напр. 1000) замість наклацування кнопками −/+.
+export const QtyInput = ({ t, value, onCommit, min = 1, width = 46, fontSize = 13.5, color, style = {} }) => {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => { setDraft(String(value)); }, [value]);
+  const commit = () => {
+    const n = parseInt(draft, 10);
+    const v = isNaN(n) || n < min ? min : n;
+    setDraft(String(v));
+    if (v !== value) onCommit(v);
+  };
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+      onFocus={(e) => e.target.select()}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+      style={{ width, textAlign: "center", fontFamily: F_NUM, fontSize, fontWeight: 700, color: color || t.ink, background: "transparent", border: "none", outline: "none", padding: 0, ...style }}
+    />
+  );
+};
+
 // ─── Нижня навігація ─────────────────────────────────────────────────────────
 // Мапа екранів застосунку → вкладки редизайну (підпис локалізується через i18n-ключ).
 const TABS = [
