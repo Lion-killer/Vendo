@@ -92,6 +92,7 @@
     "/orders": {
       "get": {
         "tags": ["Замовлення"], "summary": "Замовлення менеджера пристрою за період",
+        "description": "Сервер може обмежувати глибину історії налаштуванням пристрою (в 1С — ГлубинаИсторииЗаказов, 0 = 30 днів): початок періоду піднімається до капу незалежно від startDate. Мок не обмежує (демо-дані малі).",
         "parameters": [
           { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Включно, YYYY-MM-DD" },
           { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Включно, YYYY-MM-DD" }

@@ -68,6 +68,25 @@
 					<ContextMenu name="АвтоПроведениеКонтекстноеМеню" id="51" />
 					<ExtendedTooltip name="АвтоПроведениеРасширеннаяПодсказка" id="52" />
 				</CheckBoxField>
+				<InputField name="ГлубинаИсторииЗаказов" id="64">
+					<DataPath>Объект.ГлубинаИсторииЗаказов</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Глубина истории заказов (дней, 0 = 30)</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Глибина історії замовлень (днів, 0 = 30)</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Order history depth (days, 0 = 30)</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ГлубинаИсторииЗаказовКонтекстноеМеню" id="65" />
+					<ExtendedTooltip name="ГлубинаИсторииЗаказовРасширеннаяПодсказка" id="66" />
+				</InputField>
 				<CheckBoxField name="Заблокировано" id="53">
 					<DataPath>Объект.Заблокировано</DataPath>
 					<Title>
