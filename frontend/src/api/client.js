@@ -40,21 +40,31 @@ const maybeAuthReject = (sentToken) => {
 
 // fetch із таймаутом — без нього недоступний бекенд висить до системного TCP-таймауту
 // (~30 с) і офлайн виявляється надто пізно.
-// Бойова 1С повільна й обробляє запити послідовно — одиничний запит легітимно триває
-// 4–7 с, а під чергою з кількох паралельних ще більше. Таймаут має це покривати, інакше
-// додаток хибно «офлайнить». 25с — стеля; реально швидше.
-const TIMEOUT = 25000;
+// Таймаут АДАПТИВНИЙ, per-ендпоінт: бойова 1С відповідає легітимно довго (велика
+// історія замовлень — TTFB 20+ с), і фіксована стеля обривала такі запити назавжди.
+// Запас = остання успішна TTFB × 3 (не менше базових 25 с, не більше 120 с); після
+// таймауту оцінка піднімається до чинного таймауту — наступна спроба дістає більше
+// часу (25 → 75 → 120 с), а успіх калібрує оцінку назад до реальної швидкості.
+// Оцінки переживають перезапуск (localStorage; чистяться разом з даними пристрою).
+const TIMEOUT = 25000;      // базовий (він же мінімум)
+const TIMEOUT_MAX = 120000; // стеля — довше не чекаємо ніколи
+const TIMES_KEY = 'vendo_net_times';
+const netTimes = (() => { try { return JSON.parse(localStorage.getItem(TIMES_KEY)) || {}; } catch { return {}; } })();
+const saveNetTimes = () => { try { localStorage.setItem(TIMES_KEY, JSON.stringify(netTimes)); } catch { /* не критично */ } };
+const timeoutFor = (path) => Math.min(Math.max(TIMEOUT, (netTimes[path] || 0) * 3), TIMEOUT_MAX);
 // Шлях без хоста — для компактного логу (метод + ендпоінт, без секретів у query немає).
 const shortPath = (url) => { try { return new URL(url).pathname; } catch { return url; } };
-const tfetch = async (url, opts = {}, timeout = TIMEOUT) => {
-    const ctrl = new AbortController();
-    const id = setTimeout(() => ctrl.abort(), timeout);
+const tfetch = async (url, opts = {}, timeout) => {
     const method = (opts.method || 'GET').toUpperCase();
     const path = shortPath(url);
+    const limit = timeout || timeoutFor(path); // явний аргумент (пінг) не адаптується
+    const ctrl = new AbortController();
+    const id = setTimeout(() => ctrl.abort(), limit);
     const started = Date.now();
     try {
         const res = await fetch(url, { ...opts, signal: ctrl.signal });
         const ms = Date.now() - started;
+        if (!timeout) { netTimes[path] = ms; saveNetTimes(); }
         (res.ok ? logInfo : logWarn)(`${method} ${path} → ${res.status}`, `${ms}ms`);
         // authReject:false — запит не бере участі в детекторі відв'язки (#40): 401 такого
         // запиту може означати не відкликаний токен, а відсутнє право на метод у 1С
@@ -62,7 +72,9 @@ const tfetch = async (url, opts = {}, timeout = TIMEOUT) => {
         if (res.status === 401 && opts.authReject !== false) maybeAuthReject(opts.headers && opts.headers['X-Auth-Token']);
         return res;
     } catch (e) {
-        logError(`${method} ${path} → помилка мережі`, e && e.name === 'AbortError' ? `таймаут ${timeout}ms` : String(e && e.message || e));
+        const aborted = e && e.name === 'AbortError';
+        if (aborted && !timeout) { netTimes[path] = limit; saveNetTimes(); } // ескалація на наступну спробу
+        logError(`${method} ${path} → помилка мережі`, aborted ? `таймаут ${limit}ms` : String(e && e.message || e));
         throw e;
     } finally {
         clearTimeout(id);
