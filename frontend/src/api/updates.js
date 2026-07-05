@@ -2,7 +2,9 @@
 // токен не потрібен; ліміт 60 запитів/год з IP — перевіряємо раз за сесію).
 // APK відкривається в системному браузері: він сам качає і пропонує встановити,
 // тож у застосунку не потрібні ні дозволи на встановлення, ні стрімінг файлів.
-const RELEASES_LATEST = "https://api.github.com/repos/Lion-killer/Vendo/releases/latest";
+// Список релізів (не /latest): щоб показати чейнджлоги ВСІХ пропущених версій, а не лише
+// найновішої (користувач міг оновлюватися через кілька версій).
+const RELEASES_LIST = "https://api.github.com/repos/Lion-killer/Vendo/releases?per_page=30";
 
 // Порівняння semver-рядків: -1 (a<b) / 0 / 1. Нечислові сегменти → 0.
 export const cmpVer = (a, b) => {
@@ -72,17 +74,30 @@ export async function openInstallSettings() {
     await registerPlugin('ApkInstaller').openInstallSettings();
 }
 
+// Чистий відбір: масив релізів GitHub + встановлена версія → { version, notes, url } або null.
+// notes — зшиті чейнджлоги ВСІХ версій, новіших за current (найновіша зверху); один
+// пропущений реліз — нотатки як є, кілька — кожна із заголовком «## vX.Y.Z».
+export function pickUpdate(list, current) {
+    const newer = (Array.isArray(list) ? list : [])
+        .map(r => ({ ...r, ver: String(r.tag_name || "").replace(/^v/, "") }))
+        .filter(r => r.ver && !r.draft && !r.prerelease && cmpVer(current, r.ver) < 0)
+        .sort((a, b) => cmpVer(b.ver, a.ver));
+    if (newer.length === 0) return null;
+    const target = newer[0]; // найновіша — її і встановлюємо
+    const apk = (target.assets || []).find(a => a.name?.endsWith(".apk"));
+    const notes = newer.length === 1
+        ? (newer[0].body || "").trim()
+        : newer.map(r => `## v${r.ver}\n\n${(r.body || "").trim()}`).join("\n\n");
+    return { version: target.ver, notes, url: apk?.browser_download_url || target.html_url };
+}
+
 // → { version, notes, url } якщо на GitHub є новіша версія, інакше null. Помилки мережі → null.
 export async function checkForUpdate(current) {
     if (cached !== undefined) return cached;
     try {
-        const res = await fetch(RELEASES_LATEST, { headers: { Accept: "application/vnd.github+json" } });
+        const res = await fetch(RELEASES_LIST, { headers: { Accept: "application/vnd.github+json" } });
         if (!res.ok) return (cached = null);
-        const rel = await res.json();
-        const version = String(rel.tag_name || "").replace(/^v/, "");
-        if (!version || cmpVer(current, version) >= 0) return (cached = null);
-        const apk = (rel.assets || []).find(a => a.name?.endsWith(".apk"));
-        cached = { version, notes: rel.body || "", url: apk?.browser_download_url || rel.html_url };
+        cached = pickUpdate(await res.json(), current);
     } catch {
         cached = null; // офлайн/помилка — мовчки без оновлення (перевіриться в наступній сесії)
     }

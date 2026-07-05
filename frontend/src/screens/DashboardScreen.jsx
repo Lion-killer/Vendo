@@ -209,6 +209,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                     </div>
                     <div style={{ flex: 1, minHeight: 0, overflowY: "auto", margin: "18px 0", padding: "0 6px", fontSize: 14, lineHeight: 1.55, color: t.ink }}>
                         <ReactMarkdown components={{
+                            h2: ({ children }) => <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 800, color: t.accent, margin: "18px 0 2px" }}>{children}</div>,
                             h3: ({ children }) => <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: .6, color: t.inkMuted, margin: "14px 0 6px" }}>{children}</div>,
                             ul: ({ children }) => <ul style={{ margin: 0, paddingLeft: 20 }}>{children}</ul>,
                             li: ({ children }) => <li style={{ margin: "4px 0" }}>{children}</li>,
