@@ -44,6 +44,11 @@
 					<ContextMenu name="ТипЦенКонтекстноеМеню" id="13" />
 					<ExtendedTooltip name="ТипЦенРасширеннаяПодсказка" id="14" />
 				</InputField>
+				<InputField name="Валюта" id="67">
+					<DataPath>Объект.Валюта</DataPath>
+					<ContextMenu name="ВалютаКонтекстноеМеню" id="68" />
+					<ExtendedTooltip name="ВалютаРасширеннаяПодсказка" id="69" />
+				</InputField>
 				<InputField name="Менеджер" id="15">
 					<DataPath>Объект.Менеджер</DataPath>
 					<ContextMenu name="МенеджерКонтекстноеМеню" id="16" />
