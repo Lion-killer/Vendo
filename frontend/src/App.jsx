@@ -21,7 +21,11 @@ import { idSet, checkOrderRefs, mergeOrders } from './api/refs';
 import { addSyncRun } from './api/syncHistory';
 import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 import { HelpScreen } from './screens/HelpScreen';
+import { UpdatePrompt } from './components/UpdatePrompt';
+import { checkForUpdate, isUpdatePromptShown, markUpdatePromptShown, downloadAndInstall, openInstallSettings } from './api/updates';
 import { parseMoney, orderNum as orderLabel, fmtDate, DEFAULT_CURRENCY } from './i18n';
+
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 
 // Сигнатура замовлення (товари+контрагент+дата) — для порівняння «чи щось змінилось».
 const orderSig = (items, custId, date) =>
@@ -64,6 +68,12 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [priceTypes, setPriceTypes] = useState([]); // доступні типи цін пристрою (для селектора)
   const [selectedPriceType, setSelectedPriceType] = useState(() => localStorage.getItem('vendo_price_type') || ""); // вибраний тип у каталозі
+  // Оновлення додатка (#37) — на рівні App, щоб промпт з'являвся НЕЗАЛЕЖНО від входу
+  // (нова версія може виправляти саму авторизацію). Перевірка анонімна (токен не потрібен).
+  const [update, setUpdate] = useState(null);
+  const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+  const [updPhase, setUpdPhase] = useState(null); // null → downloading → installing/permission/error
+  const [updProgress, setUpdProgress] = useState(0);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
   // #40: чому користувача викинуло на екран входу (i18n-ключ). Персистентний банер на
   // LoginScreen (переживає перезапуск, на відміну від снека) — стирається при вході.
@@ -129,6 +139,26 @@ export default function App() {
 
   // Вибраний тип цін переживає перезапуск (валідується проти списку в applyPriceTypes).
   useEffect(() => { if (selectedPriceType) localStorage.setItem('vendo_price_type', selectedPriceType); }, [selectedPriceType]);
+
+  // Перевірка оновлень раз за сесію — на маунті App, НЕЗАЛЕЖНО від входу (анонімний GitHub
+  // Releases). Знайдене — показуємо повноекранним промптом одразу (навіть на екрані логіну).
+  useEffect(() => {
+    checkForUpdate(APP_VERSION).then(u => {
+      setUpdate(u);
+      if (u && !isUpdatePromptShown()) { markUpdatePromptShown(); setShowUpdatePrompt(true); }
+    }).catch(() => { });
+  }, []);
+
+  const startUpdate = async () => {
+    setUpdPhase('downloading'); setUpdProgress(0);
+    try {
+      const r = await downloadAndInstall(update, setUpdProgress);
+      if (r === 'permission') setUpdPhase('permission');
+      else if (r === 'installing') setUpdPhase('installing');
+      else { setUpdPhase(null); setShowUpdatePrompt(false); } // web-фолбек: URL відкрито
+    } catch { setUpdPhase('error'); }
+  };
+  const closeUpdate = () => { setShowUpdatePrompt(false); setUpdPhase(null); };
 
   const toggleTheme = () => setIsDark(d => {
     const next = !d;
@@ -597,7 +627,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} update={update} onShowUpdate={() => { setUpdPhase(null); setShowUpdatePrompt(true); }} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} selectedPriceType={selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
@@ -626,6 +656,9 @@ export default function App() {
 
       {/* Єдиний лайтбокс фото (каталог + замовлення); закривається апаратним «назад» */}
       <Lightbox />
+
+      {/* Промпт оновлення — глобальний, поверх будь-якого екрана (зокрема логіну) */}
+      {showUpdatePrompt && <UpdatePrompt t={t} appVersion={APP_VERSION} update={update} phase={updPhase} progress={updProgress} onStart={startUpdate} onLater={closeUpdate} onOpenSettings={openInstallSettings} />}
     </>
   );
 }
