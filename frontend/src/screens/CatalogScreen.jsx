@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput } from '../components/ui';
 import { fmtMoney, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY } from '../i18n';
+import { Z } from '../theme';
 import { scanBarcode } from '../api/scanner';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
@@ -44,7 +45,9 @@ const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
 const ProductRow = ({ t, p, price, qty, onAdd }) => {
     const { t: tr } = useTranslation();
+    const noPrice = price == null; // тип вибрано, а ціни цього типу для товару немає
     const out = Number(p.stock) <= 0;
+    const blocked = out || noPrice; // не можна додати: немає залишку або немає ціни
     const low = !out && Number(p.stock) < 5;
     const stockColor = out ? t.err : low ? t.warn : t.ok;
     const stockLabel = out ? tr("catalog.outOfStock") : `${p.stock}`;
@@ -58,19 +61,23 @@ const ProductRow = ({ t, p, price, qty, onAdd }) => {
                         <div style={{ fontSize: 10.5, color: t.inkMuted, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.trail.join(" › ")}</div>
                     )}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                        <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(price)}</span>
-                        <span style={{ fontSize: 11, color: t.inkMuted }}>{curSymbol(p.currency)}{p.unit ? ` / ${p.unit}` : ""}</span>
+                        {noPrice
+                            ? <span style={{ fontSize: 12.5, fontWeight: 700, color: t.err }}>{tr("catalog.noPrice")}</span>
+                            : <>
+                                <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(price)}</span>
+                                <span style={{ fontSize: 11, color: t.inkMuted }}>{curSymbol(p.currency)}{p.unit ? ` / ${p.unit}` : ""}</span>
+                              </>}
                         <span style={{ fontFamily: F_NUM, fontSize: 11, color: stockColor, fontWeight: 600, marginLeft: "auto" }}>{stockLabel}</span>
                     </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", border: `1px solid ${qty > 0 ? t.ink : t.line}`, borderRadius: 10, height: 36, flexShrink: 0, opacity: out ? 0.4 : 1 }}>
-                    <button disabled={out || qty <= 0} onClick={() => onAdd(p, -1)} style={{ width: 32, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: qty > 0 ? "pointer" : "default" }}>
+                <div style={{ display: "flex", alignItems: "center", border: `1px solid ${qty > 0 ? t.ink : t.line}`, borderRadius: 10, height: 36, flexShrink: 0, opacity: blocked ? 0.4 : 1 }}>
+                    <button disabled={blocked || qty <= 0} onClick={() => onAdd(p, -1)} style={{ width: 32, height: 36, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: qty > 0 ? "pointer" : "default" }}>
                         <MIcon name="minus" size={15} color={qty > 0 ? t.ink : t.inkMuted} w={2} />
                     </button>
-                    {out
+                    {blocked
                         ? <div style={{ width: 28, textAlign: "center", fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.inkMuted }}>{qty}</div>
                         : <QtyInput t={t} value={qty} onCommit={(v) => onAdd(p, v - qty)} min={0} width={40} fontSize={14} color={qty > 0 ? t.ink : t.inkMuted} />}
-                    <button disabled={out} onClick={() => onAdd(p, 1)} style={{ width: 32, height: 36, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 9px 9px 0", border: "none", cursor: out ? "default" : "pointer" }}>
+                    <button disabled={blocked} onClick={() => onAdd(p, 1)} style={{ width: 32, height: 36, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 9px 9px 0", border: "none", cursor: blocked ? "default" : "pointer" }}>
                         <MIcon name="plus" size={15} color="#fff" w={2} />
                     </button>
                 </div>
@@ -102,7 +109,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], selectedPriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, isOnline, notify, connecting, offsetTop = 0 }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], activePriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, notify, connecting, offsetTop = 0 }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -129,10 +136,19 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
 
-    // Ціна за вибраним типом (prices[type]); фолбек — базова price. Додавання в кошик морозить
-    // саме цю ціну (знімок), тому onAddToOrder отримує товар із price = ціні вибраного типу.
-    const priceOf = (p) => (selectedPriceType && p.prices && p.prices[selectedPriceType] != null) ? p.prices[selectedPriceType] : p.price;
-    const addToOrder = (p, delta) => onAddToOrder({ ...p, price: priceOf(p) }, delta);
+    // Ціна за активним типом. Типів немає (activePriceType порожній) — базова price.
+    // Тип вибрано, але ціни цього типу немає — null (немає ціни), товар не додається.
+    // Додавання морозить саме цю ціну (знімок) → onAddToOrder отримує товар із price типу.
+    const priceOf = (p) => {
+        if (!activePriceType) return p.price;
+        return (p.prices && p.prices[activePriceType] != null) ? p.prices[activePriceType] : null;
+    };
+    const addToOrder = (p, delta) => {
+        const price = priceOf(p);
+        if (price == null) { notify?.(tr("catalog.noPriceForType")); return false; }
+        onAddToOrder({ ...p, price }, delta);
+        return true;
+    };
 
     // Сканування штрихкоду товару: знайти за barcode/артикулом/id і додати в замовлення.
     const handleScan = async () => {
@@ -143,7 +159,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
         const norm = code.trim().toLowerCase();
         const found = (products || []).find(p =>
             [p.barcode, p.sku, p.id].filter(Boolean).some(v => String(v).toLowerCase() === norm));
-        if (found) { addToOrder(found, 1); notify?.(tr("catalog.added", { name: found.name })); }
+        if (found) { if (addToOrder(found, 1)) notify?.(tr("catalog.added", { name: found.name })); }
         else notify?.(tr("catalog.barcodeNotFound", { code }));
     };
 
@@ -156,7 +172,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
             {/* Власні дії каталогу — фіксований кластер ліворуч від глобального TopActions.
                 Вирівняні через спільний TOP_ACTIONS_W; обидва зсуваються на offsetTop під
                 банером помилки. Жодного резервування місця в потоці шапки. */}
-            <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: TOP_ACTIONS_W + 24, zIndex: 1500, display: "flex", gap: 6, alignItems: "center" }}>
+            <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: TOP_ACTIONS_W + 24, zIndex: Z.floating, display: "flex", gap: 6, alignItems: "center" }}>
                 <button onClick={handleScan} aria-label="Сканувати штрихкод" style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
                     <MIcon name="barcode" size={18} color={t.ink} />
                 </button>
@@ -184,7 +200,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                 {priceTypes.length > 1 && (
                     <ScrollRow fade={t.bg} gap={6} style={{ marginTop: 10, paddingBottom: 2 }}>
                         {priceTypes.map(pt => {
-                            const on = pt.id === selectedPriceType;
+                            const on = pt.id === activePriceType;
                             return (
                                 <button key={pt.id} onClick={() => onSelectPriceType?.(pt.id)}
                                     style={{ flexShrink: 0, height: 30, padding: "0 13px", borderRadius: 9, border: on ? "none" : `1px solid ${t.line}`, background: on ? t.accent : "transparent", color: on ? "#fff" : t.inkSoft, fontFamily: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>

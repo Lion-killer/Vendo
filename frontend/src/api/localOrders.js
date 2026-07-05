@@ -1,3 +1,5 @@
+import { STATUS } from '../status.js';
+
 const STORAGE_KEY = 'vendo_local_orders';
 
 // GUID для локальної ідентичності замовлення (узгоджено з 1С/бекендом, ідемпотентна
@@ -51,7 +53,7 @@ export const updateLocalOrderStatus = (id, status) => {
 
     if (existingIndex >= 0) {
         orders[existingIndex].status = status;
-        const color = status === "Нове" ? "#F2994A" : "#F2C94C";
+        const color = status === STATUS.NEW ? "#F2994A" : "#F2C94C";
         orders[existingIndex].sColor = color;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
     }

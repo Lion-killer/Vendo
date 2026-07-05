@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ConfirmDialog } from '../components/ui';
+import { MIcon, Card, F_NUM, ConfirmDialog, BottomSheet } from '../components/ui';
+import { STATUS } from '../status';
 import { localeTag, fmtMoney as fmtCurLocale, fmtCur, parseMoney, todayISO, orderNum, setLang, SUPPORTED, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
@@ -25,7 +26,7 @@ const syncLabel = (ts, tr) => {
     return d === 1 ? tr("sync.yesterday") : tr("sync.dayAgo", { count: d });
 };
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products = [], productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData, onOpenSyncHistory, onOpenHelp, update, onShowUpdate }) => {
+export const DashboardScreen = ({ t, onNav, userName, orders, products = [], customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData, onOpenSyncHistory, onOpenHelp, update, onShowUpdate }) => {
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
     const [clearConfirm, setClearConfirm] = useState(null); // {body} коли відкрито діалог очистки
@@ -46,21 +47,24 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
 
     const today = new Date().toLocaleDateString(localeTag(), { weekday: 'long', day: 'numeric', month: 'long' });
 
-    const statusColor = (o) => o.sColor || (o.status === 'Видалено' ? t.err : o.status === 'Відправлено' ? t.ok : o.status === 'Нове' ? t.warn : t.inkSoft);
-    const isNew = (o) => o.status === 'Нове';
+    const statusColor = (o) => o.sColor || (o.status === STATUS.DELETED ? t.err : o.status === STATUS.SENT ? t.ok : o.status === STATUS.NEW ? t.warn : t.inkSoft);
+    const isNew = (o) => o.status === STATUS.NEW;
 
     // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки й KPI «сьогодні».
     const todayOrders = displayOrders.filter(o => o.date === todayISO());
 
     // KPI «сьогодні» рахуємо саме з сьогоднішніх (без помічених на видалення) — щоб
     // виторг/к-сть узгоджувалися зі списком нижче.
-    const liveToday = todayOrders.filter(o => !o.deletionMark && o.status !== 'Видалено');
+    const liveToday = todayOrders.filter(o => !o.deletionMark && o.status !== STATUS.DELETED);
     const ordersCount = liveToday.length;
     // Виторг/чек — тільки по замовленнях у валюті пристрою (чужі валюти не змішуємо, #35).
     const deviceCurrency = products?.[0]?.currency || DEFAULT_CURRENCY;
     const sameCur = liveToday.filter(o => (o.currency || DEFAULT_CURRENCY) === deviceCurrency);
     const revenue = sameCur.reduce((s, o) => s + parseMoney(o.total), 0);
     const avgCheck = sameCur.length ? Math.round(revenue / sameCur.length) : 0;
+
+    // Спільний стиль пункту меню профілю (щоб не копіювати інлайн у кожну кнопку).
+    const menuBtn = { width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 };
 
     // Стан синхронізації: час останньої вдалої синхронізації + локальна черга на відправку.
     const lastSync = Number(localStorage.getItem('vendo_last_sync')) || 0;
@@ -169,9 +173,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
 
             {/* Меню профілю (#47) */}
             {showProfile && (
-                <div onClick={() => setShowProfile(false)} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                    <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "20px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
-                        <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "0 auto 16px" }} />
+                <BottomSheet t={t} onClose={() => setShowProfile(false)}>
                         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: "0 4px" }}>
                             <div style={{ width: 52, height: 52, borderRadius: 16, background: t.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 700, fontSize: 18 }}>{initials(userName)}</div>
                             <div style={{ minWidth: 0 }}>
@@ -181,7 +183,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                         </div>
                         {/* Оновлення (#37): відкриваємо APK у системному браузері — він сам качає і пропонує встановити */}
                         {update && (
-                            <button onClick={() => { setShowProfile(false); onShowUpdate?.(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.accentSoft, border: `1px solid ${t.accent}55`, color: t.accent, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                            <button onClick={() => { setShowProfile(false); onShowUpdate?.(); }} style={{ ...menuBtn, background: t.accentSoft, border: `1px solid ${t.accent}55`, color: t.accent, fontWeight: 700 }}>
                                 <MIcon name="download" size={20} color={t.accent} />
                                 <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.update", { version: update.version })}</span>
                             </button>
@@ -201,22 +203,22 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                             </div>
                         </div>
                         {onToggleTheme && (
-                            <button onClick={onToggleTheme} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                            <button onClick={onToggleTheme} style={menuBtn}>
                                 <MIcon name="moon" size={20} color={t.ink} />
                                 <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.darkTheme")}</span>
                                 <span style={{ fontSize: 13, fontWeight: 700, color: isDark ? t.accent : t.inkMuted }}>{isDark ? tr("profile.on") : tr("profile.off")}</span>
                             </button>
                         )}
-                        <button onClick={() => { setShowProfile(false); onOpenSyncHistory && onOpenSyncHistory(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                        <button onClick={() => { setShowProfile(false); onOpenSyncHistory && onOpenSyncHistory(); }} style={menuBtn}>
                             <MIcon name="sync" size={20} color={t.ink} />
                             <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.openSyncHistory")}</span>
                         </button>
-                        <button onClick={() => { setShowProfile(false); onOpenLog && onOpenLog(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                        <button onClick={() => { setShowProfile(false); onOpenLog && onOpenLog(); }} style={menuBtn}>
                             <MIcon name="send" size={20} color={t.ink} />
                             <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.openLog")}</span>
                             {hasErrors && <span style={{ width: 9, height: 9, borderRadius: "50%", background: t.err }} />}
                         </button>
-                        <button onClick={() => { setShowProfile(false); onOpenHelp && onOpenHelp(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                        <button onClick={() => { setShowProfile(false); onOpenHelp && onOpenHelp(); }} style={menuBtn}>
                             <MIcon name="info" size={20} color={t.ink} />
                             <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.openHelp")}</span>
                         </button>
@@ -224,17 +226,16 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                             <button onClick={() => {
                                 const pending = getLocalOrders().length;
                                 setClearConfirm({ body: pending > 0 ? tr("profile.clearDataPending", { count: pending }) : tr("profile.clearDataConfirm") });
-                            }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 }}>
+                            }} style={menuBtn}>
                                 <MIcon name="trash" size={20} color={t.ink} />
                                 <span style={{ flex: 1, textAlign: "left" }}>{tr("profile.clearData")}</span>
                             </button>
                         )}
-                        <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ width: "100%", height: 50, borderRadius: 14, background: t.errSoft, border: `1px solid ${t.err}33`, color: t.err, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontFamily: "inherit" }}>
+                        <button onClick={() => { setShowProfile(false); onLogout && onLogout(); }} style={{ ...menuBtn, background: t.errSoft, border: `1px solid ${t.err}33`, color: t.err, fontWeight: 700, justifyContent: "center", gap: 10, marginBottom: 0 }}>
                             <MIcon name="logout" size={20} color={t.err} /> {tr("profile.logout")}
                         </button>
                         <div style={{ textAlign: "center", marginTop: 12, fontSize: 11.5, color: t.inkMuted, fontFamily: F_NUM }}>Vendo v{APP_VERSION}</div>
-                    </div>
-                </div>
+                </BottomSheet>
             )}
 
             {clearConfirm && (

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
 import { fmtMoney, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
+import { STATUS } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
 
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, currency = null, priceType = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
     // Валюта замовлення: заморожена (редагування) або валюта пристрою (нове). Символ — з коду.
     const orderCurrency = currency || products?.[0]?.currency || DEFAULT_CURRENCY;
@@ -23,7 +24,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // Проведене на сервері перезаписати НЕ можна (1С відмовляє навіть форсом) — лишаємо
     // тільки «взяти серверне».
     const conflictPosted = conflicted && conflictLocal.serverState === 'posted';
-    const statusColor = status === "Видалено" ? t.err : status === "Проведено" ? t.inkSoft : status === "Відправлено" ? t.ok : t.warn;
+    const statusColor = status === STATUS.DELETED ? t.err : status === STATUS.POSTED ? t.inkSoft : status === STATUS.SENT ? t.ok : t.warn;
     const customer = editCustomer; // без фолбеку: не вибрано — показуємо плейсхолдер
     const setCustomer = setEditCustomer;
     const [showCustPicker, setShowCustPicker] = useState(false);
@@ -76,14 +77,14 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         try {
             // Правка відправленого замовлення лишається "Відправлено" (черга на оновлення);
             // нове — "Нове". doSync зробить upsert із цим статусом.
-            const queueStatus = status === "Відправлено" ? "Відправлено" : "Нове";
+            const queueStatus = status === STATUS.SENT ? STATUS.SENT : STATUS.NEW;
             const orderData = {
                 id: editOrderId || undefined,
                 num: num || undefined,
                 ...orderFields(),
                 status: queueStatus,
-                sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
-                baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
+                sColor: queueStatus === STATUS.SENT ? t.ok : t.warn,
+                baseVersion: queueStatus === STATUS.SENT ? baseVersion : undefined,
             };
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
@@ -94,11 +95,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // і коли товари додані з каталогу (минаючи зміни безпосередньо в цьому екрані).
     const saveDraft = () => {
         if (!locked && orderItems.length > 0) {
-            const queueStatus = status === "Відправлено" ? "Відправлено" : "Нове";
+            const queueStatus = status === STATUS.SENT ? STATUS.SENT : STATUS.NEW;
             const savedId = saveLocalOrder({
                 id: editOrderId || undefined, num: num || undefined, ...orderFields(),
-                status: queueStatus, sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
-                baseVersion: queueStatus === "Відправлено" ? baseVersion : undefined,
+                status: queueStatus, sColor: queueStatus === STATUS.SENT ? t.ok : t.warn,
+                baseVersion: queueStatus === STATUS.SENT ? baseVersion : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
             notify?.(tr("toast.saved", { label: orderNum({ num, id: savedId }), date: orderDate.split("-").reverse().join(".") }));
@@ -117,15 +118,15 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // "Проведено"/"Видалено" — недоступно.
     const handleDeleteOrder = async () => {
         setShowMenu(false);
-        if (status === "Проведено" || status === "Видалено") return;
-        const isNew = status === "Нове";
+        if (status === STATUS.POSTED || status === STATUS.DELETED) return;
+        const isNew = status === STATUS.NEW;
         try {
             if (isNew) {
                 if (editOrderId) removeLocalOrder(editOrderId);
             } else if (!isOnline) {
                 // Офлайн: ставимо видалення в чергу (op:'delete') — doSync виконає при синхронізації.
                 saveLocalOrder({
-                    id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено', baseVersion,
+                    id: editOrderId, num: num || undefined, op: 'delete', status: STATUS.DELETED, baseVersion,
                     ...orderFields(), sColor: t.err,
                 });
             } else {
@@ -133,7 +134,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // Конфлікт версій (помітку/вміст змінили на сервері) → у чергу як конфлікт, банер.
                 if (r && r.conflict) {
                     saveLocalOrder({
-                        id: editOrderId, num: num || undefined, op: 'delete', status: 'Видалено', baseVersion,
+                        id: editOrderId, num: num || undefined, op: 'delete', status: STATUS.DELETED, baseVersion,
                         conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
                         ...orderFields(), sColor: t.err,
                     });
@@ -157,7 +158,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // Команда «Зняти помітку видалення» — лише для статусу "Видалено".
     const handleUnmark = async () => {
         setShowMenu(false);
-        if (status !== "Видалено" || !editOrderId) return;
+        if (status !== STATUS.DELETED || !editOrderId) return;
         const label = orderNum({ num, id: editOrderId });
         try {
             if (!isOnline) {
@@ -165,14 +166,14 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // синхронізації. Локальний запис із deletionMark:false перекриває серверний
                 // (mergeOrders) → у списку одразу показується НЕ видаленим.
                 saveLocalOrder({
-                    id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено', baseVersion,
+                    id: editOrderId, num: num || undefined, op: 'restore', status: STATUS.SENT, baseVersion,
                     deletionMark: false, ...orderFields(), sColor: t.ok,
                 });
             } else {
                 const r = await restoreOrder(editOrderId, baseVersion);
                 if (r && r.conflict) {
                     saveLocalOrder({
-                        id: editOrderId, num: num || undefined, op: 'restore', status: 'Відправлено', baseVersion,
+                        id: editOrderId, num: num || undefined, op: 'restore', status: STATUS.SENT, baseVersion,
                         deletionMark: false, conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
                         ...orderFields(), sColor: t.ok,
                     });
@@ -255,25 +256,22 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
             {/* Меню команд замовлення (kebab) */}
             {showMenu && (
-                <div onClick={() => setShowMenu(false)} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 200, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                    <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "12px 12px max(16px, env(safe-area-inset-bottom))" }}>
-                        <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "4px auto 12px" }} />
+                <BottomSheet t={t} onClose={() => setShowMenu(false)} sheetStyle={{ padding: "12px 12px", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
                         <button onClick={handleCopy} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
                             <MIcon name="doc" size={20} color={t.ink} /> {tr("order.copy")}
                         </button>
-                        <button onClick={handleUnmark} disabled={status !== "Видалено"} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: status === "Видалено" ? "pointer" : "not-allowed", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: status === "Видалено" ? t.ink : t.inkMuted, textAlign: "left", opacity: status === "Видалено" ? 1 : 0.5 }}>
-                            <MIcon name="check" size={20} color={status === "Видалено" ? t.ink : t.inkMuted} /> {tr("order.unmark")}
+                        <button onClick={handleUnmark} disabled={status !== STATUS.DELETED} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: status === STATUS.DELETED ? "pointer" : "not-allowed", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: status === STATUS.DELETED ? t.ink : t.inkMuted, textAlign: "left", opacity: status === STATUS.DELETED ? 1 : 0.5 }}>
+                            <MIcon name="check" size={20} color={status === STATUS.DELETED ? t.ink : t.inkMuted} /> {tr("order.unmark")}
                         </button>
                         {(() => {
-                            const canDelete = status === "Нове" || status === "Відправлено";
+                            const canDelete = status === STATUS.NEW || status === STATUS.SENT;
                             return (
                                 <button onClick={handleDeleteOrder} disabled={!canDelete} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: canDelete ? "pointer" : "not-allowed", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: canDelete ? t.err : t.inkMuted, textAlign: "left", opacity: canDelete ? 1 : 0.5 }}>
-                                    <MIcon name="trash" size={20} color={canDelete ? t.err : t.inkMuted} /> {status === "Нове" ? tr("order.delete") : tr("order.markDelete")}
+                                    <MIcon name="trash" size={20} color={canDelete ? t.err : t.inkMuted} /> {status === STATUS.NEW ? tr("order.delete") : tr("order.markDelete")}
                                 </button>
                             );
                         })()}
-                    </div>
-                </div>
+                </BottomSheet>
             )}
 
             {/* Банер конфлікту синхронізації */}
@@ -382,9 +380,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
             {/* Вибір контрагента */}
             {showCustPicker && (
-                <div onClick={closeCustPicker} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                    <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "20px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
-                        <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "0 auto 16px" }} />
+                <BottomSheet t={t} onClose={closeCustPicker}>
                         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 0 12px" }}>
                             <span style={{ fontSize: 16, fontWeight: 700 }}>{tr("order.selectCustomer")}</span>
                             <span style={{ fontSize: 11, color: t.inkMuted, fontFamily: F_NUM }}>{tr("order.ofTotal", { shown: filteredCustomers.length, total: customers.length })}</span>
@@ -415,8 +411,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                 );
                             })}
                         </div>
-                    </div>
-                </div>
+                </BottomSheet>
             )}
 
             {askUnmark && (

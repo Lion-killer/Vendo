@@ -105,7 +105,14 @@
     "positions_many": "{{count}} позиций",
     "positions_other": "{{count}} позиций",
     "added": "Добавлено: {{name}}",
-    "barcodeNotFound": "Штрихкод не найден: {{code}}"
+    "barcodeNotFound": "Штрихкод не найден: {{code}}",
+    "noPrice": "Нет цены",
+    "noPriceForType": "Нет цены этого типа для товара",
+    "switchBlocked": "Нет цены «{{type}}»: {{names}}. Уберите эти позиции или оставьте текущий тип.",
+    "recalcTitle": "Сменить тип цен?",
+    "recalcBody": "Пересчитать цены в заказе на «{{type}}»? Если нет — останется текущий тип.",
+    "recalcYes": "Пересчитать",
+    "recalcNo": "Оставить текущий"
   },
   "customers": {
     "title": "Клиенты",

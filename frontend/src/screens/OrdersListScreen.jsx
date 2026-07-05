@@ -4,6 +4,7 @@ import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/
 import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney } from '../i18n';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
+import { STATUS } from '../status';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 
 // Форматування дати в YYYY-MM-DD (локальний час, без зсуву UTC).
@@ -58,7 +59,6 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
     const inRange = (o) => o.date >= startDate && o.date <= endDate;
     const [orders, setOrders] = useState(() =>
         mergeOrders(appOrders.filter(inRange), getLocalOrders().filter(inRange)));
-    const [loading, setLoading] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState(null);
     // Порційний рендер: сотні карток за раз підвішують WebView; малюємо перші PAGE_SIZE
     // і рівно стільки ж додаємо кнопкою «Показати ще». Зміна періоду скидає порцію.
@@ -86,13 +86,12 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
     // за датою клієнтсько. Жодних власних мережевих викликів — як решта екранів.
     const recompute = () => setOrders(mergeOrders(appOrders.filter(inRange), getLocalOrders().filter(inRange)));
 
-    const isDraftStatus = (o) => o?.status === "Нове";
+    const isDraftStatus = (o) => o?.status === STATUS.NEW;
 
     const handleDelete = async () => {
         if (!orderToDelete) return;
         const o = orderToDelete;
-        if (o.status === "Проведено" || o.status === "Видалено") { setOrderToDelete(null); return; } // проведене/вже видалене не чіпаємо
-        setLoading(true);
+        if (o.status === STATUS.POSTED || o.status === STATUS.DELETED) { setOrderToDelete(null); return; } // проведене/вже видалене не чіпаємо
         try {
             if (isDraftStatus(o)) {
                 // "Нове" — лише локальне; видаляємо локально (на сервері його ще немає).
@@ -104,7 +103,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 // Конфлікт версій → у чергу як конфлікт (банер при відкритті), не «успіх».
                 if (r && r.conflict) {
                     saveLocalOrder({
-                        id: o.id, num: o.num, op: 'delete', status: 'Видалено', baseVersion: o.version,
+                        id: o.id, num: o.num, op: 'delete', status: STATUS.DELETED, baseVersion: o.version,
                         conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
                         customer: o.customer || null, customerId: o.customerId || null,
                         client: o.client || o.customer?.name || tr('common.unknownClient'),
@@ -116,7 +115,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             } else {
                 // Офлайн: ставимо видалення в чергу (op:'delete') — виконається при синхронізації.
                 saveLocalOrder({
-                    id: o.id, num: o.num, op: 'delete', status: 'Видалено', baseVersion: o.version,
+                    id: o.id, num: o.num, op: 'delete', status: STATUS.DELETED, baseVersion: o.version,
                     customer: o.customer || null, customerId: o.customerId || null,
                     client: o.client || o.customer?.name || tr('common.unknownClient'),
                     items: o.items || [], date: o.date, total: o.total, sColor: t.err,
@@ -128,8 +127,6 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             if (refreshOrders) refreshOrders(); // App перечитає сервер у фоні → appOrders оновиться
         } catch (err) {
             console.error("Помилка видалення", err);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -224,11 +221,11 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                     <span style={{ fontSize: 11, fontWeight: 700, color: o.sColor }}>{tr(`status.${o.status}`)}</span>
                                 </div>
                                 {(() => {
-                                    const blocked = o.status === "Проведено" || o.status === "Видалено";
+                                    const blocked = o.status === STATUS.POSTED || o.status === STATUS.DELETED;
                                     return (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); if (!blocked) setOrderToDelete(o); }}
-                                            title={blocked ? (o.status === "Видалено" ? tr("ordersList.tipAlreadyMarked") : tr("ordersList.tipCantDeletePosted")) : tr("ordersList.tipDelete")}
+                                            title={blocked ? (o.status === STATUS.DELETED ? tr("ordersList.tipAlreadyMarked") : tr("ordersList.tipCantDeletePosted")) : tr("ordersList.tipDelete")}
                                             style={{ background: blocked ? t.surfaceMuted : t.err + "15", border: "none", padding: 8, borderRadius: 10, cursor: blocked ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: blocked ? 0.45 : 1, transition: "background .2s" }}>
                                             <MIcon name="trash" size={18} color={blocked ? t.inkMuted : t.err} />
                                         </button>

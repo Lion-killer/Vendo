@@ -4,6 +4,10 @@
 // тож у застосунку не потрібні ні дозволи на встановлення, ні стрімінг файлів.
 // Список релізів (не /latest): щоб показати чейнджлоги ВСІХ пропущених версій, а не лише
 // найновішої (користувач міг оновлюватися через кілька версій).
+// @capacitor/core — статичний (client.js його однаково тягне в основний чанк); динамічним
+// лишається лише те, що справді код-спліт (filesystem — потрібен тільки на нативі).
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
 const RELEASES_LIST = "https://api.github.com/repos/Lion-killer/Vendo/releases?per_page=30";
 
 // Порівняння semver-рядків: -1 (a<b) / 0 / 1. Нечислові сегменти → 0.
@@ -36,7 +40,6 @@ let downloaded = null; // { version, path }
 //  'web'        — не натив (браузер): відкрито URL, більше нічого не робимо.
 // Помилки мережі/файлової системи кидаються виключенням.
 export async function downloadAndInstall(update, onProgress) {
-    const { Capacitor, registerPlugin } = await import('@capacitor/core');
     if (!Capacitor.isNativePlatform()) {
         window.open(update.url, '_blank');
         return 'web';
@@ -70,7 +73,6 @@ export async function downloadAndInstall(update, onProgress) {
 
 // Системні налаштування «встановлення невідомих застосунків» для цього застосунку.
 export async function openInstallSettings() {
-    const { registerPlugin } = await import('@capacitor/core');
     await registerPlugin('ApkInstaller').openInstallSettings();
 }
 

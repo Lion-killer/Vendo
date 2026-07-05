@@ -105,7 +105,14 @@
     "positions_many": "{{count}} позицій",
     "positions_other": "{{count}} позицій",
     "added": "Додано: {{name}}",
-    "barcodeNotFound": "Штрихкод не знайдено: {{code}}"
+    "barcodeNotFound": "Штрихкод не знайдено: {{code}}",
+    "noPrice": "Немає ціни",
+    "noPriceForType": "Немає ціни цього типу для товару",
+    "switchBlocked": "Немає ціни «{{type}}»: {{names}}. Приберіть ці позиції або лишіть поточний тип.",
+    "recalcTitle": "Змінити тип цін?",
+    "recalcBody": "Перерахувати ціни в замовленні на «{{type}}»? Якщо ні — лишиться поточний тип.",
+    "recalcYes": "Перерахувати",
+    "recalcNo": "Лишити поточний"
   },
   "customers": {
     "title": "Клієнти",
