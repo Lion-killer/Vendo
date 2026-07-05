@@ -211,6 +211,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="27828ca8-4a1f-424d-ab51-9cc686cf2880">
+				<Properties>
+					<Name>PriceTypes</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>PriceTypes</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/price-types</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="7aeca30c-617e-4886-88cb-508de14c4fc5">
+						<Properties>
+							<Name>Get</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Get</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>GET</HTTPMethod>
+							<Handler>PriceTypesGet</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 			<URLTemplate uuid="fc5f78fb-d616-4918-ba3f-1d244df58703">
 				<Properties>
 					<Name>Auth</Name>

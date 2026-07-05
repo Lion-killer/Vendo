@@ -41,11 +41,6 @@
 					<ContextMenu name="СкладКонтекстноеМеню" id="10" />
 					<ExtendedTooltip name="СкладРасширеннаяПодсказка" id="11" />
 				</InputField>
-				<InputField name="ТипЦен" id="12">
-					<DataPath>Объект.ТипЦен</DataPath>
-					<ContextMenu name="ТипЦенКонтекстноеМеню" id="13" />
-					<ExtendedTooltip name="ТипЦенРасширеннаяПодсказка" id="14" />
-				</InputField>
 				<InputField name="Валюта" id="67">
 					<DataPath>Объект.Валюта</DataPath>
 					<ContextMenu name="ВалютаКонтекстноеМеню" id="68" />
@@ -265,6 +260,41 @@
 									<DataPath>Объект.Товары.Номенклатура</DataPath>
 									<ContextMenu name="ТоварыНоменклатураКонтекстноеМеню" id="48" />
 									<ExtendedTooltip name="ТоварыНоменклатураРасширеннаяПодсказка" id="49" />
+								</InputField>
+							</ChildItems>
+						</Table>
+					</ChildItems>
+				</Page>
+				<Page name="СтраницаТипыЦен" id="72">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Типы цен</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Типи цін</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Price types</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="СтраницаТипыЦенРасширеннаяПодсказка" id="73" />
+					<ChildItems>
+						<Table name="ТипыЦен" id="74">
+							<DataPath>Объект.ТипыЦен</DataPath>
+							<ChangeRowSet>true</ChangeRowSet>
+							<ContextMenu name="ТипыЦенКонтекстноеМеню" id="75" />
+							<AutoCommandBar name="ТипыЦенКоманднаяПанель" id="76" />
+							<SearchStringAddition name="ТипыЦенСтрокаПоиска" id="77" />
+							<ViewStatusAddition name="ТипыЦенСостояниеПросмотра" id="78" />
+							<SearchControlAddition name="ТипыЦенУправлениеПоиском" id="79" />
+							<ChildItems>
+								<InputField name="ТипыЦенТипЦен" id="80">
+									<DataPath>Объект.ТипыЦен.ТипЦен</DataPath>
+									<ContextMenu name="ТипыЦенТипЦенКонтекстноеМеню" id="81" />
+									<ExtendedTooltip name="ТипыЦенТипЦенРасширеннаяПодсказка" id="82" />
 								</InputField>
 							</ChildItems>
 						</Table>

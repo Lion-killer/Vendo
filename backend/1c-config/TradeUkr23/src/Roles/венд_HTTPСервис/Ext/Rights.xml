@@ -63,6 +63,13 @@
         </right>
     </object>
     <object>
+        <name>HTTPService.венд_МобильноеПриложение.URLTemplate.PriceTypes.Method.Get</name>
+        <right>
+            <name>Use</name>
+            <value>true</value>
+        </right>
+    </object>
+    <object>
         <name>HTTPService.венд_МобильноеПриложение.URLTemplate.Auth.Method.Post</name>
         <right>
             <name>Use</name>
