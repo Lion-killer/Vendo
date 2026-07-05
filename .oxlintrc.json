@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "rules": {
+    "no-unused-vars": ["warn", {
+      "args": "after-used",
+      "caughtErrors": "none",
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+    "no-unused-expressions": ["warn", {
+      "allowShortCircuit": true,
+      "allowTernary": true
+    }]
+  },
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/*.test.mjs"]
+}
