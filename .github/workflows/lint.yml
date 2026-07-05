@@ -1,0 +1,22 @@
+name: lint
+
+# Лінт обох JS-проєктів (frontend + backend/mock) через oxlint на кожен push у main і PR.
+# Конфіг — .oxlintrc.json у корені; версія зафіксована в package.json/package-lock.json.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  oxlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # --deny-warnings: будь-яке попередження валить перевірку (у конфізі всі правила — warn).
+      # --format=github: інлайн-анотації на рядках у вкладці «Files changed» PR.
+      - run: npm run lint -- --deny-warnings --format=github
