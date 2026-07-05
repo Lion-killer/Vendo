@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ListPlaceholder } from '../components/ui';
-import { fmtMoney, fmtDate, orderNum } from '../i18n';
+import { fmtMoney, fmtDate, orderNum, curSymbol } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
 
@@ -36,7 +36,7 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>{c.name}</div>
-                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? tr("customers.debt", { sum: money(debt) }) : tr("customers.overpay", { sum: money(-debt) })}</div>}
+                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? tr("customers.debt", { sum: `${money(debt)} ${curSymbol(c.debtCurrency)}` }) : tr("customers.overpay", { sum: `${money(-debt)} ${curSymbol(c.debtCurrency)}` })}</div>}
                     </div>
                 </div>
 
@@ -100,12 +100,12 @@ const ClientRow = ({ t, c, onClick }) => {
                 <div style={{ flexShrink: 0, textAlign: "right", marginLeft: 8, minWidth: 72 }}>
                     {debt > 0 ? (
                         <>
-                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.err }}>{money(debt)} ₴</div>
+                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.err }}>{money(debt)} {curSymbol(c.debtCurrency)}</div>
                             <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr("customers.debtShort")}</div>
                         </>
                     ) : debt < 0 ? (
                         <>
-                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.ok }}>{money(-debt)} ₴</div>
+                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.ok }}>{money(-debt)} {curSymbol(c.debtCurrency)}</div>
                             <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr("customers.overpayShort")}</div>
                         </>
                     ) : (

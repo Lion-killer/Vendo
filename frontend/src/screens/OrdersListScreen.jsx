@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/ui';
-import { orderNum, fmtDate as fmtDmy } from '../i18n';
+import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney } from '../i18n';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
@@ -220,7 +220,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                                 <div style={{ textAlign: "right" }}>
-                                    <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: "0 0 2px", whiteSpace: "nowrap" }}>{o.total}</p>
+                                    <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: "0 0 2px", whiteSpace: "nowrap" }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</p>
                                     <span style={{ fontSize: 11, fontWeight: 700, color: o.sColor }}>{tr(`status.${o.status}`)}</span>
                                 </div>
                                 {(() => {

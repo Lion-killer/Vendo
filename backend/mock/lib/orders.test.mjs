@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { colorFor, formatUAH, computeTotal, pickLang, msg } = require('./orders.js');
+const { colorFor, convertPrice, computeTotal, pickLang, msg } = require('./orders.js');
 
 test('computeTotal: підсумок по зафіксованих цінах', () => {
     assert.equal(computeTotal([{ qty: 2, price: 10 }, { qty: 3, price: 5 }]), 35);
@@ -14,11 +14,15 @@ test('computeTotal: підсумок по зафіксованих цінах', 
     assert.equal(computeTotal([{ qty: 6, price: 42.5 }]), 255);
 });
 
-test('formatUAH: 2 знаки + розділювач тисяч + символ', () => {
-    assert.equal(formatUAH(255), '255.00 ₴');
-    assert.equal(formatUAH(1134), '1 134.00 ₴');
-    assert.equal(formatUAH(1234567.5), '1 234 567.50 ₴');
-    assert.equal(formatUAH(0), '0.00 ₴');
+test('convertPrice: конверсія між валютами, округлення до 2 знаків', () => {
+    // та сама валюта → без змін
+    assert.equal(convertPrice(100, '980', '980'), 100);
+    // 415 грн → USD (курс 41.5) = 10.00
+    assert.equal(convertPrice(415, '840', '980'), 10);
+    // округлення до копійок
+    assert.equal(convertPrice(100, '840', '980'), 2.41);
+    // невідома валюта → курс 1 (фолбек), без падіння
+    assert.equal(convertPrice(100, 'XXX', '980'), 100);
 });
 
 test('colorFor: відомі статуси + фолбек', () => {

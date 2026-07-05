@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchAuthedBlobRaw } from '../api/client';
 import { loadCachedImage } from '../api/imageCache';
 import { F_NUM, F_UI } from '../theme';
+import { curSymbol } from '../i18n';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
 // тінь зліва/справа зʼявляється лише коли є куди гортати (чіпи фільтра, хлібні крихти).
@@ -149,7 +150,7 @@ export const Lightbox = () => {
       </button>
       {name && <div style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", left: 16, right: 64, color: "#fff", fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{name}</div>}
       {(sku || barcode || price != null || stock != null) && <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.85)", fontFamily: F_NUM, fontSize: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-        {price != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Ціна: </span>{Number(price).toFixed(2)} ₴</span>}
+        {price != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Ціна: </span>{Number(price).toFixed(2)} {curSymbol(currency)}</span>}
         {stock != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Залишок: </span>{stock}{unit ? ` ${unit}` : ""}</span>}
         {sku && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Артикул: </span>{sku}</span>}
         {barcode && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Штрихкод: </span>{barcode}</span>}
@@ -160,7 +161,7 @@ export const Lightbox = () => {
 };
 
 // ─── Фото товару з fallback на плейсхолдер; тап відкриває спільний лайтбокс (#30) ──
-export const ProductImage = ({ t, img, sku, name, barcode, price, stock, unit, size = 56, radius = 10 }) => {
+export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stock, unit, size = 56, radius = 10 }) => {
   const [err, setErr] = React.useState(false);
   // img-шлях виду "/products/{id}/image" — захищений ендпоінт: вантажимо blob із заголовками.
   // Звичайний URL/емодзі-фолбек використовуємо напряму.

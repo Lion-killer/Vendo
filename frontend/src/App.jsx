@@ -21,7 +21,7 @@ import { idSet, checkOrderRefs, mergeOrders } from './api/refs';
 import { addSyncRun } from './api/syncHistory';
 import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 import { HelpScreen } from './screens/HelpScreen';
-import { parseMoney, orderNum as orderLabel, fmtDate } from './i18n';
+import { parseMoney, orderNum as orderLabel, fmtDate, DEFAULT_CURRENCY } from './i18n';
 
 // Сигнатура замовлення (товари+контрагент+дата) — для порівняння «чи щось змінилось».
 const orderSig = (items, custId, date) =>
@@ -56,6 +56,7 @@ export default function App() {
   const [editStatus, setEditStatus] = useState("Нове"); // статус замовлення на екрані (Нове/Відправлено/Проведено)
   const [editNum, setEditNum] = useState(null); // номер документа (null для невідправленого) — лише для показу
   const [editVersion, setEditVersion] = useState(null); // токен версії на момент відкриття (для виявлення конфліктів)
+  const [editCurrency, setEditCurrency] = useState(DEFAULT_CURRENCY); // валюта замовлення (заморожена/пристрою)
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -103,7 +104,8 @@ export default function App() {
       client: editCustomer?.name || tr("common.unknownClient"),
       items: orderItems,
       date: editDate || undefined,
-      total: `${total.toLocaleString("uk-UA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₴`,
+      total: total,            // число (контракт #35)
+      currency: editCurrency,  // заморожена валюта замовлення
       status: queueStatus,
       sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
       // База версії лише для правок серверного замовлення (виявлення конфлікту).
@@ -472,6 +474,7 @@ export default function App() {
       saveLeavingDraft();
     }
 
+    const deviceCurrency = products?.[0]?.currency || DEFAULT_CURRENCY;
     if (s === "orders" && params.order) {
       // Редагування існуючого замовлення з дашборду (ідентичність — GUID id)
       setEditOrderId(params.order.id);
@@ -482,6 +485,7 @@ export default function App() {
       setEditStatus(params.order.status || "Нове");
       setEditNum(params.order.num || null);
       setEditVersion(params.order.version ?? null);
+      setEditCurrency(params.order.currency || deviceCurrency); // заморожена валюта; старі → пристрою
       orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date);
     } else if (s === "orders" && params.newOrder) {
       // Явно створюємо нове замовлення (наприклад, кнопка з дашборду)
@@ -493,6 +497,7 @@ export default function App() {
       setEditStatus("Нове");
       setEditNum(nextDraftNum());
       setEditVersion(null);
+      setEditCurrency(deviceCurrency);
       orderBaseline.current = orderSig([], null, null);
     } else if (s === "catalog" && !params.keepOrder) {
       // Просто перехід в Товари - створюємо нове (скидаємо редаговане замовлення)
@@ -504,6 +509,7 @@ export default function App() {
       setEditStatus("Нове");
       setEditNum(nextDraftNum());
       setEditVersion(null);
+      setEditCurrency(deviceCurrency);
       orderBaseline.current = orderSig([], null, null);
     }
     // В іншому випадку (наприклад, при переході з Каталогу в Orders) стан кошика зберігається
@@ -560,7 +566,7 @@ export default function App() {
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}

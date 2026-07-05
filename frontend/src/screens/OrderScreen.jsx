@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput } from '../components/ui';
-import { fmtMoney, todayISO, orderNum } from '../i18n';
+import { fmtMoney, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
 
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, currency = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
+    // Валюта замовлення: заморожена (редагування) або валюта пристрою (нове). Символ — з коду.
+    const orderCurrency = currency || products?.[0]?.currency || DEFAULT_CURRENCY;
+    const cur = curSymbol(orderCurrency);
     // Набір GUID наявних товарів — для позначення «зниклих» позицій (видалених на бекенді).
     const prodIds = idSet(products);
     const productMissing = (p) => products.length > 0 && p?.id != null && !prodIds.has(p.id);
@@ -62,7 +65,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         client: customer?.name || tr("common.unknownClient"),
         items: orderItems,
         date: orderDate,
-        total: `${money(total)} ₴`,
+        total: total,            // число (контракт #35); форматується при показі
+        currency: orderCurrency, // заморожена валюта замовлення
     });
 
     // Автозбереження невідправленого замовлення (проведене не чіпаємо — лише перегляд)
@@ -298,7 +302,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <div style={{ fontSize: 11.5, color: t.inkSoft, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap" }}>
                                 {customerMissing && <span style={{ color: t.err, fontWeight: 700 }}>{tr("order.customerDeleted")}</span>}
                                 {customer?.address && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{customer.address}</span>}
-                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>{tr("order.debt", { sum: money(debt) })}</span></>}
+                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>{tr("order.debt", { sum: `${money(debt)} ${curSymbol(customer?.debtCurrency)}` })}</span></>}
                             </div>
                         </div>
                         {!locked && <MIcon name="chevron" size={18} color={t.inkMuted} />}
@@ -324,12 +328,12 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         {orderItems.map((it, idx) => (
                             <SwipeToDelete key={it.product?.id || idx} t={t} disabled={locked} onDelete={() => removeItem(idx)}>
                             <div style={{ padding: "8px 12px", borderBottom: idx < orderItems.length - 1 ? `1px solid ${t.lineSoft}` : "none", display: "flex", alignItems: "center", gap: 8 }}>
-                                <ProductImage t={t} img={it.product.img} sku={it.product.sku} name={it.product.name} barcode={it.product.barcode} price={it.product.price} stock={it.product.stock} unit={it.product.unit} size={32} radius={7} />
+                                <ProductImage t={t} img={it.product.img} sku={it.product.sku} name={it.product.name} barcode={it.product.barcode} price={it.product.price} currency={orderCurrency} stock={it.product.stock} unit={it.product.unit} size={32} radius={7} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: productMissing(it.product) ? t.err : t.ink }}>{it.product.name}{productMissing(it.product) ? ` · ${tr("order.unavailable")}` : ""}</div>
                                     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 1 }}>
-                                        <div style={{ flex: 1, minWidth: 0, fontFamily: F_NUM, fontSize: 10.5, color: t.inkMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.sku} · {money(it.product.price)} ₴{it.product.unit ? `/${it.product.unit}` : ""}</div>
-                                        <div style={{ flexShrink: 0, fontFamily: F_NUM, fontSize: 11, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{money(it.product.price * it.qty)} ₴</div>
+                                        <div style={{ flex: 1, minWidth: 0, fontFamily: F_NUM, fontSize: 10.5, color: t.inkMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.sku} · {money(it.product.price)} {cur}{it.product.unit ? `/${it.product.unit}` : ""}</div>
+                                        <div style={{ flexShrink: 0, fontFamily: F_NUM, fontSize: 11, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{money(it.product.price * it.qty)} {cur}</div>
                                     </div>
                                 </div>
                                 {locked ? (
@@ -359,7 +363,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "10px 16px max(12px, env(safe-area-inset-bottom))", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ flexShrink: 0 }}>
                         <div style={{ fontSize: 10.5, fontWeight: 600, color: t.inkMuted, textTransform: "uppercase", letterSpacing: 0.4 }}>{tr("order.toPay")}</div>
-                        <div style={{ fontFamily: F_NUM, fontSize: 20, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{money(total)} ₴</div>
+                        <div style={{ fontFamily: F_NUM, fontSize: 20, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{money(total)} {cur}</div>
                     </div>
                     <button onClick={saveDraft} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: t.accent, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
                         <MIcon name="check" size={16} color="#fff" w={2} /> {tr("order.save")}
@@ -371,7 +375,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             {locked && orderItems.length > 0 && (
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "14px 16px max(16px, env(safe-area-inset-bottom))", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontSize: 14, fontWeight: 700 }}>{tr("order.sum")}</span>
-                    <span style={{ fontFamily: F_NUM, fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>{money(total)} ₴</span>
+                    <span style={{ fontFamily: F_NUM, fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>{money(total)} {cur}</span>
                 </div>
             )}
 

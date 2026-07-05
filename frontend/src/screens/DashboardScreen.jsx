@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ConfirmDialog } from '../components/ui';
-import { localeTag, fmtMoney as fmtCurLocale, parseMoney, todayISO, orderNum, setLang, SUPPORTED } from '../i18n';
+import { localeTag, fmtMoney as fmtCurLocale, fmtCur, parseMoney, todayISO, orderNum, setLang, SUPPORTED, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
 import ReactMarkdown from 'react-markdown';
@@ -27,7 +27,7 @@ const syncLabel = (ts, tr) => {
     return d === 1 ? tr("sync.yesterday") : tr("sync.dayAgo", { count: d });
 };
 
-export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData, onOpenSyncHistory, onOpenHelp }) => {
+export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products = [], productsCount = 0, customersCount = 0, onSync, onLogout, isDark, onToggleTheme, onOpenLog, hasErrors, onClearData, onOpenSyncHistory, onOpenHelp }) => {
     const { t: tr, i18n } = useTranslation();
     const [showProfile, setShowProfile] = useState(false);
     const [clearConfirm, setClearConfirm] = useState(null); // {body} коли відкрито діалог очистки
@@ -87,8 +87,11 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
     // виторг/к-сть узгоджувалися зі списком нижче.
     const liveToday = todayOrders.filter(o => !o.deletionMark && o.status !== 'Видалено');
     const ordersCount = liveToday.length;
-    const revenue = liveToday.reduce((s, o) => s + parseMoney(o.total), 0);
-    const avgCheck = ordersCount ? Math.round(revenue / ordersCount) : 0;
+    // Виторг/чек — тільки по замовленнях у валюті пристрою (чужі валюти не змішуємо, #35).
+    const deviceCurrency = products?.[0]?.currency || DEFAULT_CURRENCY;
+    const sameCur = liveToday.filter(o => (o.currency || DEFAULT_CURRENCY) === deviceCurrency);
+    const revenue = sameCur.reduce((s, o) => s + parseMoney(o.total), 0);
+    const avgCheck = sameCur.length ? Math.round(revenue / sameCur.length) : 0;
 
     // Стан синхронізації: час останньої вдалої синхронізації + локальна черга на відправку.
     const lastSync = Number(localStorage.getItem('vendo_last_sync')) || 0;
@@ -126,10 +129,10 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
             <div style={{ margin: "12px 16px 0", borderRadius: 20, background: t.invBg, color: "#fff", padding: "18px 20px", overflow: "hidden" }}>
                 <div>
                     <div style={{ fontSize: 11, opacity: 0.55, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.8 }}>{tr("dashboard.revenueToday")}</div>
-                    <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4, fontFamily: F_NUM, letterSpacing: -0.5 }}>{fmtMoney(revenue)} ₴</div>
+                    <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4, fontFamily: F_NUM, letterSpacing: -0.5 }}>{fmtMoney(revenue)} {curSymbol(deviceCurrency)}</div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, fontSize: 11, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 14 }}>
-                    {[[tr("dashboard.orders"), String(ordersCount)], [tr("dashboard.avgCheck"), `${fmtMoney(avgCheck)} ₴`], [tr("dashboard.clients"), String(customersCount)]].map(([l, v]) => (
+                    {[[tr("dashboard.orders"), String(ordersCount)], [tr("dashboard.avgCheck"), `${fmtMoney(avgCheck)} ${curSymbol(deviceCurrency)}`], [tr("dashboard.clients"), String(customersCount)]].map(([l, v]) => (
                         <div key={l}>
                             <div style={{ opacity: 0.55 }}>{l}</div>
                             <div style={{ fontFamily: F_NUM, fontWeight: 600, fontSize: 16, marginTop: 1 }}>{v}</div>
@@ -184,7 +187,7 @@ export const DashboardScreen = ({ t, onNav, userName, isOnline, orders, products
                                     <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</div>
                                 </div>
                                 <div style={{ textAlign: "right", marginLeft: 10 }}>
-                                    <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{o.total}</div>
+                                    <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</div>
                                     <div style={{ fontSize: 10.5, color: statusColor(o), fontWeight: 600, marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
                                 </div>
                             </div>

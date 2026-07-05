@@ -27,9 +27,20 @@ const pickLang = (req) => {
 };
 const msg = (req, key) => (MESSAGES[key] || {})[pickLang(req)] || (MESSAGES[key] || {}).en || key;
 
-const formatUAH = (n) => `${Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₴`;
-
 // Сума по нормалізованих рядках { qty, price }. Ціна — зафіксований snapshot.
 const computeTotal = (items) => items.reduce((sum, it) => sum + (it.price || 0) * it.qty, 0);
 
-module.exports = { STATUS_COLORS, colorFor, MESSAGES, pickLang, msg, formatUAH, computeTotal };
+// #35 Мультивалютність. Контракт: бекенд віддає числа + числовий код валюти (ISO 4217,
+// напр. "980"=грн, "840"=USD); форматує лише фронтенд. Валюта одна на пристрій.
+// Мок імітує 1С-конверсію: ціни в db.json — у базовій валюті (грн), а /products віддає
+// їх переведеними у валюту пристрою (MOCK_CURRENCY). Фліп MOCK_CURRENCY=840 → каталог у $.
+const BASE_CURRENCY = '980';                             // валюта цін у db.json
+const MOCK_CURRENCY = process.env.MOCK_CURRENCY || '980'; // валюта пристрою
+// Курс = скільки базової валюти (грн) за 1 одиницю валюти. Тільки для демо конверсії.
+const RATES = { '980': 1, '840': 41.5, '978': 45, '826': 52 };
+const convertPrice = (amount, toCode = MOCK_CURRENCY, fromCode = BASE_CURRENCY) => {
+    const from = RATES[String(fromCode)] ?? 1, to = RATES[String(toCode)] ?? 1;
+    return Math.round(((Number(amount) || 0) * from / to) * 100) / 100;
+};
+
+module.exports = { STATUS_COLORS, colorFor, MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice };

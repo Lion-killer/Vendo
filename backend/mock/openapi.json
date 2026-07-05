@@ -106,7 +106,7 @@
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderInput" } } } },
         "responses": {
           "200": { "description": "Створено/оновлено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
-          "400": { "description": "Некоректне замовлення: контрагента не вказано/не знайдено, позиція без productId, невідомий товар. Позиції не пропускаються мовчки — будь-яка некоректна позиція відхиляє весь запит", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "400": { "description": "Некоректне замовлення: контрагента не вказано/не знайдено, позиція без productId, невідомий товар. У 1С також: контрагент не має договору у валюті пристрою (#35). Позиції не пропускаються мовчки — будь-яка некоректна позиція відхиляє весь запит", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/Conflict" }
         }
@@ -182,7 +182,8 @@
           "name": { "type": "string" },
           "sku": { "type": "string" },
           "barcode": { "type": "string", "description": "Штрихкод EAN-13 (для сканера)" },
-          "price": { "type": "number" },
+          "price": { "type": "number", "description": "Ціна у валюті пристрою (currency); конвертована з валюти прайсу" },
+          "currency": { "type": "string", "description": "Числовий код валюти ISO 4217 (напр. \"980\"=грн, \"840\"=USD). Однаковий для всіх позицій пристрою" },
           "stock": { "type": "integer" },
           "unit": { "type": "string" },
           "category": { "type": "string" },
@@ -215,7 +216,8 @@
           "contact": { "type": "string", "description": "Основна контактна особа" },
           "phone": { "type": "string" },
           "contacts": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" }, "description": "Кілька контактних осіб (опційно)" },
-          "debt": { "type": "number", "description": "Борг (>0) / переплата (<0)" },
+          "debt": { "type": "number", "description": "Борг (>0) / переплата (<0), в управлінській валюті (debtCurrency)" },
+          "debtCurrency": { "type": "string", "description": "Числовий код валюти боргу ISO 4217 (управлінський облік, одна на відповідь)" },
           "status": { "type": "string" }
         }
       },
@@ -252,7 +254,8 @@
           "client": { "type": "string" },
           "customer": { "allOf": [ { "$ref": "#/components/schemas/Customer" } ], "nullable": true },
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
-          "total": { "type": "string", "description": "Сума з валютою, напр. \"3 168.00 ₴\"" },
+          "total": { "type": "number", "description": "Сума замовлення (число) у валюті замовлення (currency); фронт форматує сам" },
+          "currency": { "type": "string", "description": "Числовий код валюти ISO 4217, заморожена на момент створення. Старі замовлення без поля → \"980\" (грн)" },
           "sColor": { "type": "string", "description": "Колір статусу (hex)" }
         }
       },

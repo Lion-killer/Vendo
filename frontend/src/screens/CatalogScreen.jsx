@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput } from '../components/ui';
-import { fmtMoney, fmtDate, todayISO } from '../i18n';
+import { fmtMoney, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { scanBarcode } from '../api/scanner';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
@@ -59,7 +59,7 @@ const ProductRow = ({ t, p, qty, onAdd }) => {
                     )}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
                         <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(p.price)}</span>
-                        <span style={{ fontSize: 11, color: t.inkMuted }}>₴{p.unit ? ` / ${p.unit}` : ""}</span>
+                        <span style={{ fontSize: 11, color: t.inkMuted }}>{curSymbol(p.currency)}{p.unit ? ` / ${p.unit}` : ""}</span>
                         <span style={{ fontFamily: F_NUM, fontSize: 11, color: stockColor, fontWeight: 600, marginLeft: "auto" }}>{stockLabel}</span>
                     </div>
                 </div>
@@ -144,6 +144,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
 
     const cartCount = orderItems.length;
     const cartTotal = orderItems.reduce((s, it) => s + (Number(it.product.price) || 0) * it.qty, 0);
+    const currency = products?.[0]?.currency || DEFAULT_CURRENCY; // валюта пристрою (одна на каталог)
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
@@ -248,7 +249,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                             <MIcon name="cart" size={18} color="#fff" />
                             <div style={{ textAlign: "left" }}>
                                 <div style={{ fontSize: 11, opacity: 0.6 }}>{tr("catalog.positions", { count: cartCount })}</div>
-                                <div style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(cartTotal)} ₴</div>
+                                <div style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(cartTotal)} {curSymbol(currency)}</div>
                             </div>
                         </div>
                         <div style={{ background: "rgba(255,255,255,0.12)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{tr("catalog.toOrder")}</div>

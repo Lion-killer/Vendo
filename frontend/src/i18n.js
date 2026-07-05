@@ -31,8 +31,15 @@ export const setLang = (lng) => {
 // BCP-47 тег для Intl (дати/числа/валюта) під поточну мову.
 export const localeTag = () => LOCALE_TAG[i18n.language] || 'uk-UA';
 export const fmtMoney = (n, opts = {}) => (Number(n) || 0).toLocaleString(localeTag(), { maximumFractionDigits: 2, ...opts });
-// Гривня — символ той самий у всіх мовах; локаль впливає лише на групування цифр.
-export const fmtCur = (n, opts = {}) => `${fmtMoney(n, opts)} ₴`;
+
+// #35 Валюта. Бекенд віддає числовий код ISO 4217 ("980"=грн, "840"=USD…); символ беремо
+// з мапи, невідома валюта показується самим кодом. Один рядок на нову валюту — без
+// залежностей (stdlib-способу «980 → ₴» немає; Intl знає лише буквені коди).
+const CUR_SYMBOL = { '980': '₴', '840': '$', '978': '€', '826': '£', '985': 'zł', '392': '¥' };
+export const DEFAULT_CURRENCY = '980';
+export const curSymbol = (code) => CUR_SYMBOL[String(code)] || String(code ?? '');
+// Сума + символ валюти. code — числовий ISO-код; за замовчуванням грн (старі дані без валюти).
+export const fmtCur = (n, code = DEFAULT_CURRENCY, opts = {}) => `${fmtMoney(n, opts)} ${curSymbol(code)}`;
 
 // ─── Спільні форматери замовлень (раніше дублювалися по екранах) ───────────────
 // Сума з рядка ("1 078,00 ₴") або числа → Number. Стійко до пробілів-роздільників і

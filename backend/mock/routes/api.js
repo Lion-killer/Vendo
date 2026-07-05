@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Чисті хелпери (кольори статусів, локалізація, формат суми, підрахунок) — у lib/orders.js,
 // щоб їх можна було юніт-тестувати без БД (#21).
-const { colorFor, msg, formatUAH, computeTotal } = require('../lib/orders');
+const { colorFor, msg, computeTotal, MOCK_CURRENCY, convertPrice } = require('../lib/orders');
 
 // --- Допоміжні функції для замовлень ---
 
@@ -49,7 +49,8 @@ const hydrateOrder = (order) => {
         client: customer ? customer.name : "Невідомий клієнт",
         customer: customer || null,
         items,
-        total: formatUAH(computeTotal(order.items || [])),
+        total: computeTotal(order.items || []), // число (контракт #35); фронт форматує сам
+        currency: order.currency || '980',      // заморожена валюта замовлення; старі → грн
         sColor: colorFor(displayStatus)
     };
 };
@@ -104,7 +105,9 @@ router.post('/telemetry', (req, res) => {
 });
 
 router.get('/products', (req, res) => {
-    res.json(store.products);
+    // Ціни переведені у валюту пристрою (як 1С-сервіс конвертує з валюти прайсу);
+    // currency — числовий код ISO, однаковий для всіх позицій пристрою.
+    res.json(store.products.map(p => ({ ...p, price: convertPrice(p.price), currency: MOCK_CURRENCY })));
 });
 
 // GET /products/:id/image — у 1С повертає Номенклатура.ОсновноеИзображение (бінарно).
@@ -119,7 +122,9 @@ router.get('/categories', (req, res) => {
 });
 
 router.get('/customers', (req, res) => {
-    res.json(store.customers);
+    // Борг — в управлінській валюті (зведений залишок), не у валюті прайсу. debtCurrency
+    // підписує його явно; у моці управлінська валюта = грн ("980").
+    res.json(store.customers.map(c => ({ ...c, debtCurrency: '980' })));
 });
 
 router.get('/orders', (req, res) => {
@@ -186,6 +191,7 @@ router.post('/orders', (req, res) => {
             deletionMark: false,
             version,
             items,
+            currency: MOCK_CURRENCY, // валюта пристрою на момент створення (заморожується)
         };
         store.orders.push(order);
     }
