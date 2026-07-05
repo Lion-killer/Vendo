@@ -140,7 +140,7 @@ export const Lightbox = () => {
     return () => { lbListeners.delete(f); };
   }, []);
   if (!data) return null;
-  const { src, name, sku, barcode, price, stock, unit } = data;
+  const { src, name, sku, barcode, price, currency, stock, unit } = data;
   return createPortal(
     <div onClick={closeLightbox} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
       <ZoomImage src={src} alt={sku} />
@@ -183,7 +183,7 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stoc
   // завантажилось" (три крапки), а не "фото немає" (артикул). Так розрізняємо ці стани.
   const pending = isApi && !show && !err;
   return (
-    <div onClick={show ? (e) => { e.stopPropagation(); openLightbox({ src, name, sku, barcode, price, stock, unit }); } : undefined} style={{
+    <div onClick={show ? (e) => { e.stopPropagation(); openLightbox({ src, name, sku, barcode, price, currency, stock, unit }); } : undefined} style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0, overflow: "hidden",
       border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center",
       // Фото є: білий фон (показ) або нейтральний (вантажиться). Фото немає: діагональна штриховка.
