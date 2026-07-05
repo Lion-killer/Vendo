@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getEntries, clearLog } from '../logger';
 import { useLogSend } from '../useLogSend';
 import { ConfirmDialog } from './ui';
+import { Z } from '../theme';
 
 // Панель журналу: показує записи логу (за замовчуванням лише помилки/попередження),
 // дає надіслати лог розробнику (sendLog: API → файл+«Поділитися» → текст → буфер) і
@@ -25,7 +26,7 @@ export const LogPanel = ({ t, onClose }) => {
     const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2100, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: Z.panel, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>
             {/* Шапка */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${t.line}`, paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
                 <div style={{ fontSize: 17, fontWeight: 800, flex: 1 }}>{tr('log.title')}</div>

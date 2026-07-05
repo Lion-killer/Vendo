@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
+import { Z } from '../theme';
 
 // Вбудована довідка (#доках). Контент — markdown із docs/user-guide, скопійований у
 // src/help при збірці (scripts/copy-help.mjs), бандлиться як ?raw → працює офлайн.
@@ -59,7 +60,7 @@ export const HelpScreen = ({ t, onClose }) => {
     const current = active ? sections.find(s => s.name === active) : null;
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2100, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: Z.panel, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>
             {/* Шапка */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${t.line}`, paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
                 {current && (

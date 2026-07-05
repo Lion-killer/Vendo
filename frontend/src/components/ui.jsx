@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchAuthedBlobRaw } from '../api/client';
 import { loadCachedImage } from '../api/imageCache';
-import { F_NUM, F_UI } from '../theme';
+import { F_NUM, F_UI, Z } from '../theme';
 import { curSymbol } from '../i18n';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
@@ -142,7 +142,7 @@ export const Lightbox = () => {
   if (!data) return null;
   const { src, status, name, sku, barcode, price, currency, stock, unit } = data;
   return createPortal(
-    <div onClick={closeLightbox} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
+    <div onClick={closeLightbox} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: Z.lightbox, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
       {src
         ? <ZoomImage src={src} alt={sku} />
         : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", padding: 24, maxWidth: "82%" }}>
@@ -249,7 +249,7 @@ export const OnlineIndicator = ({ t, online, connecting, syncing, floating }) =>
 export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync, offsetTop = 0 }) => {
   const btn = { width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
   return (
-    <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: 16, zIndex: 1500, display: "flex", gap: 8 }}>
+    <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: 16, zIndex: Z.floating, display: "flex", gap: 8 }}>
       <button onClick={onSync} aria-label="Синхронізувати" style={{ ...btn, position: "relative", cursor: "pointer", fontFamily: "inherit" }}>
         <div style={{ animation: syncing ? "spin 1s linear infinite" : "none", display: "flex" }}><MIcon name="sync" size={18} color={t.ink} /></div>
         {pending > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
@@ -327,9 +327,21 @@ export const ListPlaceholder = ({ loading, t, children }) => (
   </div>
 );
 
+// ─── Нижній лист (модальна шторка знизу) — єдиний стиль для меню й вибірників ──────
+// Скрим t.overlay + картка з радіусом угорі та «ручкою». Внутрішні відступи можна
+// перекрити через sheetStyle. Клік по скриму закриває; клік усередині — ні.
+export const BottomSheet = ({ t, onClose, zIndex = Z.sheet, sheetStyle, children }) => (
+  <div onClick={onClose} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+    <div onClick={(e) => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "20px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))", ...sheetStyle }}>
+      <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "0 auto 16px" }} />
+      {children}
+    </div>
+  </div>
+);
+
 // ─── Діалог підтвердження у стилі додатка (замість нативного window.confirm) ───────
 export const ConfirmDialog = ({ t, icon = "trash", danger = true, title, body, confirmLabel = "OK", cancelLabel = "Скасувати", onConfirm, onCancel }) => (
-  <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 2300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(2px)" }}>
+  <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: Z.dialog, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(2px)" }}>
     <div onClick={(e) => e.stopPropagation()} style={{ background: t.surface, borderRadius: 20, padding: 24, width: "100%", maxWidth: 340, boxShadow: "0 16px 40px rgba(0,0,0,0.3)", fontFamily: F_UI }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
         <div style={{ width: 48, height: 48, borderRadius: 24, background: (danger ? t.err : t.accent) + "22", display: "flex", alignItems: "center", justifyContent: "center" }}>

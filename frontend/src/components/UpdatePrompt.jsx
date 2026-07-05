@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { MIcon, F_NUM } from './ui';
+import { Z } from '../theme';
 
 // Повноекранний промпт оновлення (#37): версія + чейнджлог + фази встановлення. Живе на рівні
 // App (глобальний оверлей), тому з'являється НЕЗАЛЕЖНО від входу — зокрема на екрані логіну,
@@ -11,7 +12,7 @@ export const UpdatePrompt = ({ t, appVersion, update, phase, progress, onStart, 
   const { t: tr } = useTranslation();
   if (!update) return null;
   return (
-    <div style={{ position: "fixed", inset: 0, background: t.bg, zIndex: 300, display: "flex", flexDirection: "column", padding: "max(24px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))" }}>
+    <div style={{ position: "fixed", inset: 0, background: t.bg, zIndex: Z.update, display: "flex", flexDirection: "column", padding: "max(24px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 28 }}>
         <div style={{ width: 72, height: 72, borderRadius: 22, background: t.accentSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <MIcon name="download" size={34} color={t.accent} />

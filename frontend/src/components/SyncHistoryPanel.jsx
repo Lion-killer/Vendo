@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getSyncHistory, clearSyncHistory } from '../api/syncHistory';
 import { ListPlaceholder, ConfirmDialog } from './ui';
+import { Z } from '../theme';
 
 // Історія прогонів синхронізації (#20): список запусків doSync (час + підсумок), розгортання
 // per-order, фільтр «лише з помилками», перехід у замовлення для вирішення конфлікту, очистка.
@@ -30,7 +31,7 @@ export const SyncHistoryPanel = ({ t, onClose, onOpenOrder }) => {
     const chip = (color, label) => <span style={{ fontSize: 11.5, fontWeight: 800, color, background: color + '1A', padding: '2px 8px', borderRadius: 8, whiteSpace: 'nowrap' }}>{label}</span>;
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2100, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: Z.panel, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>
             {/* Шапка */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${t.line}`, paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
                 <div style={{ fontSize: 17, fontWeight: 800, flex: 1 }}>{tr('syncHist.title')}</div>

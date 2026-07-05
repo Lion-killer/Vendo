@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ListPlaceholder } from '../components/ui';
+import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet } from '../components/ui';
 import { fmtMoney, fmtDate, orderNum, curSymbol } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
@@ -27,9 +27,7 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
     ) : null;
 
     return (
-        <div onClick={onClose} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: 120, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: t.surface, borderRadius: "24px 24px 0 0", padding: "12px 16px max(20px, env(safe-area-inset-bottom))", maxHeight: "85vh", overflowY: "auto" }}>
-                <div style={{ width: 40, height: 4, borderRadius: 2, background: t.line, margin: "4px auto 16px" }} />
+        <BottomSheet t={t} onClose={onClose} sheetStyle={{ padding: "12px 16px", paddingBottom: "max(20px, env(safe-area-inset-bottom))", maxHeight: "85vh", overflowY: "auto" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                     <div style={{ width: 48, height: 48, borderRadius: 14, background: t.surfaceMuted, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <MIcon name="building" size={22} color={t.inkSoft} />
@@ -72,8 +70,7 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
                         </div>
                     </div>
                 ))}
-            </div>
-        </div>
+        </BottomSheet>
     );
 };
 
@@ -117,7 +114,7 @@ const ClientRow = ({ t, c, onClick }) => {
     );
 };
 
-export const CustomersScreen = ({ t, customers = [], orders = [], onNav, isOnline, connecting }) => {
+export const CustomersScreen = ({ t, customers = [], orders = [], onNav, connecting }) => {
     const { t: tr } = useTranslation();
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
