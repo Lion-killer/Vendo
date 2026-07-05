@@ -51,7 +51,7 @@ const ProductRow = ({ t, p, qty, onAdd }) => {
     return (
         <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={p.price} stock={p.stock} unit={p.unit} size={56} radius={10} />
+                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={p.price} currency={p.currency} stock={p.stock} unit={p.unit} size={56} radius={10} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
                     {p.trail && p.trail.length > 0 && (
