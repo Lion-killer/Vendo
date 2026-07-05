@@ -8,7 +8,7 @@ import { idSet } from '../api/refs';
 
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, currency = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = "Нове", num = null, baseVersion = null, currency = null, priceType = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
     // Валюта замовлення: заморожена (редагування) або валюта пристрою (нове). Символ — з коду.
     const orderCurrency = currency || products?.[0]?.currency || DEFAULT_CURRENCY;
@@ -67,6 +67,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         date: orderDate,
         total: total,            // число (контракт #35); форматується при показі
         currency: orderCurrency, // заморожена валюта замовлення
+        priceType: priceType || undefined, // тип цін замовлення (→ 1С Заказ.ТипЦен)
     });
 
     // Автозбереження невідправленого замовлення (проведене не чіпаємо — лише перегляд)

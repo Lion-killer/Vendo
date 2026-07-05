@@ -104,6 +104,10 @@ export const fetchCustomers = async () =>
 export const fetchCategories = async () =>
     (await tfetch(`${apiUrl()}/categories`, { headers: h() })).json();
 
+// Доступні типи цін пристрою (для селектора в каталозі): [{ id, name, default }].
+export const fetchPriceTypes = async () =>
+    (await tfetch(`${apiUrl()}/price-types`, { headers: h() })).json();
+
 // Завантажити захищене бінарне зображення за відносним шляхом API (напр. поле Product.img
 // = "/products/{id}/image") і повернути blob-URL для <img src>. Заголовки (X-Device-Id +
 // bearer) додаються, бо ендпоінт захищений і голий <img src> не пройшов би. null — якщо
@@ -170,18 +174,18 @@ const wireItems = (orderItems) => (orderItems || []).map(it => ({
 // конфлікт (409), якщо запис відтоді змінився. Відсутній baseVersion = перезаписати.
 // deletionMark=false — зняти помітку видалення при upsert (для «перезаписати моє» над
 // видаленим на сервері). Якщо не передано — помітку не чіпаємо.
-export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date, baseVersion, deletionMark) =>
+export const createOrder = async (id, orderItems, customerId, total, status = "Нове", date, baseVersion, deletionMark, priceType) =>
     (await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id, orderItems: wireItems(orderItems), customerId, total, status, date, baseVersion, ...(deletionMark === false ? { deletionMark: false } : {}) }),
+        body: JSON.stringify({ id, orderItems: wireItems(orderItems), customerId, total, status, date, baseVersion, ...(deletionMark === false ? { deletionMark: false } : {}), ...(priceType ? { priceType } : {}) }),
     })).json();
 
-export const updateOrder = async (id, orderItems, customerId, total, status, date) =>
+export const updateOrder = async (id, orderItems, customerId, total, status, date, priceType) =>
     (await tfetch(`${apiUrl()}/orders/${id}`, {
         method: 'PUT',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ orderItems: wireItems(orderItems), customerId, total, status, date }),
+        body: JSON.stringify({ orderItems: wireItems(orderItems), customerId, total, status, date, ...(priceType ? { priceType } : {}) }),
     })).json();
 
 // baseVersion — токен версії на момент, коли додаток бачив замовлення: 1С виявляє

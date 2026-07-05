@@ -10,7 +10,7 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer } from './api/client';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
@@ -57,10 +57,13 @@ export default function App() {
   const [editNum, setEditNum] = useState(null); // номер документа (null для невідправленого) — лише для показу
   const [editVersion, setEditVersion] = useState(null); // токен версії на момент відкриття (для виявлення конфліктів)
   const [editCurrency, setEditCurrency] = useState(DEFAULT_CURRENCY); // валюта замовлення (заморожена/пристрою)
+  const [editPriceType, setEditPriceType] = useState(""); // тип цін замовлення (заморожений/вибраний)
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [priceTypes, setPriceTypes] = useState([]); // доступні типи цін пристрою (для селектора)
+  const [selectedPriceType, setSelectedPriceType] = useState(() => localStorage.getItem('vendo_price_type') || ""); // вибраний тип у каталозі
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
   // #40: чому користувача викинуло на екран входу (i18n-ключ). Персистентний банер на
   // LoginScreen (переживає перезапуск, на відміну від снека) — стирається при вході.
@@ -106,6 +109,7 @@ export default function App() {
       date: editDate || undefined,
       total: total,            // число (контракт #35)
       currency: editCurrency,  // заморожена валюта замовлення
+      priceType: editPriceType, // тип цін замовлення (→ 1С Заказ.ТипЦен)
       status: queueStatus,
       sColor: queueStatus === "Відправлено" ? t.ok : t.warn,
       // База версії лише для правок серверного замовлення (виявлення конфлікту).
@@ -122,6 +126,9 @@ export default function App() {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
+
+  // Вибраний тип цін переживає перезапуск (валідується проти списку в applyPriceTypes).
+  useEffect(() => { if (selectedPriceType) localStorage.setItem('vendo_price_type', selectedPriceType); }, [selectedPriceType]);
 
   const toggleTheme = () => setIsDark(d => {
     const next = !d;
@@ -242,10 +249,27 @@ export default function App() {
     }
   };
 
+  // Типи цін пристрою (для селектора в каталозі): кеш одразу (offline-first), далі мережа.
+  // Рідко змінюються — поза 20-с циклом даних. Вибраний тип валідуємо проти списку;
+  // невалідний/порожній → тип за замовчуванням.
+  const applyPriceTypes = (types) => {
+    if (!Array.isArray(types) || !types.length) return;
+    setPriceTypes(types);
+    setSelectedPriceType(prev => (prev && types.some(t => t.id === prev)) ? prev : (types.find(t => t.default) || types[0]).id);
+  };
+  const loadPriceTypes = async () => {
+    try { const cached = await dataGet('priceTypes'); if (cached) applyPriceTypes(cached); } catch { /* немає кешу */ }
+    try {
+      const fresh = await fetchPriceTypes();
+      if (Array.isArray(fresh) && fresh.length) { dataPut('priceTypes', fresh); applyPriceTypes(fresh); }
+    } catch { /* офлайн — лишаємось на кеші */ }
+  };
+
   // Запуск: спершу кеш (одразу), далі мережа у фоні (не блокує UI).
   const loadData = async () => {
     collectionsFpRef.current = {}; // нова сесія/перезавантаження — перший знімок застосовується завжди
     await loadFromCache();
+    loadPriceTypes(); // паралельно, не блокує основні дані
     await fetchFromNetwork();
   };
 
@@ -286,7 +310,7 @@ export default function App() {
         // Чернетка лишається в черзі з помилкою — користувач обирає клієнта й синкає знову.
         if (!o.customerId) { setLocalOrderError(o.id, "Не вибрано контрагента"); skipped++; rec(o, 'skipped', "Не вибрано контрагента"); continue; }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; rec(o, 'skipped', "Посилання на видалені дані"); continue; }
-        const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion, o.deletionMark);
+        const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), "Відправлено", o.date, o.baseVersion, o.deletionMark, o.priceType);
         if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
         if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
         removeLocalOrder(o.id); sent++; rec(o, 'sent');
@@ -487,6 +511,7 @@ export default function App() {
       setEditNum(params.order.num || null);
       setEditVersion(params.order.version ?? null);
       setEditCurrency(params.order.currency || deviceCurrency); // заморожена валюта; старі → пристрою
+      setEditPriceType(params.order.priceType || selectedPriceType); // тип цін замовлення
       orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date);
     } else if (s === "orders" && params.newOrder) {
       // Явно створюємо нове замовлення (наприклад, кнопка з дашборду)
@@ -499,6 +524,7 @@ export default function App() {
       setEditNum(nextDraftNum());
       setEditVersion(null);
       setEditCurrency(deviceCurrency);
+      setEditPriceType(selectedPriceType);
       orderBaseline.current = orderSig([], null, null);
     } else if (s === "catalog" && !params.keepOrder) {
       // Просто перехід в Товари - створюємо нове (скидаємо редаговане замовлення)
@@ -511,10 +537,18 @@ export default function App() {
       setEditNum(nextDraftNum());
       setEditVersion(null);
       setEditCurrency(deviceCurrency);
+      setEditPriceType(selectedPriceType);
       orderBaseline.current = orderSig([], null, null);
     }
     // В іншому випадку (наприклад, при переході з Каталогу в Orders) стан кошика зберігається
     setScreen(s);
+  };
+
+  // Вибір типу цін у каталозі: для нового (ще не відправленого) чека тип слідує за вибором,
+  // щоб замовлення записало саме той тип, яким його набирають. Наявне замовлення не чіпаємо.
+  const handleSelectPriceType = (id) => {
+    setSelectedPriceType(id);
+    if (editStatus === "Нове") setEditPriceType(id);
   };
 
   // Зміна кількості позиції в кошику. Додатна/від'ємна дельта; при <=0 — видалення.
@@ -564,10 +598,10 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} selectedPriceType={selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}

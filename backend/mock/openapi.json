@@ -83,6 +83,12 @@
         "responses": { "200": { "description": "Список категорій", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
       }
     },
+    "/price-types": {
+      "get": {
+        "tags": ["Довідники"], "summary": "Доступні типи цін пристрою (для селектора в каталозі)",
+        "responses": { "200": { "description": "Список типів цін", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PriceType" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
     "/customers": {
       "get": {
         "tags": ["Довідники"], "summary": "Контрагенти пристрою з боргом і контактними особами",
@@ -182,13 +188,22 @@
           "name": { "type": "string" },
           "sku": { "type": "string" },
           "barcode": { "type": "string", "description": "Штрихкод EAN-13 (для сканера)" },
-          "price": { "type": "number", "description": "Ціна у валюті пристрою (currency); конвертована з валюти прайсу" },
+          "price": { "type": "number", "description": "Ціна типу за замовчуванням, у валюті пристрою (фолбек, якщо prices не читається)" },
+          "prices": { "type": "object", "additionalProperties": { "type": "number" }, "description": "Ціна за кожним доступним типом цін: { \"<typeId>\": число } (у валюті пристрою). Клієнт перемикає тип без дозавантаження" },
           "currency": { "type": "string", "description": "Числовий код валюти ISO 4217 (напр. \"980\"=грн, \"840\"=USD). Однаковий для всіх позицій пристрою" },
           "stock": { "type": "integer" },
           "unit": { "type": "string" },
           "category": { "type": "string" },
           "categoryId": { "type": "integer", "nullable": true },
           "img": { "type": "string", "description": "Відносний шлях бінарного ендпоінта зображення (/products/{id}/image), якщо є ОсновноеИзображение; інакше \"\". Тягнути через fetch із заголовками." }
+        }
+      },
+      "PriceType": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Ідентифікатор типу цін (ключ у Product.prices)" },
+          "name": { "type": "string", "description": "Назва для селектора" },
+          "default": { "type": "boolean", "description": "Тип за замовчуванням (стартовий вибір)" }
         }
       },
       "Category": {
@@ -256,6 +271,7 @@
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
           "total": { "type": "number", "description": "Сума замовлення (число) у валюті замовлення (currency); фронт форматує сам" },
           "currency": { "type": "string", "description": "Числовий код валюти ISO 4217, заморожена на момент створення. Старі замовлення без поля → \"980\" (грн)" },
+          "priceType": { "type": "string", "description": "Тип цін замовлення (id), заморожений на момент створення; у 1С → Заказ.ТипЦен" },
           "sColor": { "type": "string", "description": "Колір статусу (hex)" }
         }
       },
@@ -267,6 +283,7 @@
           "customerId": { "type": "string", "format": "uuid", "nullable": true },
           "status": { "$ref": "#/components/schemas/OrderStatus" },
           "date": { "type": "string", "format": "date" },
+          "priceType": { "type": "string", "description": "Вибраний тип цін (id); якщо немає — тип за замовчуванням" },
           "baseVersion": { "type": "string", "description": "Версія, від якої редагували (виявлення конфлікту). Відсутня = перезаписати." }
         }
       },

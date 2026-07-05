@@ -43,4 +43,14 @@ const convertPrice = (amount, toCode = MOCK_CURRENCY, fromCode = BASE_CURRENCY) 
     return Math.round(((Number(amount) || 0) * from / to) * 100) / 100;
 };
 
-module.exports = { STATUS_COLORS, colorFor, MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice };
+// Типи цін пристрою: мок імітує «доступні типи цін із налаштувань пристрою». factor —
+// множник до базової (роздрібної) ціни з db.json (внутрішнє, у контракт НЕ віддається;
+// у 1С це різні прайси РегистрСведений.ЦеныНоменклатуры). Один тип — default.
+const PRICE_TYPES = [
+    { id: 'retail', name: 'Роздрібна', default: true, factor: 1 },
+    { id: 'wholesale', name: 'Оптова', factor: 0.9 },
+    { id: 'promo', name: 'Акційна', factor: 0.8 },
+];
+const defaultPriceType = () => (PRICE_TYPES.find(t => t.default) || PRICE_TYPES[0] || {}).id || null;
+
+module.exports = { STATUS_COLORS, colorFor, MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType };

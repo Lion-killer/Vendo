@@ -6,7 +6,9 @@ const router = express.Router();
 
 // Чисті хелпери (кольори статусів, локалізація, формат суми, підрахунок) — у lib/orders.js,
 // щоб їх можна було юніт-тестувати без БД (#21).
-const { colorFor, msg, computeTotal, MOCK_CURRENCY, convertPrice } = require('../lib/orders');
+const { colorFor, msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType } = require('../lib/orders');
+
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 // --- Допоміжні функції для замовлень ---
 
@@ -51,6 +53,7 @@ const hydrateOrder = (order) => {
         items,
         total: computeTotal(order.items || []), // число (контракт #35); фронт форматує сам
         currency: order.currency || '980',      // заморожена валюта замовлення; старі → грн
+        priceType: order.priceType || defaultPriceType(), // тип цін замовлення
         sColor: colorFor(displayStatus)
     };
 };
@@ -104,10 +107,21 @@ router.post('/telemetry', (req, res) => {
     res.json({ ok: true, requestLog: store.telemetry.requestLog });
 });
 
+// Доступні типи цін пристрою (для селектора в каталозі). factor не віддаємо.
+router.get('/price-types', (req, res) => {
+    res.json(PRICE_TYPES.map(t => ({ id: t.id, name: t.name, default: !!t.default })));
+});
+
 router.get('/products', (req, res) => {
-    // Ціни переведені у валюту пристрою (як 1С-сервіс конвертує з валюти прайсу);
-    // currency — числовий код ISO, однаковий для всіх позицій пристрою.
-    res.json(store.products.map(p => ({ ...p, price: convertPrice(p.price), currency: MOCK_CURRENCY })));
+    // Ціни переведені у валюту пристрою (як 1С конвертує з валюти прайсу); currency —
+    // числовий код ISO. prices — ціна за КОЖНИМ доступним типом цін (клієнт перемикає без
+    // дозавантаження); price = ціна типу за замовчуванням (фолбек/сумісність).
+    const def = defaultPriceType();
+    res.json(store.products.map(p => {
+        const prices = {};
+        for (const t of PRICE_TYPES) prices[t.id] = convertPrice(round2(p.price * t.factor));
+        return { ...p, price: prices[def] ?? convertPrice(p.price), prices, currency: MOCK_CURRENCY };
+    }));
 });
 
 // GET /products/:id/image — у 1С повертає Номенклатура.ОсновноеИзображение (бінарно).
@@ -140,7 +154,7 @@ router.get('/orders', (req, res) => {
 });
 
 router.post('/orders', (req, res) => {
-    const { id: clientId, orderItems, customerId, status, date, baseVersion } = req.body;
+    const { id: clientId, orderItems, customerId, status, date, baseVersion, priceType } = req.body;
 
     const id = clientId || randomUUID();
     const existing = store.orderById(id);
@@ -192,6 +206,7 @@ router.post('/orders', (req, res) => {
             version,
             items,
             currency: MOCK_CURRENCY, // валюта пристрою на момент створення (заморожується)
+            priceType: priceType || defaultPriceType(), // вибраний тип цін
         };
         store.orders.push(order);
     }

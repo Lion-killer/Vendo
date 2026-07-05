@@ -42,7 +42,7 @@ const flattenProducts = (node, trail = []) => {
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
-const ProductRow = ({ t, p, qty, onAdd }) => {
+const ProductRow = ({ t, p, price, qty, onAdd }) => {
     const { t: tr } = useTranslation();
     const out = Number(p.stock) <= 0;
     const low = !out && Number(p.stock) < 5;
@@ -51,14 +51,14 @@ const ProductRow = ({ t, p, qty, onAdd }) => {
     return (
         <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={p.price} currency={p.currency} stock={p.stock} unit={p.unit} size={56} radius={10} />
+                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={price} currency={p.currency} stock={p.stock} unit={p.unit} size={56} radius={10} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
                     {p.trail && p.trail.length > 0 && (
                         <div style={{ fontSize: 10.5, color: t.inkMuted, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.trail.join(" › ")}</div>
                     )}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                        <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(p.price)}</span>
+                        <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(price)}</span>
                         <span style={{ fontSize: 11, color: t.inkMuted }}>{curSymbol(p.currency)}{p.unit ? ` / ${p.unit}` : ""}</span>
                         <span style={{ fontFamily: F_NUM, fontSize: 11, color: stockColor, fontWeight: 600, marginLeft: "auto" }}>{stockLabel}</span>
                     </div>
@@ -102,7 +102,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, isOnline, notify, connecting, offsetTop = 0 }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], selectedPriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, isOnline, notify, connecting, offsetTop = 0 }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -129,6 +129,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
 
+    // Ціна за вибраним типом (prices[type]); фолбек — базова price. Додавання в кошик морозить
+    // саме цю ціну (знімок), тому onAddToOrder отримує товар із price = ціні вибраного типу.
+    const priceOf = (p) => (selectedPriceType && p.prices && p.prices[selectedPriceType] != null) ? p.prices[selectedPriceType] : p.price;
+    const addToOrder = (p, delta) => onAddToOrder({ ...p, price: priceOf(p) }, delta);
+
     // Сканування штрихкоду товару: знайти за barcode/артикулом/id і додати в замовлення.
     const handleScan = async () => {
         let code;
@@ -138,7 +143,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
         const norm = code.trim().toLowerCase();
         const found = (products || []).find(p =>
             [p.barcode, p.sku, p.id].filter(Boolean).some(v => String(v).toLowerCase() === norm));
-        if (found) { onAddToOrder(found, 1); notify?.(tr("catalog.added", { name: found.name })); }
+        if (found) { addToOrder(found, 1); notify?.(tr("catalog.added", { name: found.name })); }
         else notify?.(tr("catalog.barcodeNotFound", { code }));
     };
 
@@ -173,6 +178,22 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                         style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
                     {searching && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                 </div>
+
+                {/* Селектор типу ціни (Варіант Б): тонкий ряд чіпів під пошуком — усі типи видно
+                    одразу, перемик у 1 тап. Ховається, коли доступний лише один тип. */}
+                {priceTypes.length > 1 && (
+                    <ScrollRow fade={t.bg} gap={6} style={{ marginTop: 10, paddingBottom: 2 }}>
+                        {priceTypes.map(pt => {
+                            const on = pt.id === selectedPriceType;
+                            return (
+                                <button key={pt.id} onClick={() => onSelectPriceType?.(pt.id)}
+                                    style={{ flexShrink: 0, height: 30, padding: "0 13px", borderRadius: 9, border: on ? "none" : `1px solid ${t.line}`, background: on ? t.accent : "transparent", color: on ? "#fff" : t.inkSoft, fontFamily: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                                    {pt.name}
+                                </button>
+                            );
+                        })}
+                    </ScrollRow>
+                )}
 
                 {/* Контекст замовлення */}
                 {(editCustomer || editOrderId) && (
@@ -214,7 +235,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                                 <MIcon name="search" size={36} color={t.line} />
                                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
                             </ListPlaceholder>
-                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
+                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} />)}
                     </>
                 ) : (
                     <>
@@ -227,7 +248,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, onAddToOrder, or
                         {levelProducts.length > 0 && (
                             <>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {levelProducts.length}</div>
-                                {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} qty={qtyOf(p)} onAdd={onAddToOrder} />)}
+                                {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} />)}
                             </>
                         )}
                         {subgroups.length === 0 && levelProducts.length === 0 && (
