@@ -11,7 +11,7 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer } from './api/client';
-import { sendTelemetry } from './api/telemetry';
+import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
 import { logWarn } from './logger';
@@ -325,6 +325,7 @@ export default function App() {
     document.addEventListener('visibilitychange', handleVisible);
 
     loadData();
+    enableErrorTelemetry(); // при помилці додатка — позачерговий снапшот із логом
     sendTelemetry(); // #42: снапшот при старті сесії
 
     // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (5 с таймаут, без БД):

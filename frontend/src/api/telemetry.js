@@ -5,7 +5,7 @@
 // Лог їде РАЗОМ зі снапшотом і лише коли є що казати: з попереднього успішного
 // відправлення з'явилися нові помилки (дедуплікація за маркером у localStorage),
 // або оператор явно запросив повний лог (requestLog у відповіді).
-import { getEntries, buildReport } from '../logger';
+import { getEntries, buildReport, setOnError } from '../logger';
 import { getLocalOrders } from './localOrders';
 import { postTelemetry } from './client';
 
@@ -73,3 +73,17 @@ export const sendTelemetry = async (fullLog = false) => {
     } catch { /* тихо: наступний снапшот за розкладом */ }
     finally { inFlight = false; }
 };
+
+// Автонадсилання повного логу при помилці ДОДАТКА (не мережевий таймаут): щойно в лозі
+// з'явилась реальна помилка — позачерговий снапшот із логом, не чекаючи планового (15 хв)
+// чи наступного старту. Дебаунс збирає пачку помилок (напр. цикл рендера / краш) в одне
+// надсилання й дає застосунку осісти. Офлайн — sendTelemetry тихо пропустить, лог піде з
+// наступним успішним снапшотом (маркер не зсунуто). Вмикається один раз (enableErrorTelemetry).
+let errDebounce = null;
+const onLoggedError = (entry) => {
+    if (!isRealError(entry)) return; // мережеві таймаути не тригерять — їх окремий лічильник
+    clearTimeout(errDebounce);
+    errDebounce = setTimeout(() => { sendTelemetry(); }, 3000);
+};
+
+export const enableErrorTelemetry = () => setOnError(onLoggedError);

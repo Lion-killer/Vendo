@@ -26,11 +26,20 @@ const trim = (v) => {
     return s.length > 1000 ? s.slice(0, 1000) + `…(+${s.length - 1000})` : s;
 };
 
+// Хук «сталася помилка» — щоб шар телеметрії міг позачергово надіслати лог, не чекаючи
+// планового снапшота. Реєструється через setOnError; не має права ламати логування.
+let onErrorHook = null;
+export const setOnError = (fn) => { onErrorHook = fn; };
+
 export const log = (level, msg, data) => {
     const arr = read();
-    arr.push({ t: new Date().toISOString(), level, msg: String(msg), data: data === undefined ? undefined : trim(data) });
+    const entry = { t: new Date().toISOString(), level, msg: String(msg), data: data === undefined ? undefined : trim(data) };
+    arr.push(entry);
     if (arr.length > MAX) arr.splice(0, arr.length - MAX);
     write(arr);
+    if (level === 'error' && onErrorHook) {
+        try { onErrorHook(entry); } catch { /* хук не має ламати лог */ }
+    }
 };
 
 export const logInfo = (msg, data) => log('info', msg, data);
