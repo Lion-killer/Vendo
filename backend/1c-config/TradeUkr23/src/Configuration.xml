@@ -253,7 +253,6 @@
 			<Role>венд_HTTPСервис</Role>
 			<HTTPService>венд_МобильноеПриложение</HTTPService>
 			<Catalog>венд_МобильныеУстройства</Catalog>
-			<Constant>венд_АдресМобильногоСервиса</Constant>
 			<InformationRegister>венд_ТелеметрияУстройств</InformationRegister>
 		</ChildObjects>
 	</Configuration>

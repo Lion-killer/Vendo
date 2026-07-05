@@ -74,8 +74,31 @@
 				</Title>
 				<ExtendedTooltip name="ОткрытьТелеметриюРасширеннаяПодсказка" id="46"/>
 			</Button>
+			<Button name="ЗапроситьЛог" id="55">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.ЗапроситьЛог</CommandName>
+				<Title>
+					<v8:item>
+						<v8:lang>ru</v8:lang>
+						<v8:content>Запросить лог</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>uk</v8:lang>
+						<v8:content>Запросити лог</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>en</v8:lang>
+						<v8:content>Request log</v8:content>
+					</v8:item>
+				</Title>
+				<ExtendedTooltip name="ЗапроситьЛогРасширеннаяПодсказка" id="56"/>
+			</Button>
 		</ChildItems>
 	</AutoCommandBar>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+		<Event name="OnOpen">ПриОткрытии</Event>
+	</Events>
 	<ChildItems>
 		<Table name="Список" id="3">
 			<DataPath>Список</DataPath>
@@ -88,6 +111,9 @@
 			<SearchStringAddition name="СписокСтрокаПоиска" id="6"/>
 			<ViewStatusAddition name="СписокСостояниеПросмотра" id="7"/>
 			<SearchControlAddition name="СписокУправлениеПоиском" id="8"/>
+			<Events>
+				<Event name="OnGetDataAtServer">СписокПриПолученииДанныхНаСервере</Event>
+			</Events>
 			<ChildItems>
 				<InputField name="Наименование" id="9">
 					<DataPath>Список.Наименование</DataPath>
@@ -243,6 +269,26 @@
 					<ContextMenu name="ТаймаутыКонтекстноеМеню" id="49"/>
 					<ExtendedTooltip name="ТаймаутыРасширеннаяПодсказка" id="50"/>
 				</InputField>
+				<CheckBoxField name="ЗапросЛога" id="51">
+					<DataPath>Список.ЗапросЛога</DataPath>
+					<TitleLocation>Right</TitleLocation>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Запрос лога</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>uk</v8:lang>
+							<v8:content>Запит логу</v8:content>
+						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Log requested</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ЗапросЛогаКонтекстноеМеню" id="52"/>
+					<ExtendedTooltip name="ЗапросЛогаРасширеннаяПодсказка" id="53"/>
+				</CheckBoxField>
 			</ChildItems>
 		</Table>
 	</ChildItems>
@@ -268,13 +314,19 @@
 	Телеметрия.ПоследняяСинхронизация КАК Синхронизация,
 	Телеметрия.Очередь КАК Очередь,
 	Телеметрия.Ошибки КАК Ошибки,
-	Телеметрия.СетевыеТаймауты КАК Таймауты
+	Телеметрия.СетевыеТаймауты КАК Таймауты,
+	ЛОЖЬ КАК ЗапросЛога
 ИЗ
 	Справочник.венд_МобильныеУстройства КАК Устройства
 		ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.венд_ТелеметрияУстройств.СрезПоследних КАК Телеметрия
 		ПО Телеметрия.Устройство = Устройства.Ссылка</QueryText>
 				<MainTable>Catalog.венд_МобильныеУстройства</MainTable>
 			</Settings>
+		</Attribute>
+		<Attribute name="СлужебныйПользовательОтсутствует" id="57">
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
 		</Attribute>
 	</Attributes>
 	<Commands>
@@ -328,6 +380,23 @@
 				</v8:item>
 			</Title>
 			<Action>ОткрытьТелеметрию</Action>
+		</Command>
+		<Command name="ЗапроситьЛог" id="54">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Запросить лог</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Запросити лог</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Request log</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ЗапроситьЛог</Action>
 		</Command>
 	</Commands>
 </Form>
