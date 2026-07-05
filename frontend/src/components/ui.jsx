@@ -140,10 +140,18 @@ export const Lightbox = () => {
     return () => { lbListeners.delete(f); };
   }, []);
   if (!data) return null;
-  const { src, name, sku, barcode, price, currency, stock, unit } = data;
+  const { src, status, name, sku, barcode, price, currency, stock, unit } = data;
   return createPortal(
     <div onClick={closeLightbox} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
-      <ZoomImage src={src} alt={sku} />
+      {src
+        ? <ZoomImage src={src} alt={sku} />
+        : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", padding: 24, maxWidth: "82%" }}>
+            <div style={{ fontSize: 46 }}>🖼️</div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>
+              {status === "pending" ? "Зображення ще завантажується" : "Зображення не встановлено"}
+            </div>
+            {status === "pending" && <div style={{ fontSize: 13, opacity: 0.7 }}>У черзі — зʼявиться після синхронізації фото</div>}
+          </div>}
       <button onClick={(e) => { e.stopPropagation(); closeLightbox(); }} aria-label="Закрити"
         style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
         <MIcon name="x" size={22} color="#fff" />
@@ -182,13 +190,16 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stoc
   // Сервер каже, що фото Є (непорожній img-шлях), але blob ще немає → "вантажиться/не
   // завантажилось" (три крапки), а не "фото немає" (артикул). Так розрізняємо ці стани.
   const pending = isApi && !show && !err;
+  // Стан для лайтбокса: є фото / ще вантажиться (в черзі) / немає. Клік відкриває лайтбокс
+  // ЗАВЖДИ — навіть без фото, щоб показати причину (в черзі / не встановлено).
+  const status = show ? "ok" : pending ? "pending" : "none";
   return (
-    <div onClick={show ? (e) => { e.stopPropagation(); openLightbox({ src, name, sku, barcode, price, currency, stock, unit }); } : undefined} style={{
+    <div onClick={(e) => { e.stopPropagation(); openLightbox({ src, status, name, sku, barcode, price, currency, stock, unit }); }} style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0, overflow: "hidden",
       border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center",
       // Фото є: білий фон (показ) або нейтральний (вантажиться). Фото немає: діагональна штриховка.
       background: show ? "#fff" : pending ? t.surfaceMuted : `repeating-linear-gradient(135deg, ${t.surfaceMuted} 0 6px, ${t.bg} 6px 12px)`,
-      cursor: show ? "zoom-in" : "default",
+      cursor: show ? "zoom-in" : "pointer",
     }}>
       {show
         ? <img src={src} alt={sku || ""} loading="lazy" onError={() => setErr(true)}
