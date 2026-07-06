@@ -75,6 +75,7 @@ export const ICON = {
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5" /><path d="M12 8h.01" /></>,
   calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></>,
   download: <><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 21h16" /></>,
+  image: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>,
 };
 
 // Ширина плаваючого кластера TopActions (2×38 + gap 8) — екрани з власними кнопками
@@ -133,6 +134,7 @@ export const closeLightbox = () => { if (lbData === null) return false; lbData =
 export const isLightboxOpen = () => lbData !== null;
 
 export const Lightbox = () => {
+  const { t: tr } = useTranslation();
   const [data, setData] = useState(lbData);
   useEffect(() => {
     const f = () => setData(lbData);
@@ -140,28 +142,49 @@ export const Lightbox = () => {
     return () => { lbListeners.delete(f); };
   }, []);
   if (!data) return null;
-  const { src, status, name, sku, barcode, price, currency, stock, unit } = data;
+  const { src, status, name, sku, barcode, price, currency, stock, unit, prices, priceTypes, activePriceType } = data;
+  const label = { color: "rgba(255,255,255,0.5)" };
+  // Каталог передає всі типи цін пристрою (#47) — показуємо перелік «Тип: ціна», активний
+  // виділено, 0/відсутня — «немає ціни». Один тип або фото з замовлення — один рядок «Ціна».
+  const showTypeList = Array.isArray(priceTypes) && priceTypes.length > 1 && prices;
   return createPortal(
     <div onClick={closeLightbox} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: Z.lightbox, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, overflow: "hidden" }}>
       {src
         ? <ZoomImage src={src} alt={sku} />
-        : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.82)", textAlign: "center", padding: 24, maxWidth: "82%" }}>
-            <div style={{ fontSize: 46 }}>🖼️</div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>
-              {status === "pending" ? "Зображення ще завантажується" : "Зображення не встановлено"}
+        : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, color: "rgba(255,255,255,0.82)", textAlign: "center", padding: 24, maxWidth: "82%" }}>
+            {/* Заглушка в стилі додатка (#47): «вантажиться» — три крапки, як у мініатюрі
+                рядка; «не встановлено» — монохромний гліф image. Без емодзі. */}
+            <div style={{ width: 88, height: 88, borderRadius: 22, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {status === "pending"
+                ? <div style={{ display: "flex", gap: 6 }}>
+                    {[0, 1, 2].map(i => <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "rgba(255,255,255,0.6)" }} />)}
+                  </div>
+                : <MIcon name="image" size={38} color="rgba(255,255,255,0.45)" w={1.6} />}
             </div>
-            {status === "pending" && <div style={{ fontSize: 13, opacity: 0.7 }}>У черзі — зʼявиться після синхронізації фото</div>}
+            <div style={{ fontSize: 16, fontWeight: 600 }}>
+              {status === "pending" ? tr("lightbox.loading") : tr("lightbox.noImage")}
+            </div>
+            {status === "pending" && <div style={{ fontSize: 13, opacity: 0.7 }}>{tr("lightbox.loadingHint")}</div>}
           </div>}
       <button onClick={(e) => { e.stopPropagation(); closeLightbox(); }} aria-label="Закрити"
         style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
         <MIcon name="x" size={22} color="#fff" />
       </button>
       {name && <div style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", left: 16, right: 64, color: "#fff", fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{name}</div>}
-      {(sku || barcode || price != null || stock != null) && <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.85)", fontFamily: F_NUM, fontSize: 12, display: "flex", flexDirection: "column", gap: 3 }}>
-        {price != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Ціна: </span>{Number(price).toFixed(2)} {curSymbol(currency)}</span>}
-        {stock != null && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Залишок: </span>{stock}{unit ? ` ${unit}` : ""}</span>}
-        {sku && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Артикул: </span>{sku}</span>}
-        {barcode && <span><span style={{ color: "rgba(255,255,255,0.5)" }}>Штрихкод: </span>{barcode}</span>}
+      {(sku || barcode || price != null || stock != null || showTypeList) && <div style={{ position: "fixed", bottom: "max(24px, env(safe-area-inset-bottom))", left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.85)", fontFamily: F_NUM, fontSize: 12, display: "flex", flexDirection: "column", gap: 3 }}>
+        {showTypeList
+          ? priceTypes.map(pt => {
+              const v = prices[pt.id];
+              const has = v != null && Number(v) > 0; // 0 = немає ціни (#45)
+              const on = pt.id === activePriceType;
+              return <span key={pt.id} style={{ fontWeight: on ? 700 : 400, color: on ? "#fff" : "rgba(255,255,255,0.85)" }}>
+                <span style={label}>{pt.name}: </span>{has ? <>{Number(v).toFixed(2)} {curSymbol(currency)}</> : tr("lightbox.noPrice")}
+              </span>;
+            })
+          : price != null && <span><span style={label}>{tr("lightbox.price")}: </span>{Number(price).toFixed(2)} {curSymbol(currency)}</span>}
+        {stock != null && <span><span style={label}>{tr("lightbox.stock")}: </span>{stock}{unit ? ` ${unit}` : ""}</span>}
+        {sku && <span><span style={label}>{tr("lightbox.sku")}: </span>{sku}</span>}
+        {barcode && <span><span style={label}>{tr("lightbox.barcode")}: </span>{barcode}</span>}
       </div>}
     </div>,
     document.body
@@ -169,7 +192,8 @@ export const Lightbox = () => {
 };
 
 // ─── Фото товару з fallback на плейсхолдер; тап відкриває спільний лайтбокс (#30) ──
-export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stock, unit, size = 56, radius = 10 }) => {
+// prices/priceTypes/activePriceType — опційні (каталог, #47): лайтбокс покаже всі типи цін.
+export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stock, unit, prices, priceTypes, activePriceType, size = 56, radius = 10 }) => {
   const [err, setErr] = React.useState(false);
   // img-шлях виду "/products/{id}/image" — захищений ендпоінт: вантажимо blob із заголовками.
   // Звичайний URL/емодзі-фолбек використовуємо напряму.
@@ -194,7 +218,7 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stoc
   // ЗАВЖДИ — навіть без фото, щоб показати причину (в черзі / не встановлено).
   const status = show ? "ok" : pending ? "pending" : "none";
   return (
-    <div onClick={(e) => { e.stopPropagation(); openLightbox({ src, status, name, sku, barcode, price, currency, stock, unit }); }} style={{
+    <div onClick={(e) => { e.stopPropagation(); openLightbox({ src, status, name, sku, barcode, price, currency, stock, unit, prices, priceTypes, activePriceType }); }} style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0, overflow: "hidden",
       border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center",
       // Фото є: білий фон (показ) або нейтральний (вантажиться). Фото немає: діагональна штриховка.

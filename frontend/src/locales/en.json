@@ -112,6 +112,16 @@
     "recalcYes": "Recalculate",
     "recalcNo": "Keep current"
   },
+  "lightbox": {
+    "loading": "Image is still loading",
+    "loadingHint": "Queued — will appear after photo sync",
+    "noImage": "No image set",
+    "price": "Price",
+    "stock": "Stock",
+    "sku": "SKU",
+    "barcode": "Barcode",
+    "noPrice": "no price"
+  },
   "customers": {
     "title": "Clients",
     "count": "{{count}} clients",

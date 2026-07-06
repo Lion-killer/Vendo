@@ -43,7 +43,7 @@ const flattenProducts = (node, trail = []) => {
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
-const ProductRow = ({ t, p, price, qty, onAdd }) => {
+const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType }) => {
     const { t: tr } = useTranslation();
     const noPrice = price == null; // тип вибрано, а ціни цього типу для товару немає
     const out = Number(p.stock) <= 0;
@@ -54,7 +54,7 @@ const ProductRow = ({ t, p, price, qty, onAdd }) => {
     return (
         <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={price} currency={p.currency} stock={p.stock} unit={p.unit} size={56} radius={10} />
+                <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={price} currency={p.currency} stock={p.stock} unit={p.unit} prices={p.prices} priceTypes={priceTypes} activePriceType={activePriceType} size={56} radius={10} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.3 }}>{p.name}</div>
                     {p.trail && p.trail.length > 0 && (
@@ -252,7 +252,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                                 <MIcon name="search" size={36} color={t.line} />
                                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
                             </ListPlaceholder>
-                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} />)}
+                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} />)}
                     </>
                 ) : (
                     <>
@@ -265,7 +265,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                         {levelProducts.length > 0 && (
                             <>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {levelProducts.length}</div>
-                                {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} />)}
+                                {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} />)}
                             </>
                         )}
                         {subgroups.length === 0 && levelProducts.length === 0 && (
