@@ -601,12 +601,16 @@ export default function App() {
   const handleSelectPriceType = (id) => {
     if (editLocked || id === editPriceType) return; // проведене — лише перегляд; той самий — нічого
     if (orderItems.length === 0) { setSelectedPriceType(id); setEditPriceType(id); return; }
-    // Одне замовлення = один тип. Якщо хоч одна позиція не має ціни нового типу — перемикання
-    // блокуємо (без мішанини): називаємо позиції, які заважають; продавець їх прибере або
-    // лишить поточний тип. Ціну беремо з живого каталогу (працює і для серверного замовлення).
-    const noPrice = orderItems.filter(it => products.find(p => p.id === it.product.id)?.prices?.[id] == null);
+    // Одне замовлення = один тип. Якщо хоч одна позиція не має ціни нового типу (нуль або
+    // відсутність — #45) — перемикання блокуємо (без мішанини) і перелічуємо ВСІ проблемні
+    // товари, щоб продавець їх прибрав або лишив поточний тип. Ціну беремо з живого
+    // каталогу (працює і для серверного замовлення).
+    const noPrice = orderItems.filter(it => {
+      const v = products.find(p => p.id === it.product.id)?.prices?.[id];
+      return v == null || Number(v) <= 0;
+    });
     if (noPrice.length) {
-      const names = noPrice.slice(0, 2).map(it => it.product.name).join(", ") + (noPrice.length > 2 ? ` +${noPrice.length - 2}` : "");
+      const names = noPrice.map(it => it.product.name).join(", ");
       notify(tr("catalog.switchBlocked", { type: priceTypes.find(p => p.id === id)?.name || "", names }));
       return;
     }
