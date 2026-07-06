@@ -96,7 +96,14 @@ export default function App() {
   const t = isDark ? DARK : LIGHT;
 
   // Плаваюче повідомлення, що переживає навігацію (на відміну від снека всередині екрана).
-  const notify = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2800); };
+  // Тривалість — від довжини тексту (#46): короткі ~2.8 с, довгі (переліки товарів) — до 8 с.
+  // Новий виклик скасовує попередній таймер, щоб повідомлення жило свій повний строк.
+  const toastTimer = useRef(null);
+  const notify = (msg) => {
+    clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(""), Math.min(8000, 2800 + Math.max(0, msg.length - 40) * 45));
+  };
   // Зберегти поточне (нове/редаговане) замовлення як чернетку при виході з екрана.
   // Викликається з handleNav; пропускається, якщо OrderScreen уже сам зберіг/відправив.
   const saveLeavingDraft = () => {
