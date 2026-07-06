@@ -28,6 +28,11 @@ export const setLang = (lng) => {
   i18n.changeLanguage(lng);
 };
 
+// Повідомлення синхронізації (#49): клієнтські причини зберігаються КЛЮЧЕМ i18n у
+// локальній черзі/історії (перекладаються поточною мовою при показі); серверні message
+// приходять уже локалізованим текстом (Accept-Language) — віддаємо як є.
+export const msgText = (m) => (m && i18n.exists(m) ? i18n.t(m) : m);
+
 // BCP-47 тег для Intl (дати/числа/валюта) під поточну мову.
 export const localeTag = () => LOCALE_TAG[i18n.language] || 'uk-UA';
 export const fmtMoney = (n, opts = {}) => (Number(n) || 0).toLocaleString(localeTag(), { maximumFractionDigits: 2, ...opts });

@@ -22,7 +22,7 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
         // 1) Відкриваємо камеру й читаємо QR
         let raw;
         try {
-            raw = await scanQr();
+            raw = await scanQr(tr("scanner.qrHint"));
         } catch (e) {
             setLoading(false);
             setError(tr("login.errScanner"));

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getSyncHistory, clearSyncHistory } from '../api/syncHistory';
 import { ListPlaceholder, ConfirmDialog } from './ui';
 import { Z } from '../theme';
+import { msgText } from '../i18n';
 
 // Історія прогонів синхронізації (#20): список запусків doSync (час + підсумок), розгортання
 // per-order, фільтр «лише з помилками», перехід у замовлення для вирішення конфлікту, очистка.
@@ -65,7 +66,7 @@ export const SyncHistoryPanel = ({ t, onClose, onOpenOrder }) => {
                                         <span style={{ color: resultColor(it.result), fontWeight: 800, fontSize: 13, minWidth: 14 }}>{resultIcon(it.result)}</span>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontSize: 12.5, fontWeight: 600 }}>{it.label} · <span style={{ color: t.inkMuted, fontWeight: 500 }}>{tr('syncHist.op_' + it.op)}</span></div>
-                                            {it.message && <div style={{ fontSize: 11.5, color: t.inkMuted, wordBreak: 'break-word' }}>{it.message}</div>}
+                                            {it.message && <div style={{ fontSize: 11.5, color: t.inkMuted, wordBreak: 'break-word' }}>{msgText(it.message)}</div>}
                                         </div>
                                         {canOpen && <span style={{ color: t.accent, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{tr('syncHist.open')} ›</span>}
                                     </div>

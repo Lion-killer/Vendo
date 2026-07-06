@@ -166,7 +166,7 @@ export const Lightbox = () => {
             </div>
             {status === "pending" && <div style={{ fontSize: 13, opacity: 0.7 }}>{tr("lightbox.loadingHint")}</div>}
           </div>}
-      <button onClick={(e) => { e.stopPropagation(); closeLightbox(); }} aria-label="Закрити"
+      <button onClick={(e) => { e.stopPropagation(); closeLightbox(); }} aria-label={tr("a11y.close")}
         style={{ position: "fixed", top: "max(16px, env(safe-area-inset-top))", right: 16, width: 40, height: 40, borderRadius: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
         <MIcon name="x" size={22} color="#fff" />
       </button>
@@ -250,10 +250,11 @@ export const ProductImage = ({ t, img, sku, name, barcode, price, currency, stoc
 //                чернетки/застряглі замовлення тримали б вічний жовтий).
 //   online     — онлайн, обмін не йде (wifi, зелений) → "Онлайн"
 export const OnlineIndicator = ({ t, online, connecting, syncing, floating }) => {
+  const { t: tr } = useTranslation();
   const state = connecting ? "connecting" : !online ? "offline" : syncing ? "syncing" : "online";
   const icon = state === "offline" ? "wifiOff" : "wifi";
   const iconColor = state === "offline" ? t.err : state === "online" ? t.ok : t.warn;
-  const label = { connecting: "Підключення…", offline: "Офлайн", syncing: "Синхронізація", online: "Онлайн" }[state];
+  const label = tr(`net.${state}`);
   const animate = state === "connecting" || state === "syncing";
   return (
     <div aria-label={label} style={{
@@ -271,10 +272,11 @@ export const OnlineIndicator = ({ t, online, connecting, syncing, floating }) =>
 
 // ─── Плаваючий кластер верхніх дій (на всіх екранах): сповіщення, синхронізація, статус ──
 export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync, offsetTop = 0 }) => {
+  const { t: tr } = useTranslation();
   const btn = { width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 };
   return (
     <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: 16, zIndex: Z.floating, display: "flex", gap: 8 }}>
-      <button onClick={onSync} aria-label="Синхронізувати" style={{ ...btn, position: "relative", cursor: "pointer", fontFamily: "inherit" }}>
+      <button onClick={onSync} aria-label={tr("a11y.sync")} style={{ ...btn, position: "relative", cursor: "pointer", fontFamily: "inherit" }}>
         <div style={{ animation: syncing ? "spin 1s linear infinite" : "none", display: "flex" }}><MIcon name="sync" size={18} color={t.ink} /></div>
         {pending > 0 && <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, background: t.err }} />}
       </button>
@@ -287,7 +289,9 @@ export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync
 // Тягнемо рядок вліво → з-під нього виїжджає червона кнопка «Видалити». Сам свайп НЕ
 // видаляє — лише відкриває; видалення спрацьовує тільки по натисканню кнопки. Тап по
 // відкритому рядку (або свайп назад) — закриває. Вертикальний скрол не блокуємо (pan-y).
-export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label = "Видалити" }) => {
+export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label }) => {
+  const { t: tr } = useTranslation();
+  const lbl = label || tr("common.delete"); // дефолт локалізований (#49)
   const REVEAL = 92, OPEN_AT = 40;
   const [dx, setDx] = useState(0);            // 0 — закрито, -REVEAL — відкрито
   const [dragging, setDragging] = useState(false);
@@ -322,7 +326,7 @@ export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label =
         <button onClick={(e) => { e.stopPropagation(); setX(0); onDelete && onDelete(); }}
           style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: REVEAL, background: t.err, color: "#fff", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700 }}>
           <MIcon name="trash" size={16} color="#fff" />
-          {label}
+          {lbl}
         </button>
       )}
       <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
@@ -364,7 +368,11 @@ export const BottomSheet = ({ t, onClose, zIndex = Z.sheet, sheetStyle, children
 );
 
 // ─── Діалог підтвердження у стилі додатка (замість нативного window.confirm) ───────
-export const ConfirmDialog = ({ t, icon = "trash", danger = true, title, body, confirmLabel = "OK", cancelLabel = "Скасувати", onConfirm, onCancel }) => (
+export const ConfirmDialog = ({ t, icon = "trash", danger = true, title, body, confirmLabel, cancelLabel, onConfirm, onCancel }) => {
+  const { t: tr } = useTranslation();
+  confirmLabel = confirmLabel || tr("common.ok");     // локалізовані дефолти (#49)
+  cancelLabel = cancelLabel || tr("common.cancel");
+  return (
   <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: t.overlay, zIndex: Z.dialog, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(2px)" }}>
     <div onClick={(e) => e.stopPropagation()} style={{ background: t.surface, borderRadius: 20, padding: 24, width: "100%", maxWidth: 340, boxShadow: "0 16px 40px rgba(0,0,0,0.3)", fontFamily: F_UI }}>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
@@ -380,7 +388,8 @@ export const ConfirmDialog = ({ t, icon = "trash", danger = true, title, body, c
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // ─── Пілл стану (VIP / борг / новий…) ─────────────────────────────────────────
 export const Pill = ({ children, bg, fg }) => (

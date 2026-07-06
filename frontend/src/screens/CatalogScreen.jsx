@@ -154,7 +154,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
     // Сканування штрихкоду товару: знайти за barcode/артикулом/id і додати в замовлення.
     const handleScan = async () => {
         let code;
-        try { code = await scanBarcode(); }
+        try { code = await scanBarcode(tr("scanner.barcodeHint")); }
         catch (e) { notify?.(tr("common.scannerError")); return; }
         if (!code) return; // скасовано
         const norm = code.trim().toLowerCase();
@@ -174,7 +174,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                 Вирівняні через спільний TOP_ACTIONS_W; обидва зсуваються на offsetTop під
                 банером помилки. Жодного резервування місця в потоці шапки. */}
             <div style={{ position: "fixed", top: `calc(max(16px, env(safe-area-inset-top)) + ${offsetTop}px)`, right: TOP_ACTIONS_W + 24, zIndex: Z.floating, display: "flex", gap: 6, alignItems: "center" }}>
-                <button onClick={handleScan} aria-label="Сканувати штрихкод" style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
+                <button onClick={handleScan} aria-label={tr("a11y.scanBarcode")} style={{ width: 38, height: 38, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
                     <MIcon name="barcode" size={18} color={t.ink} />
                 </button>
                 <button onClick={() => onNav("orders", { keepOrder: true })} style={{ padding: "0 12px", height: 38, borderRadius: 12, background: t.accent, color: "#fff", display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", fontFamily: "inherit" }}>

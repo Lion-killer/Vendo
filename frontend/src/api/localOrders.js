@@ -54,7 +54,7 @@ export const setLocalOrderError = (id, message, conflict = false, serverState = 
     const orders = getLocalOrders();
     const i = orders.findIndex(o => o.id === id);
     if (i >= 0) {
-        orders[i].syncError = message || "Помилка";
+        orders[i].syncError = message || 'syncErr.generic'; // ключ i18n — переклад при показі (#49)
         orders[i].conflict = !!conflict;
         orders[i].serverState = serverState; // 'posted'|'deleted'|'edited' — для діалогу вирішення
         orders[i].syncAttempts = (orders[i].syncAttempts || 0) + 1;

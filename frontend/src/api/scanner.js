@@ -7,10 +7,11 @@ import {
 // Відкриває нативний сканер QR і повертає зчитаний рядок ("" якщо скасовано).
 // Android: ZXing (не залежить від Google Play ML Kit-модуля, який не вантажиться
 // на частині емуляторів — інакше сканер не відкривається).
-export async function scanQr() {
+// instructions — локалізована підказка (#49): передається викликачем через tr(...).
+export async function scanQr(instructions) {
     const res = await CapacitorBarcodeScanner.scanBarcode({
         hint: CapacitorBarcodeScannerTypeHint.QR_CODE,
-        scanInstructions: 'Наведіть камеру на QR-код',
+        scanInstructions: instructions,
         android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING },
     });
     return (res?.ScanResult || '').trim();
@@ -18,10 +19,10 @@ export async function scanQr() {
 
 // Відкриває нативний сканер для ШТРИХКОДІВ товарів (EAN/UPC/Code128 тощо — hint ALL,
 // бо звичайні штрихкоди різних форматів). Повертає зчитаний рядок ("" якщо скасовано).
-export async function scanBarcode() {
+export async function scanBarcode(instructions) {
     const res = await CapacitorBarcodeScanner.scanBarcode({
         hint: CapacitorBarcodeScannerTypeHint.ALL,
-        scanInstructions: 'Наведіть камеру на штрихкод товару',
+        scanInstructions: instructions,
         android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING },
     });
     return (res?.ScanResult || '').trim();

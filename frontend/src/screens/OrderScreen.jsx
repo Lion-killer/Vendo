@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
-import { fmtMoney, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY } from '../i18n';
+import { fmtMoney, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
@@ -134,7 +134,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 if (r && r.conflict) {
                     saveLocalOrder({
                         id: editOrderId, num: num || undefined, op: 'delete', status: STATUS.DELETED, baseVersion,
-                        conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
+                        conflict: true, serverState: r.serverState || null, syncError: r.message || 'syncErr.conflict',
                         ...orderFields(),
                     });
                     markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
@@ -173,7 +173,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 if (r && r.conflict) {
                     saveLocalOrder({
                         id: editOrderId, num: num || undefined, op: 'restore', status: STATUS.SENT, baseVersion,
-                        deletionMark: false, conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
+                        deletionMark: false, conflict: true, serverState: r.serverState || null, syncError: r.message || 'syncErr.conflict',
                         ...orderFields(),
                     });
                     markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
@@ -278,7 +278,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <div style={{ margin: "0 16px 12px", padding: "12px 14px", background: t.errSoft, border: `1px solid ${t.err}44`, borderRadius: 12 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                         <div style={{ flexShrink: 0, marginTop: 1, display: "flex" }}><MIcon name="bell" size={15} color={t.err} /></div>
-                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>{conflictPosted ? tr("order.conflictPosted") : (conflictLocal?.syncError || tr("order.conflictMsg"))}</div>
+                        <div style={{ fontSize: 12.5, color: t.err, fontWeight: 600, lineHeight: 1.4 }}>{conflictPosted ? tr("order.conflictPosted") : (msgText(conflictLocal?.syncError) || tr("order.conflictMsg"))}</div>
                     </div>
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                         {/* Проведене: лише «взяти серверне» (перезапис заблоковано на сервері). */}

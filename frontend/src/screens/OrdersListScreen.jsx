@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/ui';
-import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney } from '../i18n';
+import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney, msgText } from '../i18n';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor } from '../status';
@@ -104,7 +104,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 if (r && r.conflict) {
                     saveLocalOrder({
                         id: o.id, num: o.num, op: 'delete', status: STATUS.DELETED, baseVersion: o.version,
-                        conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
+                        conflict: true, serverState: r.serverState || null, syncError: r.message || 'syncErr.conflict',
                         customer: o.customer || null, customerId: o.customerId || null,
                         client: o.client || o.customer?.name || tr('common.unknownClient'),
                         items: o.items || [], date: o.date, total: o.total,
@@ -208,8 +208,8 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                         <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</p>
                                         <span style={{ fontSize: 10, color: t.inkMuted }}>{fmtDmy(o.date)}</span>
                                         {!refs.ok && <span title={tr("ordersList.tipStale")} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("ordersList.badgeStale")}</span>}
-                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
-                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeError")}</span>
+                                        {o.conflict ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
+                                            : o.syncError ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeError")}</span>
                                             : o._pending && <span title={tr("ordersList.tipWaiting")} style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeWaiting")}</span>}
                                     </div>
                                     <p style={{ color: t.inkMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>

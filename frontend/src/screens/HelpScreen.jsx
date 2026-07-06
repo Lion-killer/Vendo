@@ -64,12 +64,12 @@ export const HelpScreen = ({ t, onClose }) => {
             {/* Шапка */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${t.line}`, paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
                 {current && (
-                    <button onClick={() => setActive(null)} aria-label="Назад" style={{ background: 'none', border: 'none', color: t.ink, fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>‹</button>
+                    <button onClick={() => setActive(null)} aria-label={tr('a11y.back')} style={{ background: 'none', border: 'none', color: t.ink, fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>‹</button>
                 )}
                 <div style={{ fontSize: 17, fontWeight: 800, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {current ? current.title : tr('help.title')}
                 </div>
-                <button onClick={onClose} aria-label="Закрити" style={{ background: 'none', border: 'none', color: t.inkMuted, fontSize: 26, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>×</button>
+                <button onClick={onClose} aria-label={tr('a11y.close')} style={{ background: 'none', border: 'none', color: t.inkMuted, fontSize: 26, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>×</button>
             </div>
 
             {/* Тіло */}

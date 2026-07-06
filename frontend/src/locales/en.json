@@ -48,7 +48,34 @@
     "all": "All →",
     "nothing": "Nothing found",
     "scannerError": "Could not open the scanner. Please allow camera access.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "ok": "OK",
+    "delete": "Delete"
+  },
+  "a11y": {
+    "close": "Close",
+    "back": "Back",
+    "sync": "Synchronize",
+    "scanBarcode": "Scan barcode"
+  },
+  "net": {
+    "connecting": "Connecting…",
+    "offline": "Offline",
+    "syncing": "Syncing",
+    "online": "Online"
+  },
+  "scanner": {
+    "qrHint": "Point the camera at the QR code",
+    "barcodeHint": "Point the camera at the product barcode"
+  },
+  "syncErr": {
+    "noCustomer": "No customer selected",
+    "brokenRefs": "References to deleted data",
+    "conflict": "Version conflict",
+    "deleteRejected": "Delete rejected",
+    "restoreRejected": "Restore rejected",
+    "rejected": "Server rejected the order",
+    "generic": "Error"
   },
   "status": {
     "new": "New",

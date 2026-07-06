@@ -341,36 +341,38 @@ export default function App() {
     const items = []; // per-record результат для історії синхронізацій (#20)
     const opCode = (o) => o.op === 'delete' ? 'delete' : o.op === 'restore' ? 'restore' : (o.num ? 'edit' : 'new');
     const rec = (o, result, message) => items.push({ id: o.id, label: o.num || ('№' + String(o.id || '').slice(0, 8)), op: opCode(o), result, message: message || '' });
+    // Клієнтські причини помилок зберігаємо КЛЮЧЕМ i18n ('syncErr.*') — переклад при
+    // показі поточною мовою (#49); серверні message уже локалізовані (Accept-Language).
     for (const o of locals) {
       try {
         if (o.op === 'delete') {
           if (o.num) {
             const r = await deleteOrder(o.id, o.baseVersion);
-            if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
-            if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено");
+            if (r && r.conflict) { setLocalOrderError(o.id, r.message || 'syncErr.conflict', true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
+            if (!r || !r.success) throw new Error(r?.message || 'syncErr.deleteRejected');
             if (r.order) upsertOrder(r.order); // одразу показуємо серверний стан (з поміткою)
           }
           removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
         if (o.op === 'restore') {
           const r = await restoreOrder(o.id, o.baseVersion);
-          if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
-          if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
+          if (r && r.conflict) { setLocalOrderError(o.id, r.message || 'syncErr.conflict', true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
+          if (!r || !r.success) throw new Error(r?.message || 'syncErr.restoreRejected');
           if (r.order) upsertOrder(r.order);
           removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
         // Без контрагента не відправляємо: 1С не прийме ЗаказПокупателя без Контрагент.
         // Чернетка лишається в черзі з помилкою — користувач обирає клієнта й синкає знову.
-        if (!o.customerId) { setLocalOrderError(o.id, "Не вибрано контрагента"); skipped++; rec(o, 'skipped', "Не вибрано контрагента"); continue; }
-        if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, "Посилання на видалені дані"); skipped++; rec(o, 'skipped', "Посилання на видалені дані"); continue; }
+        if (!o.customerId) { setLocalOrderError(o.id, 'syncErr.noCustomer'); skipped++; rec(o, 'skipped', 'syncErr.noCustomer'); continue; }
+        if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, 'syncErr.brokenRefs'); skipped++; rec(o, 'skipped', 'syncErr.brokenRefs'); continue; }
         const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), STATUS.SENT, o.date, o.baseVersion, o.deletionMark, o.priceType);
-        if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
-        if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
+        if (res && res.conflict) { setLocalOrderError(o.id, res.message || 'syncErr.conflict', true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
+        if (!res || !res.success) throw new Error(res?.message || 'syncErr.rejected');
         if (res.order) upsertOrder(res.order); // серверна версія (з номером) видима одразу, без розриву
         removeLocalOrder(o.id); sent++; rec(o, 'sent');
       } catch (e) {
         console.error("Sync error", o.id, e);
-        setLocalOrderError(o.id, e.message || "Помилка"); failed++; rec(o, 'failed', e.message || "Помилка");
+        setLocalOrderError(o.id, e.message || 'syncErr.generic'); failed++; rec(o, 'failed', e.message || 'syncErr.generic');
       }
     }
     await fetchFromNetwork(true);
