@@ -310,6 +310,16 @@ export default function App() {
   // а guard заблокував би оновлення). Тихо, щоб не миготів індикатор.
   const refreshOrders = () => fetchFromNetwork(true, true);
 
+  // Миттєвий upsert серверної копії замовлення у стан (відповіді POST/PUT/DELETE вже
+  // гідратовані). Закриває розрив «локальну копію видалено → серверна ще не дотяглася»:
+  // на повільній 1С щойно синхронізоване замовлення зникало зі списку й дашборду на
+  // секунди-хвилини, поки не долетить повний рефетч.
+  const upsertOrder = (o) => setOrders(prev => {
+    const i = prev.findIndex(x => x.id === o.id);
+    if (i < 0) return [o, ...prev];
+    const next = [...prev]; next[i] = o; return next;
+  });
+
   // Ручна синхронізація офлайн-черги на сервер (доступна з усіх екранів через TopActions).
   // Стійка: одна помилка не валить чергу; кожен запис — успіх/конфлікт/помилка/пропуск.
   const doSync = async () => {
@@ -329,6 +339,7 @@ export default function App() {
             const r = await deleteOrder(o.id, o.baseVersion);
             if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
             if (!r || !r.success) throw new Error(r?.message || "Видалення відхилено");
+            if (r.order) upsertOrder(r.order); // одразу показуємо серверний стан (з поміткою)
           }
           removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
@@ -336,6 +347,7 @@ export default function App() {
           const r = await restoreOrder(o.id, o.baseVersion);
           if (r && r.conflict) { setLocalOrderError(o.id, r.message || "Конфлікт версій", true, r.serverState || null); conflict++; rec(o, 'conflict', r.message); continue; }
           if (!r || !r.success) throw new Error(r?.message || "Відновлення відхилено");
+          if (r.order) upsertOrder(r.order);
           removeLocalOrder(o.id); sent++; rec(o, 'sent'); continue;
         }
         // Без контрагента не відправляємо: 1С не прийме ЗаказПокупателя без Контрагент.
@@ -345,6 +357,7 @@ export default function App() {
         const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), STATUS.SENT, o.date, o.baseVersion, o.deletionMark, o.priceType);
         if (res && res.conflict) { setLocalOrderError(o.id, res.message || "Конфлікт версій", true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
         if (!res || !res.success) throw new Error(res?.message || "Сервер відхилив замовлення");
+        if (res.order) upsertOrder(res.order); // серверна версія (з номером) видима одразу, без розриву
         removeLocalOrder(o.id); sent++; rec(o, 'sent');
       } catch (e) {
         console.error("Sync error", o.id, e);
