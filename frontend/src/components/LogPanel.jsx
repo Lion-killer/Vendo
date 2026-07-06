@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEntries, clearLog } from '../logger';
 import { useLogSend } from '../useLogSend';
@@ -17,8 +17,11 @@ export const LogPanel = ({ t, onClose }) => {
     const [confirmClear, setConfirmClear] = useState(false);
     const { state: sendState, send: doSend, sending } = useLogSend('Надсилання з журналу помилок');
 
-    // Читаємо журнал на кожному рендері (не знімком): після спроби надсилання стан
-    // змінюється → перемальовка → одразу видно нові записи (зокрема причину збою).
+    // Читаємо журнал на кожному рендері (не знімком) і тікаємо перемальовку раз на 2 с
+    // (#43): фонові події (помилки циклу синхронізації) з'являються без дій користувача.
+    // Інтервал живе лише поки панель відкрита — unmount його знімає.
+    const [, setTick] = useState(0);
+    useEffect(() => { const id = setInterval(() => setTick(n => n + 1), 2000); return () => clearInterval(id); }, []);
     const entries = getEntries().slice().reverse(); // найновіші зверху
     const shown = all ? entries : entries.filter(e => e.level !== 'info');
     const doClear = () => setConfirmClear(true);
