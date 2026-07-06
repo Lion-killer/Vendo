@@ -1,6 +1,7 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { logInfo, logWarn, logError } from '../logger';
 import { STATUS } from '../status';
+import { K } from '../storageKeys';
 
 // Маркер мережевої помилки в тексті логу — ЄДИНЕ джерело (#50): телеметрія рахує
 // «Таймаути» саме за ним (telemetry.isNetError). Міняється тут → міняється і там.
@@ -11,9 +12,9 @@ export const NET_ERROR_MARK = 'помилка мережі';
 // Підказки для емулятора (10.0.2.2) і реального пристрою (LAN IP) — у README.
 const DEFAULT_API = import.meta.env.VITE_API_URL || 'http://10.0.2.2:3000/api';
 
-const apiUrl = () => localStorage.getItem('vendo_api_url') || DEFAULT_API;
-const deviceId = () => localStorage.getItem('vendo_device_id') || '';
-const token = () => localStorage.getItem('vendo_token') || '';
+const apiUrl = () => localStorage.getItem(K.apiUrl) || DEFAULT_API;
+const deviceId = () => localStorage.getItem(K.deviceId) || '';
+const token = () => localStorage.getItem(K.token) || '';
 
 // Заголовки: X-Device-Id — ідентифікатор пристрою (за ним 1С фільтрує дані),
 // Authorization: Bearer — секретний токен (видається в /auth в обмін на код прив'язки).
@@ -26,7 +27,7 @@ const h = (extra = {}) => {
     const tk = token();
     if (tk) headers['X-Auth-Token'] = tk;
     // #26: мова інтерфейсу → бекенд локалізує message-рядки (uk/ru/en).
-    const lang = localStorage.getItem('vendo_lang');
+    const lang = localStorage.getItem(K.lang);
     if (lang) headers['Accept-Language'] = lang;
     // #42: пасивна телеметрія — 1С тротльовано оновлює активність/версію пристрою.
     if (typeof __APP_VERSION__ !== 'undefined') headers['X-App-Version'] = __APP_VERSION__;
@@ -53,9 +54,8 @@ const maybeAuthReject = (sentToken) => {
 // Оцінки переживають перезапуск (localStorage; чистяться разом з даними пристрою).
 const TIMEOUT = 25000;      // базовий (він же мінімум)
 const TIMEOUT_MAX = 120000; // стеля — довше не чекаємо ніколи
-const TIMES_KEY = 'vendo_net_times';
-const netTimes = (() => { try { return JSON.parse(localStorage.getItem(TIMES_KEY)) || {}; } catch { return {}; } })();
-const saveNetTimes = () => { try { localStorage.setItem(TIMES_KEY, JSON.stringify(netTimes)); } catch { /* не критично */ } };
+const netTimes = (() => { try { return JSON.parse(localStorage.getItem(K.netTimes)) || {}; } catch { return {}; } })();
+const saveNetTimes = () => { try { localStorage.setItem(K.netTimes, JSON.stringify(netTimes)); } catch { /* не критично */ } };
 const timeoutFor = (path) => Math.min(Math.max(TIMEOUT, (netTimes[path] || 0) * 3), TIMEOUT_MAX);
 // Шлях без хоста — для компактного логу (метод + ендпоінт, без секретів у query немає).
 const shortPath = (url) => { try { return new URL(url).pathname; } catch { return url; } };
@@ -96,7 +96,7 @@ export const auth = async (devId, pairingCode) => {
         body: JSON.stringify({ deviceId: devId || deviceId(), pairingCode }),
     });
     const data = await res.json();
-    if (data.success && data.token) localStorage.setItem('vendo_token', data.token);
+    if (data.success && data.token) localStorage.setItem(K.token, data.token);
     return data;
 };
 

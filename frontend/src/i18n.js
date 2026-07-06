@@ -4,6 +4,7 @@ import uk from './locales/uk.json';
 import ru from './locales/ru.json';
 import en from './locales/en.json';
 import { SUPPORTED, detectLang } from './detectLang';
+import { K } from './storageKeys';
 
 // #26: три мови — українська (типова система), російська, англійська (fallback).
 // Визначення мови — у чистому detectLang.js (тестовано окремо).
@@ -11,7 +12,7 @@ export { SUPPORTED, detectLang };
 const LOCALE_TAG = { uk: 'uk-UA', ru: 'ru-RU', en: 'en-US' };
 
 const initial = detectLang(
-  typeof localStorage !== 'undefined' ? localStorage.getItem('vendo_lang') : null,
+  typeof localStorage !== 'undefined' ? localStorage.getItem(K.lang) : null,
   typeof navigator !== 'undefined' ? (navigator.languages || [navigator.language]) : []
 );
 
@@ -24,7 +25,7 @@ i18n.use(initReactI18next).init({
 
 // Ручна зміна мови (з налаштувань) — персистимо й перемикаємо без перезавантаження.
 export const setLang = (lng) => {
-  if (typeof localStorage !== 'undefined') localStorage.setItem('vendo_lang', lng);
+  if (typeof localStorage !== 'undefined') localStorage.setItem(K.lang, lng);
   i18n.changeLanguage(lng);
 };
 

@@ -8,9 +8,10 @@
 import { getEntries, buildReport, setOnError } from '../logger';
 import { getLocalOrders } from './localOrders';
 import { postTelemetry, NET_ERROR_MARK } from './client';
+import { K } from '../storageKeys';
 
-const MARK_KEY = 'vendo_telemetry_mark';      // t останнього запису, покритого відправленим логом
-const NET_MARK_KEY = 'vendo_telemetry_net_mark'; // t останнього снапшота — для лічильника таймаутів
+const MARK_KEY = K.telemetryMark;        // t останнього запису, покритого відправленим логом
+const NET_MARK_KEY = K.telemetryNetMark; // t останнього снапшота — для лічильника таймаутів
 
 // NET_ERROR_MARK — спільна константа з client.js (#50): маркер мережевих збоїв
 // (таймаут/Failed to fetch). Мережеві таймаути НЕ вважаються справжніми помилками
@@ -52,7 +53,7 @@ export const sendTelemetry = async (fullLog = false) => {
         const netMark = localStorage.getItem(NET_MARK_KEY) || '';
         const netErrs = newSince(netMark, isNetError);
         const withLog = fullLog || errs.length > 0;
-        const lastMs = Number(localStorage.getItem('vendo_last_sync'));
+        const lastMs = Number(localStorage.getItem(K.lastSync));
         const payload = {
             version: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev',
             ...deviceInfo(),

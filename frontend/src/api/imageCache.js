@@ -2,7 +2,9 @@
 // офлайн). Ключ — відносний шлях ендпоінта ("/products/{id}/image"), значення — Blob.
 // Стратегія: cache-first (швидко й офлайн); промах → мережа → запис у кеш.
 
-const DB_NAME = 'vendo_images';
+import { IDB_IMAGES } from '../storageKeys';
+
+const DB_NAME = IDB_IMAGES;
 const STORE = 'imgs';
 let dbPromise = null;
 

@@ -6,6 +6,7 @@ import { scanQr, parseQr } from '../api/scanner';
 import { clearImageCache } from '../api/imageCache';
 import { clearDataCache } from '../api/dataCache';
 import { purgeOnDeviceSwitch } from '../api/deviceData';
+import { K } from '../storageKeys';
 
 // notice — i18n-ключ причини, чому користувача вивело на екран входу (#40: відв'язка
 // пристрою). Постійний банер + кнопка журналу помилок, щоб лог можна було надіслати
@@ -38,8 +39,8 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
         // Чужі дані не вантажаться.
         if (purgeOnDeviceSwitch(deviceId, localStorage)) { clearImageCache(); clearDataCache(); }
 
-        if (apiUrl) localStorage.setItem('vendo_api_url', apiUrl);
-        if (deviceId) localStorage.setItem('vendo_device_id', deviceId);
+        if (apiUrl) localStorage.setItem(K.apiUrl, apiUrl);
+        if (deviceId) localStorage.setItem(K.deviceId, deviceId);
 
         // 3) Обмін коду прив'язки на токен
         try {

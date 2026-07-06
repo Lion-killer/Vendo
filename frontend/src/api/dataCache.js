@@ -4,7 +4,9 @@
 // IndexedDB зберігає об'єкти без stringify (structured clone) і пише асинхронно.
 // Патерн той самий, що в imageCache.js (кеш зображень у сусідній базі vendo_images).
 
-const DB_NAME = 'vendo_data';
+import { IDB_DATA } from '../storageKeys';
+
+const DB_NAME = IDB_DATA;
 const STORE = 'kv';
 let dbPromise = null;
 

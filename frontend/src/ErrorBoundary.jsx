@@ -2,13 +2,14 @@ import React from 'react';
 import { logError } from './logger';
 import { useLogSend } from './useLogSend';
 import { LIGHT, DARK, F_UI, F_NUM } from './theme';
+import { K } from './storageKeys';
 
 // Остання лінія оборони: ловить будь-яку помилку рендера й показує екран замість
 // білого. Стилі беруть токени теми (як решта застосунку), але імпорт theme.js
 // безпечний — це чисті константи без побічних ефектів, тож boundary лишається надійним
 // навіть коли інші модулі ламаються.
 const resolveTheme = () => {
-    const saved = (() => { try { return localStorage.getItem('vendo_theme'); } catch { return null; } })();
+    const saved = (() => { try { return localStorage.getItem(K.theme); } catch { return null; } })();
     if (saved === 'dark') return DARK;
     if (saved === 'light') return LIGHT;
     const prefersDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);

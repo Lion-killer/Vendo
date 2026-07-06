@@ -2,7 +2,9 @@
 // Кільцевий буфер у localStorage — останні MAX запусків doSync. Один запис:
 // { t, sent, failed, conflict, skipped, items: [{ id, label, op, result, message }] }
 // op: 'new'|'edit'|'delete'|'restore'; result: 'sent'|'failed'|'conflict'|'skipped'.
-const KEY = 'vendo_sync_history';
+import { K } from '../storageKeys';
+
+const KEY = K.syncHistory;
 const MAX = 50;
 
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };

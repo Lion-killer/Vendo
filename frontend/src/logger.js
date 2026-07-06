@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { K } from './storageKeys';
 
 // Логер додатку: кільцевий буфер останніх подій у localStorage (переживає краш і
 // перезапуск), глобальні обробники помилок і відправка логу розробнику.
@@ -6,7 +7,7 @@ import { Capacitor } from '@capacitor/core';
 // «нічого не працює». Транспорт: основний — POST /logs на бекенд; запасний (коли
 // сервера/мережі немає) — системне «Поділитися»; останній — буфер обміну.
 
-const KEY = 'vendo_log';
+const KEY = K.log;
 const MAX = 300; // кільцевий буфер: тримаємо лише останні MAX записів
 
 const read = () => {
@@ -54,9 +55,9 @@ export const clearLog = () => write([]);
 // Контекст пристрою — щоб розробник бачив, звідки лог.
 const context = () => ({
     time: new Date().toISOString(),
-    apiUrl: localStorage.getItem('vendo_api_url') || '',
-    deviceId: localStorage.getItem('vendo_device_id') || '',
-    lang: localStorage.getItem('vendo_lang') || '',
+    apiUrl: localStorage.getItem(K.apiUrl) || '',
+    deviceId: localStorage.getItem(K.deviceId) || '',
+    lang: localStorage.getItem(K.lang) || '',
     online: navigator.onLine,
     userAgent: navigator.userAgent,
     appVersion: (typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'),

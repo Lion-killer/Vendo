@@ -6,6 +6,16 @@ import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor } from '../status';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
+import { K, LEGACY } from '../storageKeys';
+
+// #51: одноразова міграція ключів періоду — раніше жили без префікса vendo_.
+[[LEGACY.ordersStart, K.ordersStart], [LEGACY.ordersEnd, K.ordersEnd]].forEach(([from, to]) => {
+    const v = localStorage.getItem(from);
+    if (v !== null) {
+        if (localStorage.getItem(to) === null) localStorage.setItem(to, v);
+        localStorage.removeItem(from);
+    }
+});
 
 // Швидкі пресети періоду. Орієнтація на історію замовлень + "Весь час" (#25).
 // "Весь час" — навмисно широкий діапазон (бекенд фільтрує рядковим порівнянням YYYY-MM-DD).
@@ -38,13 +48,13 @@ const matchedPreset = (start, end) => {
 
 export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products = [], customers = [], orders: appOrders = [], connecting }) => {
     const { t: tr } = useTranslation();
-    const [startDate, setStartDate] = useState(() => localStorage.getItem('orders_startDate') || presetRange('last7').start);
-    const [endDate, setEndDate] = useState(() => localStorage.getItem('orders_endDate') || presetRange('last7').end);
+    const [startDate, setStartDate] = useState(() => localStorage.getItem(K.ordersStart) || presetRange('last7').start);
+    const [endDate, setEndDate] = useState(() => localStorage.getItem(K.ordersEnd) || presetRange('last7').end);
     // Поля точного вибору приховані, поки користувач не натисне "Свій період"
     // (або якщо відновлений діапазон не відповідає жодному пресету).
     const [showCustom, setShowCustom] = useState(() => !matchedPreset(
-        localStorage.getItem('orders_startDate') || presetRange('last7').start,
-        localStorage.getItem('orders_endDate') || presetRange('last7').end,
+        localStorage.getItem(K.ordersStart) || presetRange('last7').start,
+        localStorage.getItem(K.ordersEnd) || presetRange('last7').end,
     ));
     // Сидуємо вже відомими замовленнями (з App + локальні, у межах періоду), щоб при
     // переході екран не блимав порожнім спінером, поки повільний сервер відповідає.
@@ -58,8 +68,8 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     useEffect(() => {
-        localStorage.setItem('orders_startDate', startDate);
-        localStorage.setItem('orders_endDate', endDate);
+        localStorage.setItem(K.ordersStart, startDate);
+        localStorage.setItem(K.ordersEnd, endDate);
         setVisibleCount(PAGE_SIZE);
     }, [startDate, endDate]);
 

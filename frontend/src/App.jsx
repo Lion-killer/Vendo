@@ -25,6 +25,7 @@ import { UpdatePrompt } from './components/UpdatePrompt';
 import { checkForUpdate, isUpdatePromptShown, markUpdatePromptShown, downloadAndInstall, openInstallSettings } from './api/updates';
 import { parseMoney, orderNum as orderLabel, fmtDate, DEFAULT_CURRENCY } from './i18n';
 import { STATUS, normalizeOrder } from './status';
+import { K, CLEAR_KEEP, LEGACY } from './storageKeys';
 
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 
@@ -38,7 +39,7 @@ const arr = (x) => Array.isArray(x) ? x : [];
 
 // Тема: збережений вибір користувача (vendo_theme) має пріоритет; інакше — системна.
 const getInitialDark = () => {
-  const saved = localStorage.getItem('vendo_theme');
+  const saved = localStorage.getItem(K.theme);
   if (saved === 'dark') return true;
   if (saved === 'light') return false;
   return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -68,7 +69,7 @@ export default function App() {
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [priceTypes, setPriceTypes] = useState([]); // доступні типи цін пристрою (для селектора)
-  const [selectedPriceType, setSelectedPriceType] = useState(() => localStorage.getItem('vendo_price_type') || ""); // вибраний тип у каталозі
+  const [selectedPriceType, setSelectedPriceType] = useState(() => localStorage.getItem(K.priceType) || ""); // вибраний тип у каталозі
   const [pendingPriceType, setPendingPriceType] = useState(""); // тип, на який чекаємо підтвердження перерахунку (є позиції)
   // Оновлення додатка (#37) — на рівні App, щоб промпт з'являвся НЕЗАЛЕЖНО від входу
   // (нова версія може виправляти саму авторизацію). Перевірка анонімна (токен не потрібен).
@@ -79,7 +80,7 @@ export default function App() {
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
   // #40: чому користувача викинуло на екран входу (i18n-ключ). Персистентний банер на
   // LoginScreen (переживає перезапуск, на відміну від снека) — стирається при вході.
-  const [loginNotice, setLoginNotice] = useState(() => localStorage.getItem('vendo_login_notice') || "");
+  const [loginNotice, setLoginNotice] = useState(() => localStorage.getItem(K.loginNotice) || "");
   const [loadError, setLoadError] = useState(null); // {what, message} — постійна помилка завантаження (банер), null = немає
   const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
   const [showSyncHistory, setShowSyncHistory] = useState(false); // відкрита панель історії синхронізацій
@@ -138,7 +139,7 @@ export default function App() {
 
   // Поки користувач не обрав тему вручну — слідуємо за системною.
   useEffect(() => {
-    if (localStorage.getItem('vendo_theme')) return;
+    if (localStorage.getItem(K.theme)) return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = e => setIsDark(e.matches);
     mq.addEventListener('change', onChange);
@@ -146,7 +147,7 @@ export default function App() {
   }, []);
 
   // Вибраний тип цін переживає перезапуск (валідується проти списку в applyPriceTypes).
-  useEffect(() => { if (selectedPriceType) localStorage.setItem('vendo_price_type', selectedPriceType); }, [selectedPriceType]);
+  useEffect(() => { if (selectedPriceType) localStorage.setItem(K.priceType, selectedPriceType); }, [selectedPriceType]);
 
   // Перевірка оновлень раз за сесію — на маунті App, НЕЗАЛЕЖНО від входу (анонімний GitHub
   // Releases). Знайдене — показуємо повноекранним промптом одразу (навіть на екрані логіну).
@@ -170,7 +171,7 @@ export default function App() {
 
   const toggleTheme = () => setIsDark(d => {
     const next = !d;
-    localStorage.setItem('vendo_theme', next ? 'dark' : 'light');
+    localStorage.setItem(K.theme, next ? 'dark' : 'light');
     return next;
   });
 
@@ -182,12 +183,12 @@ export default function App() {
       let data = await dataGet('collections');
       if (!data) {
         // Одноразова міграція зі старого localStorage-кешу (cached_data_v2).
-        const legacy = localStorage.getItem('cached_data_v2');
+        const legacy = localStorage.getItem(LEGACY.cachedData);
         if (!legacy) return false;
         data = JSON.parse(legacy);
         dataPut('collections', data); // у фоні; невдача не критична
       }
-      localStorage.removeItem('cached_data_v2'); // легасі-ключ більше не потрібен (і не тисне на квоту)
+      localStorage.removeItem(LEGACY.cachedData); // легасі-ключ більше не потрібен (і не тисне на квоту)
       setProducts(arr(data.products));
       setCategories(arr(data.categories));
       setCustomers(arr(data.customers));
@@ -275,7 +276,7 @@ export default function App() {
             products: arr(prodR.value), categories: arr(catR.value), customers: arr(custR.value), orders: arr(ordR.value)
           });
         }
-        localStorage.setItem('vendo_last_sync', String(Date.now())); // час останньої успішної синхронізації
+        localStorage.setItem(K.lastSync, String(Date.now())); // час останньої успішної синхронізації
       }
       return true;
     } catch (e) {
@@ -464,7 +465,7 @@ export default function App() {
 
   const handleLogin = (name, token) => {
     const resolvedName = name || tr("common.user");
-    localStorage.removeItem('vendo_login_notice');
+    localStorage.removeItem(K.loginNotice);
     setLoginNotice("");
     saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
     setUserName(resolvedName);
@@ -474,7 +475,7 @@ export default function App() {
 
   const handleLogout = () => {
     clearSession();
-    localStorage.removeItem('vendo_token'); // bearer-токен; повторний вхід видасть новий
+    localStorage.removeItem(K.token); // bearer-токен; повторний вхід видасть новий
     setUserName("");
     setOrderItems([]);
     setEditOrderId(null);
@@ -491,7 +492,7 @@ export default function App() {
   const sessionRevoked = () => {
     if (screenRef.current === "login") return; // повторні 401 того самого циклу
     logWarn("Пристрій відв'язано сервером (401 із чинним токеном) — вихід на екран входу");
-    localStorage.setItem('vendo_login_notice', 'login.revoked'); // i18n-ключ, не текст (мова може змінитися)
+    localStorage.setItem(K.loginNotice, 'login.revoked'); // i18n-ключ, не текст (мова може змінитися)
     setLoginNotice('login.revoked');
     handleLogout();
   };
@@ -506,8 +507,7 @@ export default function App() {
   // localStorage, крім keep-списку (підхід «все крім дозволеного» ловить і ключі через
   // константи: журнал, чернетки), + кеш зображень (IndexedDB), скидаємо стан і тягнемо заново.
   const clearData = () => {
-    const KEEP = ['vendo_token', 'vendo_device_id', 'vendo_api_url', 'vendo_session', 'vendo_theme', 'vendo_lang'];
-    Object.keys(localStorage).forEach(k => { if (!KEEP.includes(k)) localStorage.removeItem(k); });
+    Object.keys(localStorage).forEach(k => { if (!CLEAR_KEEP.includes(k)) localStorage.removeItem(k); });
     clearImageCache();
     clearDataCache();
     setProducts([]); setCategories([]); setCustomers([]); setOrders([]); setLoadError(null);

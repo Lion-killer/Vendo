@@ -5,6 +5,7 @@ import { STATUS, statusColor as statusColorOf } from '../status';
 import { localeTag, fmtMoney as fmtCurLocale, fmtCur, parseMoney, todayISO, orderNum, setLang, SUPPORTED, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
+import { K } from '../storageKeys';
 
 // Версія з package.json, вшита Vite'ом на збірці (define у vite.config.js).
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
@@ -67,7 +68,7 @@ export const DashboardScreen = ({ t, onNav, userName, orders, products = [], cus
     const menuBtn = { width: "100%", height: 50, borderRadius: 14, background: t.surfaceMuted, border: `1px solid ${t.line}`, color: t.ink, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, padding: "0 14px", fontFamily: "inherit", marginBottom: 10 };
 
     // Стан синхронізації: час останньої вдалої синхронізації + локальна черга на відправку.
-    const lastSync = Number(localStorage.getItem('vendo_last_sync')) || 0;
+    const lastSync = Number(localStorage.getItem(K.lastSync)) || 0;
     const pendingCount = getLocalOrders().length;
 
     const stats = [

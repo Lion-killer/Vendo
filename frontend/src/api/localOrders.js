@@ -1,7 +1,8 @@
 import { normalizeOrder } from '../status.js';
 import { todayISO } from '../dates.js';
+import { K } from '../storageKeys.js';
 
-const STORAGE_KEY = 'vendo_local_orders';
+const STORAGE_KEY = K.localOrders;
 
 // GUID для локальної ідентичності замовлення (узгоджено з 1С/бекендом, ідемпотентна
 // синхронізація). Фолбек — якщо crypto.randomUUID недоступний (старий Android WebView).
@@ -16,8 +17,8 @@ export const newId = () => {
 // Простий чернетковий номер для нового замовлення до синхронізації (ЧН-N, лічильник у
 // localStorage). Сервер при синхронізації присвоїть власний ЗМ-номер — це лише для показу.
 export const nextDraftNum = () => {
-    const seq = (parseInt(localStorage.getItem('vendo_draft_seq') || '0', 10) || 0) + 1;
-    localStorage.setItem('vendo_draft_seq', String(seq));
+    const seq = (parseInt(localStorage.getItem(K.draftSeq) || '0', 10) || 0) + 1;
+    localStorage.setItem(K.draftSeq, String(seq));
     return `ЧН-${seq}`;
 };
 
