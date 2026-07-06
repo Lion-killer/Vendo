@@ -36,21 +36,40 @@
 				</Title>
 				<ExtendedTooltip name="НастроитьURLСервисаРасширеннаяПодсказка" id="2"/>
 			</Button>
+			<Button name="НастройкиСервиса" id="57">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.НастройкиСервиса</CommandName>
+				<Title>
+					<v8:item>
+						<v8:lang>ru</v8:lang>
+						<v8:content>Настройки сервиса</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>uk</v8:lang>
+						<v8:content>Налаштування сервісу</v8:content>
+					</v8:item>
+					<v8:item>
+						<v8:lang>en</v8:lang>
+						<v8:content>Service settings</v8:content>
+					</v8:item>
+				</Title>
+				<ExtendedTooltip name="НастройкиСервисаРасширеннаяПодсказка" id="58"/>
+			</Button>
 			<Button name="ОчиститьТелеметрию" id="42">
 				<Type>CommandBarButton</Type>
 				<CommandName>Form.Command.ОчиститьТелеметрию</CommandName>
 				<Title>
 					<v8:item>
 						<v8:lang>ru</v8:lang>
-						<v8:content>Очистить телеметрию (30+ дней)</v8:content>
+						<v8:content>Очистить телеметрию</v8:content>
 					</v8:item>
 					<v8:item>
 						<v8:lang>uk</v8:lang>
-						<v8:content>Очистити телеметрію (30+ днів)</v8:content>
+						<v8:content>Очистити телеметрію</v8:content>
 					</v8:item>
 					<v8:item>
 						<v8:lang>en</v8:lang>
-						<v8:content>Purge telemetry (30+ days)</v8:content>
+						<v8:content>Purge telemetry</v8:content>
 					</v8:item>
 				</Title>
 				<ExtendedTooltip name="ОчиститьТелеметриюРасширеннаяПодсказка" id="43"/>
@@ -330,6 +349,23 @@
 		</Attribute>
 	</Attributes>
 	<Commands>
+		<Command name="НастройкиСервиса" id="59">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Настройки сервиса</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Налаштування сервісу</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Service settings</v8:content>
+				</v8:item>
+			</Title>
+			<Action>НастройкиСервиса</Action>
+		</Command>
 		<Command name="НастроитьURLСервиса" id="22">
 			<Title>
 				<v8:item>
@@ -351,15 +387,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>Очистить телеметрию (30+ дней)</v8:content>
+					<v8:content>Очистить телеметрию</v8:content>
 				</v8:item>
 				<v8:item>
 					<v8:lang>uk</v8:lang>
-					<v8:content>Очистити телеметрію (30+ днів)</v8:content>
+					<v8:content>Очистити телеметрію</v8:content>
 				</v8:item>
 				<v8:item>
 					<v8:lang>en</v8:lang>
-					<v8:content>Purge telemetry (30+ days)</v8:content>
+					<v8:content>Purge telemetry</v8:content>
 				</v8:item>
 			</Title>
 			<Action>ОчиститьТелеметрию</Action>
