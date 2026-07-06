@@ -213,9 +213,11 @@ export const postTelemetry = async (payload) =>
 
 // Найдешевший пінг доступності: HEAD /health (без авторизації, без БД, без тіла) —
 // 1С-шаблон /health має окремий HEAD-метод (HealthHead → порожній 200), Node теж.
+// Таймаут 12 с: на живій базі через Keenetic-тунель здоровий HEAD займає 4–5 с
+// (бойовий лог 06.07.2026) — з 5 с індикатор постійно фальшиво падав в офлайн.
 export const pingServer = async () => {
     try {
-        const res = await tfetch(`${apiUrl()}/health`, { method: 'HEAD' }, 5000);
+        const res = await tfetch(`${apiUrl()}/health`, { method: 'HEAD' }, 12000);
         return res.ok;
     } catch (e) {
         return false;

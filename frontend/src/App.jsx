@@ -384,14 +384,19 @@ export default function App() {
     enableErrorTelemetry(); // при помилці додатка — позачерговий снапшот із логом
     sendTelemetry(); // #42: снапшот при старті сесії
 
-    // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (5 с таймаут, без БД):
+    // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (12 с таймаут, без БД):
     // важкі запити даних можуть хвилинами таймаутити на повільній 1С — це «синхронізація
-    // повзе», а не офлайн. Повернення зв'язку після офлайну → одразу свіжий рефетч.
+    // повзе», а не офлайн. Гістерезис: в офлайн — лише після 2 невдач поспіль (одиночний
+    // пропуск на повільному тунелі — шум, бойовий лог 06.07.2026 миготів саме так).
+    // Повернення зв'язку після офлайну → одразу свіжий рефетч.
+    let pingFails = 0;
     const ping = async () => {
       const ok = await pingServer();
+      pingFails = ok ? 0 : pingFails + 1;
       const was = onlineRef.current;
-      onlineRef.current = ok;
-      setIsOnline(ok);
+      const next = ok ? true : (pingFails >= 2 ? false : was);
+      onlineRef.current = next;
+      setIsOnline(next);
       if (ok && !was) fetchFromNetwork(true); // зв'язок повернувся — тягнемо свіже
     };
     ping();
