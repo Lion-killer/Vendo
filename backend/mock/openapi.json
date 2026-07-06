@@ -132,8 +132,8 @@
         }
       },
       "delete": {
-        "tags": ["Замовлення"], "summary": "Видалити (Нове) / помітити на видалення (Відправлено)",
-        "description": "«Нове» → фізичне видалення; «Відправлено» → помітка на видалення (ПометкаУдаления); «Проведено» → 409 (заборонено).",
+        "tags": ["Замовлення"], "summary": "Видалити (new) / помітити на видалення (sent)",
+        "description": "new → фізичне видалення; sent → помітка на видалення (ПометкаУдаления); posted → 409 (заборонено).",
         "responses": {
           "200": { "description": "Видалено або помічено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeleteResponse" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
@@ -253,8 +253,8 @@
       },
       "OrderStatus": {
         "type": "string",
-        "enum": ["Нове", "Відправлено", "Проведено", "Видалено"],
-        "description": "Нове — лише локальне (невідправлене); Відправлено — непроведене в базі; Проведено — проведене в 1С (лише перегляд); Видалено — помітка на видалення."
+        "enum": ["new", "sent", "posted", "deleted"],
+        "description": "Дротовий ідентифікатор (#48); відображуваний текст і колір — справа клієнта (локалі/тема). new — лише локальне (невідправлене); sent — непроведене в базі; posted — проведене в 1С (лише перегляд); deleted — помітка на видалення."
       },
       "Order": {
         "type": "object",
@@ -271,8 +271,7 @@
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
           "total": { "type": "number", "description": "Сума замовлення (число) у валюті замовлення (currency); фронт форматує сам" },
           "currency": { "type": "string", "description": "Числовий код валюти ISO 4217, заморожена на момент створення. Старі замовлення без поля → \"980\" (грн)" },
-          "priceType": { "type": "string", "description": "Тип цін замовлення (id), заморожений на момент створення; у 1С → Заказ.ТипЦен" },
-          "sColor": { "type": "string", "description": "Колір статусу (hex)" }
+          "priceType": { "type": "string", "description": "Тип цін замовлення (id), заморожений на момент створення; у 1С → Заказ.ТипЦен" }
         }
       },
       "OrderInput": {
@@ -306,8 +305,8 @@
         "type": "object",
         "properties": {
           "success": { "type": "boolean" },
-          "deleted": { "type": "boolean", "description": "Фізично видалено (було «Нове»)" },
-          "marked": { "type": "boolean", "description": "Помічено на видалення (було «Відправлено»)" },
+          "deleted": { "type": "boolean", "description": "Фізично видалено (було new)" },
+          "marked": { "type": "boolean", "description": "Помічено на видалення (було sent)" },
           "order": { "allOf": [ { "$ref": "#/components/schemas/Order" } ], "nullable": true },
           "message": { "type": "string" }
         }

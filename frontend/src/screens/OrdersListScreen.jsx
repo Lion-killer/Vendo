@@ -4,7 +4,7 @@ import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/
 import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney } from '../i18n';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
-import { STATUS } from '../status';
+import { STATUS, statusColor } from '../status';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 
 // Форматування дати в YYYY-MM-DD (локальний час, без зсуву UTC).
@@ -107,7 +107,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                         conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
                         customer: o.customer || null, customerId: o.customerId || null,
                         client: o.client || o.customer?.name || tr('common.unknownClient'),
-                        items: o.items || [], date: o.date, total: o.total, sColor: t.err,
+                        items: o.items || [], date: o.date, total: o.total,
                     });
                     setOrderToDelete(null); recompute(); return;
                 }
@@ -118,7 +118,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                     id: o.id, num: o.num, op: 'delete', status: STATUS.DELETED, baseVersion: o.version,
                     customer: o.customer || null, customerId: o.customerId || null,
                     client: o.client || o.customer?.name || tr('common.unknownClient'),
-                    items: o.items || [], date: o.date, total: o.total, sColor: t.err,
+                    items: o.items || [], date: o.date, total: o.total,
                 });
             }
 
@@ -218,7 +218,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                             <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                                 <div style={{ textAlign: "right" }}>
                                     <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: "0 0 2px", whiteSpace: "nowrap" }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</p>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: o.sColor }}>{tr(`status.${o.status}`)}</span>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(o, t) }}>{tr(`status.${o.status}`)}</span>
                                 </div>
                                 {(() => {
                                     const blocked = o.status === STATUS.POSTED || o.status === STATUS.DELETED;

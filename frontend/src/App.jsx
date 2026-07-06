@@ -24,7 +24,7 @@ import { HelpScreen } from './screens/HelpScreen';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { checkForUpdate, isUpdatePromptShown, markUpdatePromptShown, downloadAndInstall, openInstallSettings } from './api/updates';
 import { parseMoney, orderNum as orderLabel, fmtDate, DEFAULT_CURRENCY } from './i18n';
-import { STATUS } from './status';
+import { STATUS, normalizeOrder } from './status';
 
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 
@@ -130,7 +130,6 @@ export default function App() {
       currency: editCurrency,  // заморожена валюта замовлення
       priceType: editPriceType, // тип цін замовлення (→ 1С Заказ.ТипЦен)
       status: queueStatus,
-      sColor: queueStatus === STATUS.SENT ? t.ok : t.warn,
       // База версії лише для правок серверного замовлення (виявлення конфлікту).
       baseVersion: queueStatus === STATUS.SENT ? editVersion : undefined,
     });
@@ -192,7 +191,7 @@ export default function App() {
       setProducts(arr(data.products));
       setCategories(arr(data.categories));
       setCustomers(arr(data.customers));
-      setOrders(arr(data.orders));
+      setOrders(arr(data.orders).map(normalizeOrder)); // кеш міг бути записаний старою версією (#48)
       return true;
     } catch (e) {
       console.error("Помилка відновлення кешу", e);
@@ -232,9 +231,9 @@ export default function App() {
       // setState (повний ре-рендер), ані перезапис кешу не потрібні. Відбиток — JSON;
       // із серверним капом історії замовлень це десятки мс, а не секунди (#41).
       let changed = false;
-      const applyIfChanged = (r, key, setter) => {
+      const applyIfChanged = (r, key, setter, map) => {
         if (r.status !== 'fulfilled') return;
-        const val = arr(r.value);
+        const val = map ? arr(r.value).map(map) : arr(r.value);
         const fp = JSON.stringify(val);
         if (collectionsFpRef.current[key] === fp) return;
         collectionsFpRef.current[key] = fp;
@@ -244,7 +243,7 @@ export default function App() {
       applyIfChanged(prodR, 'products', setProducts);
       applyIfChanged(catR, 'categories', setCategories);
       applyIfChanged(custR, 'customers', setCustomers);
-      applyIfChanged(ordR, 'orders', setOrders);
+      applyIfChanged(ordR, 'orders', setOrders, normalizeOrder); // стара 1С ще шле укр. статуси/sColor (#48)
 
       // Банер серверної помилки — лише коли колекція ПРИЙШЛА, але не масивом ({success:false}).
       // Мережевий таймаут (rejected) тут не вважаємо помилкою даних (це повільність сервера).
@@ -321,11 +320,14 @@ export default function App() {
   // гідратовані). Закриває розрив «локальну копію видалено → серверна ще не дотяглася»:
   // на повільній 1С щойно синхронізоване замовлення зникало зі списку й дашборду на
   // секунди-хвилини, поки не долетить повний рефетч.
-  const upsertOrder = (o) => setOrders(prev => {
-    const i = prev.findIndex(x => x.id === o.id);
-    if (i < 0) return [o, ...prev];
-    const next = [...prev]; next[i] = o; return next;
-  });
+  const upsertOrder = (raw) => {
+    const o = normalizeOrder(raw); // стара 1С у відповіді теж шле укр. статус/sColor (#48)
+    setOrders(prev => {
+      const i = prev.findIndex(x => x.id === o.id);
+      if (i < 0) return [o, ...prev];
+      const next = [...prev]; next[i] = o; return next;
+    });
+  };
 
   // Ручна синхронізація офлайн-черги на сервер (доступна з усіх екранів через TopActions).
   // Стійка: одна помилка не валить чергу; кожен запис — успіх/конфлікт/помилка/пропуск.

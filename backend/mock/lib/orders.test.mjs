@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { colorFor, convertPrice, computeTotal, pickLang, msg } = require('./orders.js');
+const { convertPrice, computeTotal, pickLang, msg } = require('./orders.js');
 
 test('computeTotal: підсумок по зафіксованих цінах', () => {
     assert.equal(computeTotal([{ qty: 2, price: 10 }, { qty: 3, price: 5 }]), 35);
@@ -23,13 +23,6 @@ test('convertPrice: конверсія між валютами, округлен
     assert.equal(convertPrice(100, '840', '980'), 2.41);
     // невідома валюта → курс 1 (фолбек), без падіння
     assert.equal(convertPrice(100, 'XXX', '980'), 100);
-});
-
-test('colorFor: відомі статуси + фолбек', () => {
-    assert.equal(colorFor('Нове'), '#F2994A');
-    assert.equal(colorFor('Проведено'), '#8A8C96');
-    assert.equal(colorFor('Видалено'), '#C0392B');
-    assert.equal(colorFor('казна-що'), '#F2C94C'); // фолбек
 });
 
 test('pickLang: з Accept-Language, fallback en', () => {

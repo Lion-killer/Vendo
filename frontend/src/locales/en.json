@@ -51,10 +51,10 @@
     "cancel": "Cancel"
   },
   "status": {
-    "Нове": "New",
-    "Відправлено": "Sent",
-    "Проведено": "Posted",
-    "Видалено": "Deleted"
+    "new": "New",
+    "sent": "Sent",
+    "posted": "Posted",
+    "deleted": "Deleted"
   },
   "login": {
     "subtitle": "Sales representative system",

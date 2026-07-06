@@ -1,4 +1,4 @@
-import { STATUS } from '../status.js';
+import { normalizeOrder } from '../status.js';
 
 const STORAGE_KEY = 'vendo_local_orders';
 
@@ -23,7 +23,8 @@ export const nextDraftNum = () => {
 export const getLocalOrders = () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        // normalizeOrder: черга могла бути записана старою версією (укр. статуси, sColor) — #48.
+        return data ? JSON.parse(data).map(normalizeOrder) : [];
     } catch (e) {
         console.error("Помилка читання localStorage", e);
         return [];
@@ -45,18 +46,6 @@ export const saveLocalOrder = (order) => {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
     return order.id;
-};
-
-export const updateLocalOrderStatus = (id, status) => {
-    const orders = getLocalOrders();
-    const existingIndex = orders.findIndex(o => o.id === id);
-
-    if (existingIndex >= 0) {
-        orders[existingIndex].status = status;
-        const color = status === STATUS.NEW ? "#F2994A" : "#F2C94C";
-        orders[existingIndex].sColor = color;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-    }
 };
 
 // Позначити запис помилкою синхронізації (лишається в черзі для повторної спроби).

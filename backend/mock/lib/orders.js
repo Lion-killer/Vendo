@@ -1,14 +1,6 @@
 // Чисті хелпери замовлень (без залежності від стора) — щоб їх можна було юніт-тестувати.
 // Гідратація/нормалізація лишаються в routes/api.js, бо потребують доступу до in-memory стора.
 
-const STATUS_COLORS = {
-    "Нове": "#F2994A",
-    "Відправлено": "#4ECDA4",
-    "Проведено": "#8A8C96",
-    "Видалено": "#C0392B"
-};
-const colorFor = (status) => STATUS_COLORS[status] || "#F2C94C";
-
 // Локалізація message-рядків (#26): мова з Accept-Language (uk/ru/en, fallback en).
 const MESSAGES = {
     conflict: { uk: "Замовлення змінили на сервері після ваших правок", ru: "Заказ изменили на сервере после ваших правок", en: "The order was changed on the server after your edits" },
@@ -53,4 +45,4 @@ const PRICE_TYPES = [
 ];
 const defaultPriceType = () => (PRICE_TYPES.find(t => t.default) || PRICE_TYPES[0] || {}).id || null;
 
-module.exports = { STATUS_COLORS, colorFor, MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType };
+module.exports = { MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType };

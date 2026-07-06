@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ConfirmDialog, BottomSheet } from '../components/ui';
-import { STATUS } from '../status';
+import { STATUS, statusColor as statusColorOf } from '../status';
 import { localeTag, fmtMoney as fmtCurLocale, fmtCur, parseMoney, todayISO, orderNum, setLang, SUPPORTED, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
@@ -47,7 +47,7 @@ export const DashboardScreen = ({ t, onNav, userName, orders, products = [], cus
 
     const today = new Date().toLocaleDateString(localeTag(), { weekday: 'long', day: 'numeric', month: 'long' });
 
-    const statusColor = (o) => o.sColor || (o.status === STATUS.DELETED ? t.err : o.status === STATUS.SENT ? t.ok : o.status === STATUS.NEW ? t.warn : t.inkSoft);
+    const statusColor = (o) => statusColorOf(o, t); // єдине джерело кольорів статусів (#48)
     const isNew = (o) => o.status === STATUS.NEW;
 
     // Сьогоднішні замовлення (локальна дата YYYY-MM-DD) — для стрічки й KPI «сьогодні».

@@ -789,7 +789,7 @@
       "num": "ЗМ-2039",
       "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
@@ -813,7 +813,7 @@
       "num": "ЗМ-2040",
       "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-23",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
@@ -842,7 +842,7 @@
       "num": "ЗМ-2041",
       "customerId": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
@@ -861,7 +861,7 @@
       "num": "ЗМ-2042",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
@@ -895,7 +895,7 @@
       "num": "ЗМ-2038",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
@@ -919,7 +919,7 @@
       "num": "ЗМ-2037",
       "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
@@ -943,7 +943,7 @@
       "num": "ЗМ-2036",
       "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
@@ -972,7 +972,7 @@
       "num": "ЗМ-2035",
       "customerId": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
@@ -1001,7 +1001,7 @@
       "num": "ЗМ-2034",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
-      "status": "Проведено",
+      "status": "posted",
       "items": [
         {
           "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
@@ -1030,7 +1030,7 @@
       "num": "ЗМ-2033",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-23",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
@@ -1164,7 +1164,7 @@
       "num": "ЗМ-2032",
       "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-19",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "d985cdce-7542-44a1-9cf3-1b7ee62c951f",
@@ -1298,7 +1298,7 @@
       "num": "ЗМ-2031",
       "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-16",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "0a9ef117-0635-47fa-92ff-d1241c0fe582",
@@ -1427,7 +1427,7 @@
       "num": "ЗМ-2030",
       "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-21",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "2b4ba0e3-eec6-4f6e-85db-3ae79322a90d",
@@ -1451,7 +1451,7 @@
       "num": "ЗМ-2029",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-20",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
@@ -1475,7 +1475,7 @@
       "num": "ЗМ-2028",
       "customerId": "8dbedd41-f184-46a7-acb9-942d3864e35a",
       "date": "2026-06-17",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "0ebebd23-7e60-4185-be67-cd7277f5e44d",
@@ -1499,7 +1499,7 @@
       "num": "ЗМ-2027",
       "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-06-14",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",
@@ -1518,7 +1518,7 @@
       "num": "ЗМ-2026",
       "customerId": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
       "date": "2026-06-09",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "1fe9f873-1b2a-4f98-9640-20ba975018e9",
@@ -1537,7 +1537,7 @@
       "num": "ЗМ-2025",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-06-03",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "b6dfc4c3-4c06-4cfe-97c6-0f2bb381b362",
@@ -1561,7 +1561,7 @@
       "num": "ЗМ-2024",
       "customerId": "b8187d87-ff29-4888-a86c-c44cb0f6e622",
       "date": "2026-05-28",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "d830d51e-e241-49bf-9f56-ef38dfd0da27",
@@ -1580,7 +1580,7 @@
       "num": "ЗМ-2022",
       "customerId": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
       "date": "2026-05-20",
-      "status": "Відправлено",
+      "status": "sent",
       "items": [
         {
           "productId": "5591400a-892b-4dd2-ab05-1546ef6f32ab",

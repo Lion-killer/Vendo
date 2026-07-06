@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
 import { fmtMoney, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
-import { STATUS } from '../status';
+import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
 
@@ -24,7 +24,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // Проведене на сервері перезаписати НЕ можна (1С відмовляє навіть форсом) — лишаємо
     // тільки «взяти серверне».
     const conflictPosted = conflicted && conflictLocal.serverState === 'posted';
-    const statusColor = status === STATUS.DELETED ? t.err : status === STATUS.POSTED ? t.inkSoft : status === STATUS.SENT ? t.ok : t.warn;
+    const statusColor = statusColorOf({ status }, t); // єдине джерело кольорів статусів (#48)
     const customer = editCustomer; // без фолбеку: не вибрано — показуємо плейсхолдер
     const setCustomer = setEditCustomer;
     const [showCustPicker, setShowCustPicker] = useState(false);
@@ -83,7 +83,6 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 num: num || undefined,
                 ...orderFields(),
                 status: queueStatus,
-                sColor: queueStatus === STATUS.SENT ? t.ok : t.warn,
                 baseVersion: queueStatus === STATUS.SENT ? baseVersion : undefined,
             };
             const localId = saveLocalOrder(orderData);
@@ -98,7 +97,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             const queueStatus = status === STATUS.SENT ? STATUS.SENT : STATUS.NEW;
             const savedId = saveLocalOrder({
                 id: editOrderId || undefined, num: num || undefined, ...orderFields(),
-                status: queueStatus, sColor: queueStatus === STATUS.SENT ? t.ok : t.warn,
+                status: queueStatus,
                 baseVersion: queueStatus === STATUS.SENT ? baseVersion : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
@@ -127,7 +126,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // Офлайн: ставимо видалення в чергу (op:'delete') — doSync виконає при синхронізації.
                 saveLocalOrder({
                     id: editOrderId, num: num || undefined, op: 'delete', status: STATUS.DELETED, baseVersion,
-                    ...orderFields(), sColor: t.err,
+                    ...orderFields(),
                 });
             } else {
                 const r = await deleteOrder(editOrderId, baseVersion); // 1С ставить помітку на видалення
@@ -136,7 +135,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     saveLocalOrder({
                         id: editOrderId, num: num || undefined, op: 'delete', status: STATUS.DELETED, baseVersion,
                         conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
-                        ...orderFields(), sColor: t.err,
+                        ...orderFields(),
                     });
                     markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
                     return;
@@ -167,7 +166,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 // (mergeOrders) → у списку одразу показується НЕ видаленим.
                 saveLocalOrder({
                     id: editOrderId, num: num || undefined, op: 'restore', status: STATUS.SENT, baseVersion,
-                    deletionMark: false, ...orderFields(), sColor: t.ok,
+                    deletionMark: false, ...orderFields(),
                 });
             } else {
                 const r = await restoreOrder(editOrderId, baseVersion);
@@ -175,7 +174,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                     saveLocalOrder({
                         id: editOrderId, num: num || undefined, op: 'restore', status: STATUS.SENT, baseVersion,
                         deletionMark: false, conflict: true, serverState: r.serverState || null, syncError: r.message || "Конфлікт",
-                        ...orderFields(), sColor: t.ok,
+                        ...orderFields(),
                     });
                     markHandled?.(); notify?.(r.message || tr("order.conflictMsg")); if (goToOrdersList) goToOrdersList();
                     return;
@@ -237,7 +236,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         </button>
                         <span style={{ fontSize: 15, fontWeight: 600, color: t.ink }}>{tr("order.title")}</span>
                     </div>
-                    <div style={{ background: statusColor + "22", height: 26, padding: "0 11px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4, display: "flex", alignItems: "center" }}>● {tr(`status.${status}`).toUpperCase()}</div>
+                    <div style={{ background: statusBg({ status }, t), height: 26, padding: "0 11px", borderRadius: 8, fontSize: 10.5, fontWeight: 700, color: statusColor, letterSpacing: 0.4, display: "flex", alignItems: "center" }}>● {tr(`status.${status}`).toUpperCase()}</div>
                 </div>
                 {/* Рядок 2: заголовок (номер документа) + контроли (дата · меню) */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

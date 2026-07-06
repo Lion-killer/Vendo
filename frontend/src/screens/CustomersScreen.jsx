@@ -4,6 +4,7 @@ import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet } from '../components/
 import { fmtMoney, fmtDate, orderNum, curSymbol } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
+import { statusColor } from '../status';
 
 const money = (n) => fmtMoney(n, { maximumFractionDigits: 0 });
 
@@ -66,7 +67,7 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
                             <div style={{ fontSize: 13.5, fontWeight: 700, fontFamily: F_NUM }}>{o.total}</div>
-                            <div style={{ fontSize: 10.5, fontWeight: 600, color: o.sColor || t.inkMuted, marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
+                            <div style={{ fontSize: 10.5, fontWeight: 600, color: statusColor(o, t), marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
                         </div>
                     </div>
                 ))}

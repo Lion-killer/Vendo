@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Чисті хелпери (кольори статусів, локалізація, формат суми, підрахунок) — у lib/orders.js,
 // щоб їх можна було юніт-тестувати без БД (#21).
-const { colorFor, msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType } = require('../lib/orders');
+const { msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType } = require('../lib/orders');
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -37,9 +37,10 @@ const hydrateOrder = (order) => {
             : { id: it.productId, name: "Товар недоступний", sku: "", img: "❓", price: it.price };
         return { product, qty: it.qty };
     });
-    // Помічене на видалення показуємо окремим статусом "Видалено" (реальний статус
-    // лишається для логіки; deletionMark теж віддаємо).
-    const displayStatus = order.deletionMark ? "Видалено" : order.status;
+    // Статус — дротовий ідентифікатор (#48): new|sent|posted|deleted. Помічене на
+    // видалення показуємо як deleted (реальний статус лишається для логіки; deletionMark
+    // теж віддаємо). Текст і колір статусу — справа клієнта (локалі/тема), не контракту.
+    const displayStatus = order.deletionMark ? "deleted" : order.status;
     return {
         id: order.id,
         num: order.num,
@@ -54,7 +55,6 @@ const hydrateOrder = (order) => {
         total: computeTotal(order.items || []), // число (контракт #35); фронт форматує сам
         currency: order.currency || '980',      // заморожена валюта замовлення; старі → грн
         priceType: order.priceType || defaultPriceType(), // тип цін замовлення
-        sColor: colorFor(displayStatus)
     };
 };
 
@@ -201,7 +201,7 @@ router.post('/orders', (req, res) => {
             num: nextOrderNum(),
             customerId: customerId ?? null,
             date: date || new Date().toISOString().split('T')[0],
-            status: status || "Відправлено",
+            status: status || "sent",
             deletionMark: false,
             version,
             items,
@@ -251,11 +251,11 @@ router.delete('/orders/:id', (req, res) => {
     }
 
     // Проведене замовлення не можна видалити/позначити з додатку (спершу розпроводять у 1С).
-    if (existing.status === "Проведено") {
+    if (existing.status === "posted") {
         return res.status(409).json({ success: false, message: msg(req, 'cantDeletePosted') });
     }
 
-    if (existing.status === "Нове") {
+    if (existing.status === "new") {
         const i = store.orders.indexOf(existing);
         if (i >= 0) store.orders.splice(i, 1);
         return res.json({ success: true, deleted: true, message: msg(req, 'deleted') });
