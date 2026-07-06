@@ -612,23 +612,29 @@ export default function App() {
     // відсутність — #45) — перемикання блокуємо (без мішанини) і перелічуємо ВСІ проблемні
     // товари, щоб продавець їх прибрав або лишив поточний тип. Ціну беремо з живого
     // каталогу (працює і для серверного замовлення).
-    const noPrice = orderItems.filter(it => {
-      const v = products.find(p => p.id === it.product.id)?.prices?.[id];
-      return v == null || Number(v) <= 0;
-    });
-    if (noPrice.length) {
-      const names = noPrice.map(it => it.product.name).join(", ");
-      notify(tr("catalog.switchBlocked", { type: priceTypes.find(p => p.id === id)?.name || "", names }));
-      return;
-    }
+    const noPrice = itemsWithoutPrice(id, orderItems);
+    if (noPrice.length) { notifySwitchBlocked(id, noPrice); return; }
     setPendingPriceType(id); // усі позиції мають ціну нового типу — питаємо про перерахунок
   };
-  // Перерахунок цін усіх позицій на новий тип (гарантовано мають ціну — перевірено вище).
+  // Позиції замовлення, для яких немає ціни типу id у живому каталозі (нуль/відсутність).
+  const itemsWithoutPrice = (id, items) => items.filter(it => {
+    const v = products.find(p => p.id === it.product.id)?.prices?.[id];
+    return v == null || Number(v) <= 0;
+  });
+  const notifySwitchBlocked = (id, items) => notify(tr("catalog.switchBlocked", {
+    type: priceTypes.find(p => p.id === id)?.name || "",
+    names: items.map(it => it.product.name).join(", "),
+  }));
+  // Перерахунок цін усіх позицій на новий тип — АТОМАРНО: спершу перевіряємо ВСІ позиції
+  // ще раз (поки відкритий діалог, фоновий цикл міг оновити каталог і ціна могла зникнути),
+  // і застосовуємо лише якщо кожна має ціну > 0. Часткова зміна цін недопустима (#45).
   const recalcPriceType = (id) => {
+    setPendingPriceType("");
+    const missing = itemsWithoutPrice(id, orderItems);
+    if (missing.length) { notifySwitchBlocked(id, missing); return; } // тип і ціни без змін
     setOrderItems(orderItems.map(it => ({ ...it, product: { ...it.product, price: products.find(p => p.id === it.product.id).prices[id] } })));
     setSelectedPriceType(id);
     setEditPriceType(id);
-    setPendingPriceType("");
   };
 
   // Зміна кількості позиції в кошику. Додатна/від'ємна дельта; при <=0 — видалення.
