@@ -2,6 +2,10 @@ import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { logInfo, logWarn, logError } from '../logger';
 import { STATUS } from '../status';
 
+// Маркер мережевої помилки в тексті логу — ЄДИНЕ джерело (#50): телеметрія рахує
+// «Таймаути» саме за ним (telemetry.isNetError). Міняється тут → міняється і там.
+export const NET_ERROR_MARK = 'помилка мережі';
+
 // Адреса бекенду береться з QR-коду (зберігається в localStorage під час логіну).
 // Пріоритет: QR (localStorage) → VITE_API_URL (.env, dev-дефолт) → хардкод-фолбек.
 // Підказки для емулятора (10.0.2.2) і реального пристрою (LAN IP) — у README.
@@ -75,7 +79,7 @@ const tfetch = async (url, opts = {}, timeout) => {
     } catch (e) {
         const aborted = e && e.name === 'AbortError';
         if (aborted && !timeout) { netTimes[path] = limit; saveNetTimes(); } // ескалація на наступну спробу
-        logError(`${method} ${path} → помилка мережі`, aborted ? `таймаут ${limit}ms` : String(e && e.message || e));
+        logError(`${method} ${path} → ${NET_ERROR_MARK}`, aborted ? `таймаут ${limit}ms` : String(e && e.message || e));
         throw e;
     } finally {
         clearTimeout(id);

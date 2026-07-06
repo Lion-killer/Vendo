@@ -1,19 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/ui';
-import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney, msgText } from '../i18n';
+import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney, msgText, dateISO } from '../i18n';
 import { deleteOrder } from '../api/client';
 import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor } from '../status';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
-
-// Форматування дати в YYYY-MM-DD (локальний час, без зсуву UTC).
-const fmtDate = (date) => {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-};
 
 // Швидкі пресети періоду. Орієнтація на історію замовлень + "Весь час" (#25).
 // "Весь час" — навмисно широкий діапазон (бекенд фільтрує рядковим порівнянням YYYY-MM-DD).
@@ -28,10 +20,10 @@ const PRESETS = [
 
 const presetRange = (type) => {
     const d = new Date();
-    if (type === 'today') return { start: fmtDate(d), end: fmtDate(d) };
-    if (type === 'yesterday') { const y = new Date(d); y.setDate(d.getDate() - 1); return { start: fmtDate(y), end: fmtDate(y) }; }
-    if (type === 'last7') { const p = new Date(d); p.setDate(d.getDate() - 6); return { start: fmtDate(p), end: fmtDate(d) }; } // 7 днів включно з сьогодні
-    if (type === 'month') { const f = new Date(d.getFullYear(), d.getMonth(), 1); return { start: fmtDate(f), end: fmtDate(d) }; }
+    if (type === 'today') return { start: dateISO(d), end: dateISO(d) };
+    if (type === 'yesterday') { const y = new Date(d); y.setDate(d.getDate() - 1); return { start: dateISO(y), end: dateISO(y) }; }
+    if (type === 'last7') { const p = new Date(d); p.setDate(d.getDate() - 6); return { start: dateISO(p), end: dateISO(d) }; } // 7 днів включно з сьогодні
+    if (type === 'month') { const f = new Date(d.getFullYear(), d.getMonth(), 1); return { start: dateISO(f), end: dateISO(d) }; }
     if (type === 'all') return { start: '2000-01-01', end: '2100-12-31' };
     return null;
 };

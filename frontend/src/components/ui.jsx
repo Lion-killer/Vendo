@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchAuthedBlobRaw } from '../api/client';
 import { loadCachedImage } from '../api/imageCache';
 import { F_NUM, F_UI, Z } from '../theme';
-import { curSymbol } from '../i18n';
+import { curSymbol, fmtMoney } from '../i18n';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
 // тінь зліва/справа зʼявляється лише коли є куди гортати (чіпи фільтра, хлібні крихти).
@@ -178,10 +178,10 @@ export const Lightbox = () => {
               const has = v != null && Number(v) > 0; // 0 = немає ціни (#45)
               const on = pt.id === activePriceType;
               return <span key={pt.id} style={{ fontWeight: on ? 700 : 400, color: on ? "#fff" : "rgba(255,255,255,0.85)" }}>
-                <span style={label}>{pt.name}: </span>{has ? <>{Number(v).toFixed(2)} {curSymbol(currency)}</> : tr("lightbox.noPrice")}
+                <span style={label}>{pt.name}: </span>{has ? <>{fmtMoney(v, { minimumFractionDigits: 2 })} {curSymbol(currency)}</> : tr("lightbox.noPrice")}
               </span>;
             })
-          : price != null && <span><span style={label}>{tr("lightbox.price")}: </span>{Number(price).toFixed(2)} {curSymbol(currency)}</span>}
+          : price != null && <span><span style={label}>{tr("lightbox.price")}: </span>{fmtMoney(price, { minimumFractionDigits: 2 })} {curSymbol(currency)}</span>}
         {stock != null && <span><span style={label}>{tr("lightbox.stock")}: </span>{stock}{unit ? ` ${unit}` : ""}</span>}
         {sku && <span><span style={label}>{tr("lightbox.sku")}: </span>{sku}</span>}
         {barcode && <span><span style={label}>{tr("lightbox.barcode")}: </span>{barcode}</span>}

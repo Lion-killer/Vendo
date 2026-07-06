@@ -1,4 +1,5 @@
 import { normalizeOrder } from '../status.js';
+import { todayISO } from '../dates.js';
 
 const STORAGE_KEY = 'vendo_local_orders';
 
@@ -35,7 +36,7 @@ export const saveLocalOrder = (order) => {
     const orders = getLocalOrders();
     // Нове локальне замовлення отримує GUID; num присвоїть сервер при синхронізації.
     if (!order.id) order.id = newId();
-    if (!order.date) order.date = new Date().toISOString().split('T')[0];
+    if (!order.date) order.date = todayISO(); // локальна дата, не UTC (#50)
 
     const existingIndex = orders.findIndex(o => o.id === order.id);
     if (existingIndex >= 0) {

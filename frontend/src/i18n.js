@@ -56,7 +56,7 @@ export const parseMoney = (v) => {
   return isNaN(n) ? 0 : n;
 };
 // Локальна дата YYYY-MM-DD (без зсуву UTC).
-export const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+export { dateISO, todayISO } from './dates.js'; // чисті дата-хелпери (див. dates.js, #50)
 // YYYY-MM-DD → DD.MM.YYYY (для показу).
 export const fmtDate = (iso) => iso ? String(iso).split('-').reverse().join('.') : '';
 // Людський лейбл замовлення: номер документа або короткий №<id>.

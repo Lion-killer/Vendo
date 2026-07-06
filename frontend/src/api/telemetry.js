@@ -7,17 +7,17 @@
 // або оператор явно запросив повний лог (requestLog у відповіді).
 import { getEntries, buildReport, setOnError } from '../logger';
 import { getLocalOrders } from './localOrders';
-import { postTelemetry } from './client';
+import { postTelemetry, NET_ERROR_MARK } from './client';
 
 const MARK_KEY = 'vendo_telemetry_mark';      // t останнього запису, покритого відправленим логом
 const NET_MARK_KEY = 'vendo_telemetry_net_mark'; // t останнього снапшота — для лічильника таймаутів
 
-// «помилка мережі» — стабільний маркер мережевих збоїв (таймаут/Failed to fetch) у client.js.
-// Мережеві таймаути НЕ вважаються справжніми помилками (штатний офлайн польового додатка,
-// інакше «Помилки» була б червона в кожного щодня) — але й не ховаються зовсім: їх рахує
-// ОКРЕМИЙ лічильник netErrors (колонка «Таймаути»), щоб стійкі мережеві негаразди (повільний
-// сервер/битий канал) були видні оператору, не змішуючись зі збоями самого додатка.
-const isNetError = (e) => e.level === 'error' && String(e.msg).indexOf('помилка мережі') !== -1;
+// NET_ERROR_MARK — спільна константа з client.js (#50): маркер мережевих збоїв
+// (таймаут/Failed to fetch). Мережеві таймаути НЕ вважаються справжніми помилками
+// (штатний офлайн польового додатка, інакше «Помилки» була б червона в кожного щодня) —
+// але й не ховаються зовсім: їх рахує ОКРЕМИЙ лічильник netErrors (колонка «Таймаути»),
+// щоб стійкі мережеві негаразди були видні оператору, не змішуючись зі збоями додатка.
+const isNetError = (e) => e.level === 'error' && String(e.msg).indexOf(NET_ERROR_MARK) !== -1;
 const isRealError = (e) => e.level === 'error' && !isNetError(e);
 
 const newSince = (mark, pred) => getEntries().filter(e => pred(e) && (!mark || e.t > mark));

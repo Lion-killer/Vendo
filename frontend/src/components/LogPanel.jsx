@@ -4,6 +4,7 @@ import { getEntries, clearLog } from '../logger';
 import { useLogSend } from '../useLogSend';
 import { ConfirmDialog } from './ui';
 import { Z } from '../theme';
+import { localeTag } from '../i18n';
 
 // Панель журналу: показує записи логу (за замовчуванням лише помилки/попередження),
 // дає надіслати лог розробнику (sendLog: API → файл+«Поділитися» → текст → буфер) і
@@ -23,7 +24,7 @@ export const LogPanel = ({ t, onClose }) => {
     const doClear = () => setConfirmClear(true);
 
     const lvlColor = (lvl) => lvl === 'error' ? t.err : lvl === 'warn' ? t.warn : t.inkMuted;
-    const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString(); } catch { return iso; } };
+    const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString(localeTag()); } catch { return iso; } };
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: Z.panel, background: t.bg, color: t.ink, display: 'flex', flexDirection: 'column', fontFamily: "'Inter', system-ui, sans-serif" }}>

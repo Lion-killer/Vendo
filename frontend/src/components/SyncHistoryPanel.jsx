@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getSyncHistory, clearSyncHistory } from '../api/syncHistory';
 import { ListPlaceholder, ConfirmDialog } from './ui';
 import { Z } from '../theme';
-import { msgText } from '../i18n';
+import { msgText, localeTag } from '../i18n';
 
 // Історія прогонів синхронізації (#20): список запусків doSync (час + підсумок), розгортання
 // per-order, фільтр «лише з помилками», перехід у замовлення для вирішення конфлікту, очистка.
@@ -14,7 +14,7 @@ const REL = (iso, tr) => {
         if (min < 60) return tr('sync.minAgo', { count: min });
         const h = Math.floor(min / 60);
         if (h < 24) return tr('sync.hourAgo', { count: h });
-        return new Date(iso).toLocaleString();
+        return new Date(iso).toLocaleString(localeTag()); // формат за мовою застосунку, не системи (#50)
     } catch { return iso; }
 };
 

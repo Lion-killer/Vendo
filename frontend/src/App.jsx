@@ -340,7 +340,7 @@ export default function App() {
     let sent = 0, failed = 0, skipped = 0, conflict = 0;
     const items = []; // per-record результат для історії синхронізацій (#20)
     const opCode = (o) => o.op === 'delete' ? 'delete' : o.op === 'restore' ? 'restore' : (o.num ? 'edit' : 'new');
-    const rec = (o, result, message) => items.push({ id: o.id, label: o.num || ('№' + String(o.id || '').slice(0, 8)), op: opCode(o), result, message: message || '' });
+    const rec = (o, result, message) => items.push({ id: o.id, label: orderLabel(o), op: opCode(o), result, message: message || '' });
     // Клієнтські причини помилок зберігаємо КЛЮЧЕМ i18n ('syncErr.*') — переклад при
     // показі поточною мовою (#49); серверні message уже локалізовані (Accept-Language).
     for (const o of locals) {

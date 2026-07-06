@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
-import { fmtMoney, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
+import { fmtMoney, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
@@ -101,7 +101,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 baseVersion: queueStatus === STATUS.SENT ? baseVersion : undefined,
             });
             markHandled?.(); // App не дублюватиме збереження на виході
-            notify?.(tr("toast.saved", { label: orderNum({ num, id: savedId }), date: orderDate.split("-").reverse().join(".") }));
+            notify?.(tr("toast.saved", { label: orderNum({ num, id: savedId }), date: fmtDate(orderDate) }));
         }
         if (isMounted.current) setOrderItems([]);
         if (goToOrdersList) goToOrdersList();
@@ -217,10 +217,10 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
     // Заголовок екрана = номер документа (або №<id> для автозбереженого). Для зовсім
     // нового без номера — порожньо, тоді показуємо слово «Замовлення» як запасний варіант.
-    const subLabel = num || (editOrderId ? `№${String(editOrderId).slice(0, 8)}` : "");
+    const subLabel = orderNum({ num, id: editOrderId });
 
     // Дата замовлення (YYYY-MM-DD → DD.MM.YYYY) для режиму перегляду.
-    const displayDate = orderDate.split("-").reverse().join(".");
+    const displayDate = fmtDate(orderDate);
     // Єдиний стиль контролів у шапці (номер, дата, «⋮», назад) — однакова висота/радіус/рамка.
     const ctl = { height: 32, borderRadius: 10, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", boxSizing: "border-box" };
 
