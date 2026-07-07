@@ -17,25 +17,6 @@
 	<AutoTitle>false</AutoTitle>
 	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
 		<ChildItems>
-			<Button name="НастроитьURLСервиса" id="1">
-				<Type>CommandBarButton</Type>
-				<CommandName>Form.Command.НастроитьURLСервиса</CommandName>
-				<Title>
-					<v8:item>
-						<v8:lang>ru</v8:lang>
-						<v8:content>Адрес сервиса (URL)</v8:content>
-					</v8:item>
-					<v8:item>
-						<v8:lang>uk</v8:lang>
-						<v8:content>Адреса сервісу (URL)</v8:content>
-					</v8:item>
-					<v8:item>
-						<v8:lang>en</v8:lang>
-						<v8:content>Service URL</v8:content>
-					</v8:item>
-				</Title>
-				<ExtendedTooltip name="НастроитьURLСервисаРасширеннаяПодсказка" id="2"/>
-			</Button>
 			<Button name="НастройкиСервиса" id="57">
 				<Type>CommandBarButton</Type>
 				<CommandName>Form.Command.НастройкиСервиса</CommandName>
@@ -365,23 +346,6 @@
 				</v8:item>
 			</Title>
 			<Action>НастройкиСервиса</Action>
-		</Command>
-		<Command name="НастроитьURLСервиса" id="22">
-			<Title>
-				<v8:item>
-					<v8:lang>ru</v8:lang>
-					<v8:content>Адрес сервиса (URL)</v8:content>
-				</v8:item>
-				<v8:item>
-					<v8:lang>uk</v8:lang>
-					<v8:content>Адреса сервісу (URL)</v8:content>
-				</v8:item>
-				<v8:item>
-					<v8:lang>en</v8:lang>
-					<v8:content>Service URL</v8:content>
-				</v8:item>
-			</Title>
-			<Action>НастроитьURLСервиса</Action>
 		</Command>
 		<Command name="ОчиститьТелеметрию" id="44">
 			<Title>
