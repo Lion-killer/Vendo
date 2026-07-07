@@ -51,6 +51,20 @@
 					<v8:content>Service URL</v8:content>
 				</v8:item>
 			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Адрес публикации HTTP-сервиса мобильного приложения. Зашивается в QR-код каждого устройства — пока не задан, QR не рабочий.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Адреса публікації HTTP-сервісу мобільного застосунку. Зашивається у QR-код кожного пристрою — поки не задана, QR не робочий.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Publication URL of the mobile app HTTP service. Embedded into each device QR code — the QR does not work until it is set.</v8:content>
+				</v8:item>
+			</ToolTip>
 			<AutoMaxWidth>false</AutoMaxWidth>
 			<HorizontalStretch>true</HorizontalStretch>
 			<InputHint>
@@ -86,6 +100,20 @@
 					<v8:content>Telemetry retention, days</v8:content>
 				</v8:item>
 			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Сколько дней хранить историю телеметрии устройств. Более старые записи удаляются автоматически при поступлении телеметрии (не чаще раза в сутки); последняя запись каждого устройства сохраняется всегда. По умолчанию 30.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Скільки днів зберігати історію телеметрії пристроїв. Старіші записи видаляються автоматично при надходженні телеметрії (не частіше разу на добу); останній запис кожного пристрою зберігається завжди. Типово 30.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>How many days to keep device telemetry history. Older records are deleted automatically when telemetry arrives (at most once a day); the latest record of each device is always kept. Default 30.</v8:content>
+				</v8:item>
+			</ToolTip>
 			<ContextMenu name="ХранениеТелеметрииДнейКонтекстноеМеню" id="9"/>
 			<ExtendedTooltip name="ХранениеТелеметрииДнейРасширеннаяПодсказка" id="10"/>
 		</InputField>
@@ -105,6 +133,20 @@
 					<v8:content>Order history depth, days</v8:content>
 				</v8:item>
 			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>За сколько дней назад приложение получает заказы, если в карточке устройства глубина не задана. Ограничивает объём и время ответа GET /orders. По умолчанию 30.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>За скільки днів назад застосунок отримує замовлення, якщо в картці пристрою глибину не задано. Обмежує обсяг і час відповіді GET /orders. Типово 30.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>How many days back the app receives orders when the device card does not set a depth. Caps the size and response time of GET /orders. Default 30.</v8:content>
+				</v8:item>
+			</ToolTip>
 			<ContextMenu name="ГлубинаИсторииДнейКонтекстноеМеню" id="12"/>
 			<ExtendedTooltip name="ГлубинаИсторииДнейРасширеннаяПодсказка" id="13"/>
 		</InputField>
@@ -124,6 +166,20 @@
 					<v8:content>Activity throttle, seconds</v8:content>
 				</v8:item>
 			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Как часто обновляется «последняя активность» устройства при его запросах (колонка в списке устройств). Меньше — точнее, но больше записей в базу. По умолчанию 300 (5 минут).</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Як часто оновлюється «остання активність» пристрою при його запитах (колонка у списку пристроїв). Менше — точніше, але більше записів у базу. Типово 300 (5 хвилин).</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>How often the device "last activity" is updated on its requests (a column in the device list). Lower is more precise but writes more. Default 300 (5 minutes).</v8:content>
+				</v8:item>
+			</ToolTip>
 			<ContextMenu name="ТротлингАктивностиСекКонтекстноеМеню" id="15"/>
 			<ExtendedTooltip name="ТротлингАктивностиСекРасширеннаяПодсказка" id="16"/>
 		</InputField>
