@@ -18,10 +18,12 @@ const REL = (iso, tr) => {
     } catch { return iso; }
 };
 
-export const SyncHistoryPanel = ({ t, onClose, onOpenOrder }) => {
+export const SyncHistoryPanel = ({ t, onClose, onOpenOrder, expandLatest = false }) => {
     const { t: tr } = useTranslation();
     const [onlyErrors, setOnlyErrors] = useState(false);
-    const [expanded, setExpanded] = useState({}); // індекс прогону -> розгорнуто
+    // expandLatest (#58): найсвіжіший прогін одразу розгорнутий — панель відкривається
+    // автоматично при проблемах синку, і причини видно без додаткового тапу.
+    const [expanded, setExpanded] = useState(() => expandLatest ? { 0: true } : {}); // індекс прогону -> розгорнуто
     const [confirmClear, setConfirmClear] = useState(false);
 
     const runs = getSyncHistory().slice().reverse(); // найновіші зверху

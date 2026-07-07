@@ -278,7 +278,7 @@
     "loadError": "Помилка завантаження з сервера: {{what}}",
     "dataCleared": "Локальні дані очищено",
     "syncResult": "Синхронізація: {{parts}}",
-    "syncNothing": "Немає чого синхронізувати",
+    "syncRefreshed": "Дані оновлено",
     "syncSent": "надіслано {{count}}",
     "syncFailed": "помилок {{count}}",
     "syncConflict": "конфліктів {{count}}",

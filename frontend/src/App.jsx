@@ -413,7 +413,12 @@ export default function App() {
     if (conflict) parts.push(tr("toast.syncConflict", { count: conflict }));
     if (failed) parts.push(tr("toast.syncFailed", { count: failed }));
     if (skipped) parts.push(tr("toast.syncSkipped", { count: skipped }));
-    notify(parts.length ? tr("toast.syncResult", { parts: parts.join(", ") }) : tr("toast.syncNothing"));
+    // Порожня черга — кнопка все одно виконала позачергове оновлення даних (#56),
+    // тож тост каже про це, а не «нічого не сталося» (#58).
+    notify(parts.length ? tr("toast.syncResult", { parts: parts.join(", ") }) : tr("toast.syncRefreshed"));
+    // #58: були проблеми відправлення — одразу відкриваємо історію синхронізацій
+    // (останній прогін розгорнутий), щоб причина була перед очима, а не за тостом.
+    if (failed + conflict + skipped > 0) setShowSyncHistory(true);
     setSyncing(false);
     sendTelemetry(); // #42: снапшот після синхронізації (fire-and-forget)
   };
@@ -750,7 +755,7 @@ export default function App() {
       {showLog && <LogPanel t={t} onClose={() => setShowLog(false)} />}
 
       {/* Історія синхронізацій: прогони + per-order результат, перехід у замовлення */}
-      {showSyncHistory && <SyncHistoryPanel t={t} onClose={() => setShowSyncHistory(false)} onOpenOrder={openOrderFromHistory} />}
+      {showSyncHistory && <SyncHistoryPanel t={t} expandLatest onClose={() => setShowSyncHistory(false)} onOpenOrder={openOrderFromHistory} />}
 
       {/* Вбудована довідка (markdown із docs/user-guide) */}
       {showHelp && <HelpScreen t={t} onClose={() => setShowHelp(false)} />}

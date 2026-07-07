@@ -278,7 +278,7 @@
     "loadError": "Ошибка загрузки с сервера: {{what}}",
     "dataCleared": "Локальные данные очищены",
     "syncResult": "Синхронизация: {{parts}}",
-    "syncNothing": "Нечего синхронизировать",
+    "syncRefreshed": "Данные обновлены",
     "syncSent": "отправлено {{count}}",
     "syncFailed": "ошибок {{count}}",
     "syncConflict": "конфликтов {{count}}",

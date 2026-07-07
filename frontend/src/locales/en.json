@@ -274,7 +274,7 @@
     "loadError": "Server load error: {{what}}",
     "dataCleared": "Local data cleared",
     "syncResult": "Sync: {{parts}}",
-    "syncNothing": "Nothing to sync",
+    "syncRefreshed": "Data refreshed",
     "syncSent": "sent {{count}}",
     "syncFailed": "errors {{count}}",
     "syncConflict": "conflicts {{count}}",
