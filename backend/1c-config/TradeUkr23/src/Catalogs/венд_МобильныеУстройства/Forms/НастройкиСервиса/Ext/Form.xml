@@ -3,7 +3,15 @@
 	<Title>
 		<v8:item>
 			<v8:lang>ru</v8:lang>
-			<v8:content>@{ru=Настройки сервиса (Vendo); uk=Налаштування сервісу (Vendo); en=Service settings (Vendo)}</v8:content>
+			<v8:content>Настройки сервиса (Vendo)</v8:content>
+		</v8:item>
+		<v8:item>
+			<v8:lang>uk</v8:lang>
+			<v8:content>Налаштування сервісу (Vendo)</v8:content>
+		</v8:item>
+		<v8:item>
+			<v8:lang>en</v8:lang>
+			<v8:content>Service settings (Vendo)</v8:content>
 		</v8:item>
 	</Title>
 	<AutoTitle>false</AutoTitle>
@@ -32,7 +40,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=Адрес сервиса (URL); uk=Адреса сервісу (URL); en=Service URL}</v8:content>
+					<v8:content>Адрес сервиса (URL)</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Адреса сервісу (URL)</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Service URL</v8:content>
 				</v8:item>
 			</Title>
 			<AutoMaxWidth>false</AutoMaxWidth>
@@ -40,7 +56,15 @@
 			<InputHint>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=http(s)://&lt;сервер&gt;/&lt;база&gt;/hs/vendo; uk=http(s)://&lt;сервер&gt;/&lt;база&gt;/hs/vendo; en=http(s)://&lt;server&gt;/&lt;base&gt;/hs/vendo}</v8:content>
+					<v8:content>http(s)://&lt;сервер&gt;/&lt;база&gt;/hs/vendo</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>http(s)://&lt;сервер&gt;/&lt;база&gt;/hs/vendo</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>http(s)://&lt;server&gt;/&lt;base&gt;/hs/vendo</v8:content>
 				</v8:item>
 			</InputHint>
 			<ContextMenu name="АдресСервисаКонтекстноеМеню" id="6"/>
@@ -51,7 +75,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=Хранение телеметрии, дней; uk=Зберігання телеметрії, днів; en=Telemetry retention, days}</v8:content>
+					<v8:content>Хранение телеметрии, дней</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Зберігання телеметрії, днів</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Telemetry retention, days</v8:content>
 				</v8:item>
 			</Title>
 			<ContextMenu name="ХранениеТелеметрииДнейКонтекстноеМеню" id="9"/>
@@ -62,7 +94,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=Глубина истории заказов, дней; uk=Глибина історії замовлень, днів; en=Order history depth, days}</v8:content>
+					<v8:content>Глубина истории заказов, дней</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Глибина історії замовлень, днів</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Order history depth, days</v8:content>
 				</v8:item>
 			</Title>
 			<ContextMenu name="ГлубинаИсторииДнейКонтекстноеМеню" id="12"/>
@@ -73,7 +113,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=Троттлинг активности, секунд; uk=Тротлінг активності, секунд; en=Activity throttle, seconds}</v8:content>
+					<v8:content>Троттлинг активности, секунд</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Тротлінг активності, секунд</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Activity throttle, seconds</v8:content>
 				</v8:item>
 			</Title>
 			<ContextMenu name="ТротлингАктивностиСекКонтекстноеМеню" id="15"/>
@@ -83,7 +131,15 @@
 			<Title formatted="false">
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=0 в числовом поле — вернуться к значению по умолчанию. Глубину истории перекрывает карточка устройства.; uk=0 у числовому полі — повернутися до типового значення. Глибину історії перекриває картка пристрою.; en=0 in a numeric field resets to the default. Device card overrides the history depth.}</v8:content>
+					<v8:content>0 в числовом поле — вернуться к значению по умолчанию. Глубину истории перекрывает карточка устройства.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>0 у числовому полі — повернутися до типового значення. Глибину історії перекриває картка пристрою.</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>0 in a numeric field resets to the default. Device card overrides the history depth.</v8:content>
 				</v8:item>
 			</Title>
 			<ContextMenu name="ПодсказкаУмолчанийКонтекстноеМеню" id="18"/>
@@ -160,7 +216,15 @@
 			<Title>
 				<v8:item>
 					<v8:lang>ru</v8:lang>
-					<v8:content>@{ru=Записать и закрыть; uk=Записати й закрити; en=Save and close}</v8:content>
+					<v8:content>Записать и закрыть</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>uk</v8:lang>
+					<v8:content>Записати й закрити</v8:content>
+				</v8:item>
+				<v8:item>
+					<v8:lang>en</v8:lang>
+					<v8:content>Save and close</v8:content>
 				</v8:item>
 			</Title>
 			<Action>ЗаписатьИЗакрыть</Action>
