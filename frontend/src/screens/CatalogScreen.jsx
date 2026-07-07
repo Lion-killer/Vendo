@@ -136,12 +136,12 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
 
-    // Ціна за активним типом. Типів немає (activePriceType порожній) — базова price.
+    // Ціна — ВИКЛЮЧНО prices[активний тип] (#57): поля price в контракті більше немає.
     // Нуль або відсутність = «немає ціни» (#45): null → товар не додається (у прайсі 1С
     // нульова ціна означає, що ціни фактично немає, а не «безкоштовно»).
     // Додавання морозить саме цю ціну (знімок) → onAddToOrder отримує товар із price типу.
     const priceOf = (p) => {
-        const v = activePriceType ? (p.prices && p.prices[activePriceType]) : p.price;
+        const v = p.prices && p.prices[activePriceType];
         return (v != null && Number(v) > 0) ? v : null;
     };
     const addToOrder = (p, delta) => {

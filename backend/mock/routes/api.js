@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Чисті хелпери (кольори статусів, локалізація, формат суми, підрахунок) — у lib/orders.js,
 // щоб їх можна було юніт-тестувати без БД (#21).
-const { msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType } = require('../lib/orders');
+const { msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES } = require('../lib/orders');
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -54,7 +54,7 @@ const hydrateOrder = (order) => {
         items,
         total: computeTotal(order.items || []), // число (контракт #35); фронт форматує сам
         currency: order.currency || '980',      // заморожена валюта замовлення; старі → грн
-        priceType: order.priceType || defaultPriceType(), // тип цін замовлення
+        priceType: order.priceType || null, // тип цін замовлення — як збережено, без підстановок (#57)
     };
 };
 
@@ -115,16 +115,16 @@ router.get('/price-types', (req, res) => {
 router.get('/products', (req, res) => {
     // Ціни переведені у валюту пристрою (як 1С конвертує з валюти прайсу); currency —
     // числовий код ISO. prices — ціна за КОЖНИМ доступним типом цін (клієнт перемикає без
-    // дозавантаження); price = ціна типу за замовчуванням (фолбек/сумісність).
+    // дозавантаження); окремого поля price немає (#57) — тип вибирає клієнт.
     // ?ids=<id,id,…> (#56) — лише вказані товари (точкове оновлення після синхронізації);
     // невідомі id мовчки відкидаються, без ids — весь каталог.
     const idsParam = String(req.query.ids || '');
     const wanted = idsParam ? new Set(idsParam.split(',').filter(Boolean)) : null;
-    const def = defaultPriceType();
     res.json(store.products.filter(p => !wanted || wanted.has(String(p.id))).map(p => {
         const prices = {};
         for (const t of PRICE_TYPES) prices[t.id] = convertPrice(round2(p.price * t.factor));
-        return { ...p, price: prices[def] ?? convertPrice(p.price), prices, currency: MOCK_CURRENCY };
+        const { price: _basePrice, ...rest } = p; // базова price лишається seed-даними, у контракт не йде
+        return { ...rest, prices, currency: MOCK_CURRENCY };
     }));
 });
 
@@ -184,6 +184,11 @@ router.post('/orders', (req, res) => {
     if (!store.customerById(effCustomerId)) {
         return res.status(400).json({ success: false, message: msg(req, 'customerNotFound').replace('%1', String(effCustomerId)) });
     }
+    // Нове замовлення без типу цін не приймаємо (#57): клієнт зобов'язаний передати вибір —
+    // жодних серверних підстановок «типу за замовчуванням».
+    if (!existing && !priceType) {
+        return res.status(400).json({ success: false, message: msg(req, 'noPriceType') });
+    }
     if (rejectInvalidItems(req, res, orderItems)) return;
 
     const version = randomUUID(); // новий токен версії при кожному записі (імітує ВерсияДанных)
@@ -210,7 +215,7 @@ router.post('/orders', (req, res) => {
             version,
             items,
             currency: MOCK_CURRENCY, // валюта пристрою на момент створення (заморожується)
-            priceType: priceType || defaultPriceType(), // вибраний тип цін
+            priceType, // вибраний тип цін (обов'язковий для нового, #57)
         };
         store.orders.push(order);
     }

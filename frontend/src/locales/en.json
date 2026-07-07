@@ -70,6 +70,7 @@
   },
   "syncErr": {
     "noCustomer": "No customer selected",
+    "noPriceType": "No price type set — open the order and save it again",
     "brokenRefs": "References to deleted data",
     "conflict": "Version conflict",
     "deleteRejected": "Delete rejected",

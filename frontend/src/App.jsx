@@ -388,6 +388,9 @@ export default function App() {
         // Без контрагента не відправляємо: 1С не прийме ЗаказПокупателя без Контрагент.
         // Чернетка лишається в черзі з помилкою — користувач обирає клієнта й синкає знову.
         if (!o.customerId) { setLocalOrderError(o.id, 'syncErr.noCustomer'); skipped++; rec(o, 'skipped', 'syncErr.noCustomer'); continue; }
+        // #57: НОВЕ замовлення без типу цін (легасі-чернетка до v0.12) не відправляємо —
+        // жодних неявних підстановок типу; користувач відкриває і зберігає його явно.
+        if (!o.num && !o.priceType) { setLocalOrderError(o.id, 'syncErr.noPriceType'); skipped++; rec(o, 'skipped', 'syncErr.noPriceType'); continue; }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, 'syncErr.brokenRefs'); skipped++; rec(o, 'skipped', 'syncErr.brokenRefs'); continue; }
         const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), STATUS.SENT, o.date, o.baseVersion, o.deletionMark, o.priceType);
         if (res && res.conflict) { setLocalOrderError(o.id, res.message || 'syncErr.conflict', true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }

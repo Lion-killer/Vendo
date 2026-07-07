@@ -6,6 +6,7 @@ const MESSAGES = {
     conflict: { uk: "Замовлення змінили на сервері після ваших правок", ru: "Заказ изменили на сервере после ваших правок", en: "The order was changed on the server after your edits" },
     notFound: { uk: "Замовлення не знайдено", ru: "Заказ не найден", en: "Order not found" },
     noCustomer: { uk: "Не вказано контрагента", ru: "Не указан контрагент", en: "Customer is required" },
+    noPriceType: { uk: "Не вказано тип цін замовлення", ru: "Не указан тип цен заказа", en: "Order price type is required" },
     customerNotFound: { uk: "Контрагента не знайдено в базі (id: %1)", ru: "Контрагент не найден в базе (id: %1)", en: "Customer not found (id: %1)" },
     noProductId: { uk: "Позиція замовлення без ідентифікатора товару (productId)", ru: "Позиция заказа без идентификатора товара (productId)", en: "Order item has no product id (productId)" },
     productNotFound: { uk: "Товар не знайдено в базі (id: %1)", ru: "Товар не найден в базе (id: %1)", en: "Product not found (id: %1)" },
@@ -43,6 +44,4 @@ const PRICE_TYPES = [
     { id: 'wholesale', name: 'Оптова', factor: 0.9 },
     { id: 'promo', name: 'Акційна', factor: 0.8 },
 ];
-const defaultPriceType = () => (PRICE_TYPES.find(t => t.default) || PRICE_TYPES[0] || {}).id || null;
-
-module.exports = { MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES, defaultPriceType };
+module.exports = { MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES };
