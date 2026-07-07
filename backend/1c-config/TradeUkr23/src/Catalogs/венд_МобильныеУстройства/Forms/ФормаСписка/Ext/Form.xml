@@ -36,25 +36,6 @@
 				</Title>
 				<ExtendedTooltip name="НастройкиСервисаРасширеннаяПодсказка" id="58"/>
 			</Button>
-			<Button name="ОчиститьТелеметрию" id="42">
-				<Type>CommandBarButton</Type>
-				<CommandName>Form.Command.ОчиститьТелеметрию</CommandName>
-				<Title>
-					<v8:item>
-						<v8:lang>ru</v8:lang>
-						<v8:content>Очистить телеметрию</v8:content>
-					</v8:item>
-					<v8:item>
-						<v8:lang>uk</v8:lang>
-						<v8:content>Очистити телеметрію</v8:content>
-					</v8:item>
-					<v8:item>
-						<v8:lang>en</v8:lang>
-						<v8:content>Purge telemetry</v8:content>
-					</v8:item>
-				</Title>
-				<ExtendedTooltip name="ОчиститьТелеметриюРасширеннаяПодсказка" id="43"/>
-			</Button>
 			<Button name="ОткрытьТелеметрию" id="45">
 				<Type>CommandBarButton</Type>
 				<CommandName>Form.Command.ОткрытьТелеметрию</CommandName>
@@ -346,23 +327,6 @@
 				</v8:item>
 			</Title>
 			<Action>НастройкиСервиса</Action>
-		</Command>
-		<Command name="ОчиститьТелеметрию" id="44">
-			<Title>
-				<v8:item>
-					<v8:lang>ru</v8:lang>
-					<v8:content>Очистить телеметрию</v8:content>
-				</v8:item>
-				<v8:item>
-					<v8:lang>uk</v8:lang>
-					<v8:content>Очистити телеметрію</v8:content>
-				</v8:item>
-				<v8:item>
-					<v8:lang>en</v8:lang>
-					<v8:content>Purge telemetry</v8:content>
-				</v8:item>
-			</Title>
-			<Action>ОчиститьТелеметрию</Action>
 		</Command>
 		<Command name="ОткрытьТелеметрию" id="47">
 			<Title>
