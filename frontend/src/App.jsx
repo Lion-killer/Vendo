@@ -625,10 +625,21 @@ export default function App() {
     const v = products.find(p => p.id === it.product.id)?.prices?.[id];
     return v == null || Number(v) <= 0;
   });
-  const notifySwitchBlocked = (id, items) => notify(tr("catalog.switchBlocked", {
-    type: priceTypes.find(p => p.id === id)?.name || "",
-    names: items.map(it => it.product.name).join(", "),
-  }));
+  // Перелік — списком з нових рядків (#55): перші 3 позиції коротко (артикул + обрізана
+  // назва), решта — одним рядком «…та ще N товарів», щоб тост лишався компактним.
+  const notifySwitchBlocked = (id, items) => {
+    const MAX_LISTED = 3, MAX_NAME = 40;
+    const short = (p) => {
+      const name = p.name.length > MAX_NAME ? p.name.slice(0, MAX_NAME - 1) + "…" : p.name;
+      return "• " + (p.sku ? p.sku + " · " : "") + name;
+    };
+    const lines = items.slice(0, MAX_LISTED).map(it => short(it.product));
+    if (items.length > MAX_LISTED) lines.push(tr("catalog.switchBlockedMore", { count: items.length - MAX_LISTED }));
+    notify(tr("catalog.switchBlocked", {
+      type: priceTypes.find(p => p.id === id)?.name || "",
+      names: "\n" + lines.join("\n"),
+    }));
+  };
   // Перерахунок цін усіх позицій на новий тип — АТОМАРНО: спершу перевіряємо ВСІ позиції
   // ще раз (поки відкритий діалог, фоновий цикл міг оновити каталог і ціна могла зникнути),
   // і застосовуємо лише якщо кожна має ціну > 0. Часткова зміна цін недопустима (#45).
