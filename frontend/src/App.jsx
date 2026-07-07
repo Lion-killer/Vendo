@@ -330,6 +330,23 @@ export default function App() {
     });
   };
 
+  // Точкове оновлення товарів (#56): тягне лише вказані id (GET /products?ids=) і вливає
+  // у стан каталогу та кеш. Швидке навіть на повільній 1С — тому викликається ДО повного
+  // рефетчу, щоб залишки відправлених замовлень оновились одразу.
+  const refreshProducts = async (ids) => {
+    try {
+      const fresh = arr(await fetchProducts(ids));
+      if (!fresh.length) return;
+      const byId = new Map(fresh.map(p => [p.id, p]));
+      setProducts(prev => prev.map(p => byId.get(p.id) || p));
+      delete collectionsFpRef.current.products; // наступний повний знімок не заблокує guard
+      const cached = await dataGet('collections');
+      if (cached && Array.isArray(cached.products)) {
+        dataPut('collections', { ...cached, products: cached.products.map(p => byId.get(p.id) || p) });
+      }
+    } catch { /* тихо: повний рефетч після синку все одно підтягне */ }
+  };
+
   // Ручна синхронізація офлайн-черги на сервер (доступна з усіх екранів через TopActions).
   // Стійка: одна помилка не валить чергу; кожен запис — успіх/конфлікт/помилка/пропуск.
   const doSync = async () => {
@@ -341,7 +358,13 @@ export default function App() {
     let sent = 0, failed = 0, skipped = 0, conflict = 0;
     const items = []; // per-record результат для історії синхронізацій (#20)
     const opCode = (o) => o.op === 'delete' ? 'delete' : o.op === 'restore' ? 'restore' : (o.num ? 'edit' : 'new');
-    const rec = (o, result, message) => items.push({ id: o.id, label: orderLabel(o), op: opCode(o), result, message: message || '' });
+    const rec = (o, result, message) => {
+      items.push({ id: o.id, label: orderLabel(o), op: opCode(o), result, message: message || '' });
+      // #56: товари успішно відправлених замовлень — кандидати на точкове оновлення
+      // (проведення могло змінити залишки).
+      if (result === 'sent') (o.items || []).forEach(it => { const pid = it.productId ?? it.product?.id; if (pid) touched.add(pid); });
+    };
+    const touched = new Set();
     // Клієнтські причини помилок зберігаємо КЛЮЧЕМ i18n ('syncErr.*') — переклад при
     // показі поточною мовою (#49); серверні message уже локалізовані (Accept-Language).
     for (const o of locals) {
@@ -376,7 +399,11 @@ export default function App() {
         setLocalOrderError(o.id, e.message || 'syncErr.generic'); failed++; rec(o, 'failed', e.message || 'syncErr.generic');
       }
     }
-    await fetchFromNetwork(true);
+    // #56: спершу — швидке точкове оновлення товарів із відправлених замовлень (залишки
+    // в каталозі свіжі одразу), потім повний рефетч ФОРСОВАНО: без force guard майже
+    // завжди ковтав виклик на повільній 1С (фоновий цикл «в польоті») і дані не оновлювались.
+    if (touched.size) await refreshProducts([...touched]);
+    await fetchFromNetwork(true, true);
     if (items.length) addSyncRun({ sent, failed, conflict, skipped, items }); // запис прогону в історію
     const parts = [];
     if (sent) parts.push(tr("toast.syncSent", { count: sent }));

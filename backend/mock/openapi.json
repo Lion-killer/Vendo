@@ -62,6 +62,7 @@
     "/products": {
       "get": {
         "tags": ["Довідники"], "summary": "Номенклатура пристрою (ціна за типом цін, залишок за складом)",
+        "parameters": [ { "name": "ids", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Перелік GUID товарів через кому — лише вказані товари (точкове оновлення після синхронізації, #56). Id поза скоупом пристрою мовчки відкидаються; без параметра — весь каталог." } ],
         "responses": { "200": { "description": "Список товарів", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
       }
     },

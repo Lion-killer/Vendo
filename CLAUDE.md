@@ -33,7 +33,7 @@ If `npm run dev`/`build` fails with `'vite' is not recognized`, the `node_module
 - `backend/mock/db.js` is the **in-memory store**: loads `data/db.json` at startup into arrays (`products`, `customers`, `categories`, `orders`, plus `meta.lastOrderSeq`) and exports them with lookup helpers (`productById`/`customerById`/`orderById`). Mutations live in memory; a restart re-seeds — no persistence. `db.json` is the seed fixture.
 - `routes/api.js` operates on those arrays — single-threaded synchronous JS, so mutations are atomic (no transactions/locks needed). Orders keep **embedded items** (`{ productId, qty, price }`, price frozen at order time), hydrated on read.
 - `POST /api/auth` is a stub that returns a fixed mock user/token; nothing validates the token.
-- Endpoints: `GET /products|categories|customers`, `GET /orders` (optional `startDate`/`endDate` query filter, inclusive string compare on `YYYY-MM-DD`), `POST /orders`, `PUT /orders/:num`, `DELETE /orders/:num`.
+- Endpoints: `GET /products|categories|customers` (`/products?ids=<id,…>` returns only the listed products — targeted post-sync refresh, #56), `GET /orders` (optional `startDate`/`endDate` query filter, inclusive string compare on `YYYY-MM-DD`), `POST /orders`, `PUT /orders/:num`, `DELETE /orders/:num`.
 
 **Order data is stored by reference, denormalized on read.** This is the key backend convention:
 - An order holds `{ id, num, customerId, date, status, deletionMark, version, items }` where each item is a reference `{ productId, qty, price }`. No embedded product/customer copies.

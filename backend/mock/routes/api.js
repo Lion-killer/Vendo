@@ -116,8 +116,12 @@ router.get('/products', (req, res) => {
     // Ціни переведені у валюту пристрою (як 1С конвертує з валюти прайсу); currency —
     // числовий код ISO. prices — ціна за КОЖНИМ доступним типом цін (клієнт перемикає без
     // дозавантаження); price = ціна типу за замовчуванням (фолбек/сумісність).
+    // ?ids=<id,id,…> (#56) — лише вказані товари (точкове оновлення після синхронізації);
+    // невідомі id мовчки відкидаються, без ids — весь каталог.
+    const idsParam = String(req.query.ids || '');
+    const wanted = idsParam ? new Set(idsParam.split(',').filter(Boolean)) : null;
     const def = defaultPriceType();
-    res.json(store.products.map(p => {
+    res.json(store.products.filter(p => !wanted || wanted.has(String(p.id))).map(p => {
         const prices = {};
         for (const t of PRICE_TYPES) prices[t.id] = convertPrice(round2(p.price * t.factor));
         return { ...p, price: prices[def] ?? convertPrice(p.price), prices, currency: MOCK_CURRENCY };

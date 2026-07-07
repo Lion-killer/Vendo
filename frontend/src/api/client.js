@@ -100,8 +100,10 @@ export const auth = async (devId, pairingCode) => {
     return data;
 };
 
-export const fetchProducts = async () =>
-    (await tfetch(`${apiUrl()}/products`, { headers: h() })).json();
+// ids (#56) — необов'язковий масив GUID: лише вказані товари (точкове оновлення
+// після синхронізації). Без ids — весь каталог пристрою.
+export const fetchProducts = async (ids) =>
+    (await tfetch(`${apiUrl()}/products${Array.isArray(ids) && ids.length ? `?ids=${ids.map(encodeURIComponent).join(',')}` : ''}`, { headers: h() })).json();
 
 export const fetchCustomers = async () =>
     (await tfetch(`${apiUrl()}/customers`, { headers: h() })).json();
