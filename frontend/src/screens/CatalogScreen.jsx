@@ -42,6 +42,12 @@ const flattenProducts = (node, trail = []) => {
 };
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
+// Товари без залишку (stock ≤ 0) — в кінець (#59). Сорт СТАБІЛЬНИЙ (Array.sort у V8/
+// WebView зберігає порядок рівних), тож відносний порядок бекенду в межах кожної групи
+// «в наявності»/«без залишку» не міняється. Не мутуємо вихідний масив.
+const outOfStockLast = (list) => list.slice().sort((a, b) =>
+    (Number(a.stock) <= 0 ? 1 : 0) - (Number(b.stock) <= 0 ? 1 : 0));
+
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
 const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType }) => {
     const { t: tr } = useTranslation();
@@ -129,10 +135,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
 
     const searching = query.trim().length > 0;
     const results = useMemo(() => searching
-        ? flattenProducts(root).filter(p =>
+        ? outOfStockLast(flattenProducts(root).filter(p =>
             p.name.toLowerCase().includes(query.toLowerCase()) ||
-            (p.sku || "").toLowerCase().includes(query.toLowerCase()))
+            (p.sku || "").toLowerCase().includes(query.toLowerCase())))
         : [], [searching, query, root]);
+    const sortedLevelProducts = useMemo(() => outOfStockLast(levelProducts), [levelProducts]);
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
 
@@ -265,7 +272,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                         {levelProducts.length > 0 && (
                             <>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {levelProducts.length}</div>
-                                {levelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} />)}
+                                {sortedLevelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} />)}
                             </>
                         )}
                         {subgroups.length === 0 && levelProducts.length === 0 && (
