@@ -271,7 +271,8 @@
           "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } },
           "total": { "type": "number", "description": "Сума замовлення (число) у валюті замовлення (currency); фронт форматує сам" },
           "currency": { "type": "string", "description": "Числовий код валюти ISO 4217, заморожена на момент створення. Старі замовлення без поля → \"980\" (грн)" },
-          "priceType": { "type": "string", "description": "Тип цін замовлення (id), заморожений на момент створення; у 1С → Заказ.ТипЦен" }
+          "priceType": { "type": "string", "description": "Тип цін замовлення (id), заморожений на момент створення; у 1С → Заказ.ТипЦен" },
+          "comment": { "type": "string", "nullable": true, "description": "Коментар до замовлення (#60); у 1С → Заказ.Комментарий. null/порожній = немає" }
         }
       },
       "OrderInput": {
@@ -283,6 +284,7 @@
           "status": { "$ref": "#/components/schemas/OrderStatus" },
           "date": { "type": "string", "format": "date" },
           "priceType": { "type": "string", "description": "Вибраний тип цін (id). ОБОВ'ЯЗКОВИЙ для нового замовлення (#57) — сервер нічого не підставляє, без нього 400" },
+          "comment": { "type": "string", "nullable": true, "description": "Коментар до замовлення (#60), необов'язковий" },
           "baseVersion": { "type": "string", "description": "Версія, від якої редагували (виявлення конфлікту). Відсутня = перезаписати." }
         }
       },
@@ -294,6 +296,7 @@
           "status": { "$ref": "#/components/schemas/OrderStatus" },
           "date": { "type": "string", "format": "date" },
           "deletionMark": { "type": "boolean", "description": "false — зняти помітку видалення" },
+          "comment": { "type": "string", "nullable": true, "description": "Коментар до замовлення (#60)" },
           "baseVersion": { "type": "string" }
         }
       },

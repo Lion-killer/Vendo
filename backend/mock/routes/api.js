@@ -55,6 +55,7 @@ const hydrateOrder = (order) => {
         total: computeTotal(order.items || []), // число (контракт #35); фронт форматує сам
         currency: order.currency || '980',      // заморожена валюта замовлення; старі → грн
         priceType: order.priceType || null, // тип цін замовлення — як збережено, без підстановок (#57)
+        comment: order.comment ?? null, // коментар до замовлення (#60; → 1С Заказ.Комментарий)
     };
 };
 
@@ -158,7 +159,7 @@ router.get('/orders', (req, res) => {
 });
 
 router.post('/orders', (req, res) => {
-    const { id: clientId, orderItems, customerId, status, date, baseVersion, priceType } = req.body;
+    const { id: clientId, orderItems, customerId, status, date, baseVersion, priceType, comment } = req.body;
 
     const id = clientId || randomUUID();
     const existing = store.orderById(id);
@@ -203,6 +204,7 @@ router.post('/orders', (req, res) => {
         existing.date = date || existing.date;
         existing.version = version;
         existing.items = items;
+        if (comment !== undefined) existing.comment = comment; // коментар (#60)
         order = existing;
     } else {
         order = {
@@ -216,6 +218,7 @@ router.post('/orders', (req, res) => {
             items,
             currency: MOCK_CURRENCY, // валюта пристрою на момент створення (заморожується)
             priceType, // вибраний тип цін (обов'язковий для нового, #57)
+            comment: comment ?? null, // коментар до замовлення (#60)
         };
         store.orders.push(order);
     }
@@ -225,7 +228,7 @@ router.post('/orders', (req, res) => {
 
 router.put('/orders/:id', (req, res) => {
     const { id } = req.params;
-    const { orderItems, customerId, status, date, deletionMark } = req.body;
+    const { orderItems, customerId, status, date, deletionMark, comment } = req.body;
 
     const existing = store.orderById(id);
     if (!existing) {
@@ -245,6 +248,7 @@ router.put('/orders/:id', (req, res) => {
     if (orderItems) existing.items = normalizeItems(orderItems);
     // Зняття/встановлення помітки на видалення (напр. "Зняти помітку").
     if (deletionMark !== undefined) existing.deletionMark = !!deletionMark;
+    if (comment !== undefined) existing.comment = comment; // коментар (#60)
 
     res.json({ success: true, order: hydrateOrder(existing) });
 });

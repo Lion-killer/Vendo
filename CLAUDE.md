@@ -36,7 +36,7 @@ If `npm run dev`/`build` fails with `'vite' is not recognized`, the `node_module
 - Endpoints: `GET /products|categories|customers` (`/products?ids=<id,…>` returns only the listed products — targeted post-sync refresh, #56), `GET /orders` (optional `startDate`/`endDate` query filter, inclusive string compare on `YYYY-MM-DD`), `POST /orders`, `PUT /orders/:num`, `DELETE /orders/:num`.
 
 **Order data is stored by reference, denormalized on read.** This is the key backend convention:
-- An order holds `{ id, num, customerId, date, status, deletionMark, version, items }` where each item is a reference `{ productId, qty, price }`. No embedded product/customer copies.
+- An order holds `{ id, num, customerId, date, status, deletionMark, version, items, priceType, comment }` where each item is a reference `{ productId, qty, price }`. No embedded product/customer copies. `comment` (#60) is a free-text note → 1C `Заказ.Комментарий`.
 - `hydrateOrder()` rebuilds the full object the frontend expects (`customer`, `client`, `items[].product`, `total`) by looking up `customers`/`products`. All GET/POST/PUT responses return hydrated orders.
 - **Price is frozen per line item** (`items[].price` is a snapshot taken at order time via `normalizeItems`). `computeTotal` and the hydrated `product.price` use this stored price, so editing a product's catalog price does NOT change historical order totals. Product name/img/sku, however, are pulled live by `productId`.
 - Create/update mutate the in-memory order in place (replacing items = reassign `order.items`); single-threaded JS makes it atomic.

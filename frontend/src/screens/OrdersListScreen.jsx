@@ -213,6 +213,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                         {o.conflict ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
                                             : o.syncError ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeError")}</span>
                                             : o._pending && <span title={tr("ordersList.tipWaiting")} style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeWaiting")}</span>}
+                                        {o.comment && <span title={tr("ordersList.hasComment")} aria-label={tr("ordersList.hasComment")} style={{ display: "flex", alignItems: "center" }}><MIcon name="message" size={13} color={t.inkMuted} /></span>}
                                     </div>
                                     <p style={{ color: t.inkMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>
                                 </div>

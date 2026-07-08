@@ -181,11 +181,11 @@ const wireItems = (orderItems) => (orderItems || []).map(it => ({
 // конфлікт (409), якщо запис відтоді змінився. Відсутній baseVersion = перезаписати.
 // deletionMark=false — зняти помітку видалення при upsert (для «перезаписати моє» над
 // видаленим на сервері). Якщо не передано — помітку не чіпаємо.
-export const createOrder = async (id, orderItems, customerId, total, status = STATUS.NEW, date, baseVersion, deletionMark, priceType) =>
+export const createOrder = async (id, orderItems, customerId, total, status = STATUS.NEW, date, baseVersion, deletionMark, priceType, comment) =>
     (await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id, orderItems: wireItems(orderItems), customerId, total, status, date, baseVersion, ...(deletionMark === false ? { deletionMark: false } : {}), ...(priceType ? { priceType } : {}) }),
+        body: JSON.stringify({ id, orderItems: wireItems(orderItems), customerId, total, status, date, baseVersion, ...(deletionMark === false ? { deletionMark: false } : {}), ...(priceType ? { priceType } : {}), ...(comment != null ? { comment } : {}) }),
     })).json();
 
 // baseVersion — токен версії на момент, коли додаток бачив замовлення: 1С виявляє

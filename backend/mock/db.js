@@ -29,7 +29,7 @@ const categories = (seed.categories || []).map(c => ({
 const orders = (seed.orders || []).map(o => ({
     id: o.id, num: o.num ?? null, customerId: o.customerId ?? null,
     date: o.date, status: o.status, deletionMark: !!o.deletionMark,
-    version: o.version ?? randomUUID(),
+    version: o.version ?? randomUUID(), comment: o.comment ?? null,
     items: (o.items || []).map(it => ({
         productId: it.productId ?? it.product?.id ?? null,
         qty: it.qty, price: it.price ?? it.product?.price ?? 0,

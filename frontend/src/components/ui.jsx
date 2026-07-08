@@ -76,6 +76,7 @@ export const ICON = {
   calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></>,
   download: <><path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M4 21h16" /></>,
   image: <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>,
+  message: <><path d="M21 11.5a8.38 8.38 0 0 1-11.9 7.6L3 21l1.9-6.1A8.38 8.38 0 1 1 21 11.5z" /></>,
 };
 
 // Ширина плаваючого кластера TopActions (2×38 + gap 8) — екрани з власними кнопками

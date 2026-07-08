@@ -9,7 +9,7 @@ import { idSet } from '../api/refs';
 
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, comment = "", pushComment, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
     // Валюта замовлення: заморожена (редагування) або валюта пристрою (нове). Символ — з коду.
     const orderCurrency = currency || products?.[0]?.currency || DEFAULT_CURRENCY;
@@ -30,6 +30,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const [showCustPicker, setShowCustPicker] = useState(false);
     const [custQuery, setCustQuery] = useState("");
     const [showMenu, setShowMenu] = useState(false);
+    const [showComment, setShowComment] = useState(false); // панель коментаря (#60)
     const [askUnmark, setAskUnmark] = useState(false); // діалог «зняти помітку при перезаписі видаленого»
 
     // Пошук контрагента по назві / адресі / телефону / коду (для великих списків).
@@ -69,6 +70,9 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         total: total,            // число (контракт #35); форматується при показі
         currency: orderCurrency, // заморожена валюта замовлення
         priceType: priceType || undefined, // тип цін замовлення (→ 1С Заказ.ТипЦен)
+        // Коментар — ЗАВЖДИ рядок (навіть "" #60): інакше очищення (undefined) губилось у
+        // JSON.stringify і бекенд лишав старий текст. Порожній "" доходить і чистить Комментарий.
+        comment: comment ?? "",
     });
 
     // Автозбереження невідправленого замовлення (проведене не чіпаємо — лише перегляд)
@@ -88,7 +92,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
         } catch (e) { console.error("Помилка автозбереження:", e); }
-    }, [orderItems, customer, editOrderId, orderDate, isOnline]);
+    }, [orderItems, customer, editOrderId, orderDate, comment, isOnline]);
 
     // Явне збереження (кнопка «Зберегти») — не залежить від isDirty, тож працює
     // і коли товари додані з каталогу (минаючи зміни безпосередньо в цьому екрані).
@@ -242,6 +246,14 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subLabel}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {/* Індикатор наявності коментаря (#60): у вільному місці шапки, тап відкриває панель.
+                            Місця в лейауті не займає — з'являється лише коли коментар є. */}
+                        {comment && (
+                            <button onClick={() => setShowComment(true)} title={tr("order.comment")} aria-label={tr("order.comment")}
+                                style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer", color: t.accent }}>
+                                <MIcon name="message" size={17} color={t.accent} />
+                            </button>
+                        )}
                         {locked
                             ? <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</div>
                             : <input type="date" value={orderDate} onChange={e => { setOrderDate(e.target.value); pushDate?.(e.target.value); setIsDirty(true); }}
@@ -256,6 +268,10 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             {/* Меню команд замовлення (kebab) */}
             {showMenu && (
                 <BottomSheet t={t} onClose={() => setShowMenu(false)} sheetStyle={{ padding: "12px 12px", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+                        <button onClick={() => { setShowMenu(false); setShowComment(true); }} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
+                            <MIcon name="message" size={20} color={t.ink} /> {tr("order.comment")}
+                            {comment && <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: 4, background: t.accent }} />}
+                        </button>
                         <button onClick={handleCopy} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
                             <MIcon name="doc" size={20} color={t.ink} /> {tr("order.copy")}
                         </button>
@@ -270,6 +286,24 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                 </button>
                             );
                         })()}
+                </BottomSheet>
+            )}
+
+            {/* Панель коментаря (#60): відкривається з kebab-меню або індикатора в шапці.
+                Не займає місця в лейауті — список позицій зберігає повну висоту. */}
+            {showComment && (
+                <BottomSheet t={t} onClose={() => setShowComment(false)}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 0 12px" }}>
+                        <span style={{ fontSize: 16, fontWeight: 700 }}>{tr("order.comment")}</span>
+                        <button onClick={() => setShowComment(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex" }}><MIcon name="x" size={18} color={t.inkMuted} /></button>
+                    </div>
+                    {locked
+                        ? <div style={{ fontSize: 14, color: comment ? t.ink : t.inkMuted, lineHeight: 1.45, whiteSpace: "pre-wrap", minHeight: 44 }}>{comment || tr("order.commentEmpty")}</div>
+                        : <textarea autoFocus value={comment} onChange={e => { pushComment?.(e.target.value); setIsDirty(true); }} placeholder={tr("order.commentPlaceholder")}
+                            style={{ width: "100%", minHeight: 96, resize: "vertical", boxSizing: "border-box", padding: "12px 14px", borderRadius: 12, border: `1px solid ${t.line}`, background: t.surfaceMuted, color: t.ink, fontFamily: "inherit", fontSize: 14, lineHeight: 1.45, outline: "none" }} />}
+                    {!locked && (
+                        <button onClick={() => setShowComment(false)} style={{ width: "100%", height: 46, marginTop: 12, borderRadius: 12, border: "none", background: t.accent, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{tr("common.ok")}</button>
+                    )}
                 </BottomSheet>
             )}
 

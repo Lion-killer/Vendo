@@ -29,9 +29,10 @@ import { K, CLEAR_KEEP, LEGACY } from './storageKeys';
 
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
 
-// Сигнатура замовлення (товари+контрагент+дата) — для порівняння «чи щось змінилось».
-const orderSig = (items, custId, date) =>
-  JSON.stringify({ i: (items || []).map(it => [it.product?.id, it.qty]), c: custId ?? null, d: date || null });
+// Сигнатура замовлення (товари+контрагент+дата+коментар) — для порівняння «чи щось
+// змінилось» (коментар у сигнатурі, #60, щоб правка лише коментаря теж зберігала чернетку).
+const orderSig = (items, custId, date, comment) =>
+  JSON.stringify({ i: (items || []).map(it => [it.product?.id, it.qty]), c: custId ?? null, d: date || null, m: comment || null });
 
 // Коерсія будь-якого значення до масиву: API чи кеш можуть повернути {success:false}
 // замість масиву — без цього .map/.filter на екранах валить додаток у білий екран.
@@ -64,6 +65,7 @@ export default function App() {
   const [editVersion, setEditVersion] = useState(null); // токен версії на момент відкриття (для виявлення конфліктів)
   const [editCurrency, setEditCurrency] = useState(DEFAULT_CURRENCY); // валюта замовлення (заморожена/пристрою)
   const [editPriceType, setEditPriceType] = useState(""); // тип цін замовлення (заморожений/вибраний)
+  const [editComment, setEditComment] = useState(""); // коментар до замовлення (#60)
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -114,7 +116,7 @@ export default function App() {
     // Проведені/видалені редагувати не можна (editLocked) — у чергу не потраплять.
     if (editOrderId && ![STATUS.NEW, STATUS.SENT].includes(editStatus)) return;
     // Нічого не змінилось від моменту відкриття — не зберігаємо й не показуємо повідомлення.
-    if (orderSig(orderItems, editCustomer?.id, editDate) === orderBaseline.current) return;
+    if (orderSig(orderItems, editCustomer?.id, editDate, editComment) === orderBaseline.current) return;
     const total = orderItems.reduce((s, it) => s + it.product.price * it.qty, 0);
     // Зберігаємо реальний статус: правка відправленого лишається "Відправлено" (черга
     // на оновлення), нове — "Нове". Так doSync зробить upsert із правильним статусом.
@@ -130,6 +132,7 @@ export default function App() {
       total: total,            // число (контракт #35)
       currency: editCurrency,  // заморожена валюта замовлення
       priceType: editPriceType, // тип цін замовлення (→ 1С Заказ.ТипЦен)
+      comment: editComment ?? "", // коментар — завжди рядок, щоб очищення "" дійшло (#60)
       status: queueStatus,
       // База версії лише для правок серверного замовлення (виявлення конфлікту).
       baseVersion: queueStatus === STATUS.SENT ? editVersion : undefined,
@@ -392,7 +395,7 @@ export default function App() {
         // жодних неявних підстановок типу; користувач відкриває і зберігає його явно.
         if (!o.num && !o.priceType) { setLocalOrderError(o.id, 'syncErr.noPriceType'); skipped++; rec(o, 'skipped', 'syncErr.noPriceType'); continue; }
         if (canCheck && !checkOrderRefs(o, prodIds, custIds).ok) { setLocalOrderError(o.id, 'syncErr.brokenRefs'); skipped++; rec(o, 'skipped', 'syncErr.brokenRefs'); continue; }
-        const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), STATUS.SENT, o.date, o.baseVersion, o.deletionMark, o.priceType);
+        const res = await createOrder(o.id, o.items, o.customerId, parseMoney(o.total), STATUS.SENT, o.date, o.baseVersion, o.deletionMark, o.priceType, o.comment);
         if (res && res.conflict) { setLocalOrderError(o.id, res.message || 'syncErr.conflict', true, res.serverState || null); conflict++; rec(o, 'conflict', res.message); continue; }
         if (!res || !res.success) throw new Error(res?.message || 'syncErr.rejected');
         if (res.order) upsertOrder(res.order); // серверна версія (з номером) видима одразу, без розриву
@@ -608,7 +611,8 @@ export default function App() {
       setEditVersion(params.order.version ?? null);
       setEditCurrency(params.order.currency || deviceCurrency); // заморожена валюта; старі → пристрою
       setEditPriceType(params.order.priceType || selectedPriceType); // тип цін замовлення
-      orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date);
+      setEditComment(params.order.comment || ""); // коментар (#60)
+      orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date, params.order.comment);
     } else if (s === "orders" && params.newOrder) {
       // Явно створюємо нове замовлення (наприклад, кнопка з дашборду)
       setEditOrderId(null);
@@ -621,7 +625,8 @@ export default function App() {
       setEditVersion(null);
       setEditCurrency(deviceCurrency);
       setEditPriceType(selectedPriceType);
-      orderBaseline.current = orderSig([], null, null);
+      setEditComment("");
+      orderBaseline.current = orderSig([], null, null, null);
     } else if (s === "catalog" && !params.keepOrder) {
       // Просто перехід в Товари - створюємо нове (скидаємо редаговане замовлення)
       setEditOrderId(null);
@@ -634,7 +639,8 @@ export default function App() {
       setEditVersion(null);
       setEditCurrency(deviceCurrency);
       setEditPriceType(selectedPriceType);
-      orderBaseline.current = orderSig([], null, null);
+      setEditComment("");
+      orderBaseline.current = orderSig([], null, null, null);
     }
     // В іншому випадку (наприклад, при переході з Каталогу в Orders) стан кошика зберігається
     setScreen(s);
@@ -737,7 +743,7 @@ export default function App() {
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} comment={editComment} pushComment={setEditComment} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
