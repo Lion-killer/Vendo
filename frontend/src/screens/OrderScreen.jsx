@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
-import { fmtMoney, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
+import { fmtMoney, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText, byName } from '../i18n';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
@@ -35,9 +35,9 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
     // Пошук контрагента по назві / адресі / телефону / коду (для великих списків).
     const custQ = custQuery.trim().toLowerCase();
-    const filteredCustomers = custQ
+    const filteredCustomers = (custQ
         ? customers.filter(c => [c.name, c.address, c.phone, c.code].filter(Boolean).join(" ").toLowerCase().includes(custQ))
-        : customers;
+        : customers).slice().sort(byName); // вибір клієнта — за назвою (#61)
     const closeCustPicker = () => { setShowCustPicker(false); setCustQuery(""); };
     const [isDirty, setIsDirty] = useState(false);
     const [orderDate, setOrderDate] = useState(date || todayISO());

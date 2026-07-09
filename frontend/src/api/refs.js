@@ -15,6 +15,32 @@ export const mergeOrders = (serverOrders = [], localOrders = []) => {
     return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
 };
 
+// Останні кількості товарів для контрагента (#63): для кожного productId — до `limit`
+// найновіших замовлень цього контрагента, що містять товар, як { qty, date } (найновіші
+// перші). Джерело — вікно кешованих замовлень (тому лише недавні); видалені (deletionMark)
+// пропускаємо. Кілька рядків одного товару в межах одного замовлення сумуємо (один запис
+// на замовлення — «скільки взяли того разу»).
+export const recentQtysForCustomer = (orders = [], customerId, limit = 3) => {
+    const map = new Map();
+    if (!customerId) return map;
+    const mine = orders
+        .filter(o => !o.deletionMark && (o.customerId || o.customer?.id) === customerId)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+    for (const o of mine) {
+        const perOrder = new Map(); // productId -> сума кількостей у цьому замовленні
+        for (const it of (o.items || [])) {
+            const pid = it.productId ?? it.product?.id;
+            if (pid == null) continue;
+            perOrder.set(pid, (perOrder.get(pid) || 0) + (Number(it.qty) || 0));
+        }
+        for (const [pid, qty] of perOrder) {
+            const arr = map.get(pid) || [];
+            if (arr.length < limit) { arr.push({ qty, date: o.date }); map.set(pid, arr); }
+        }
+    }
+    return map;
+};
+
 // Перевірка посилань замовлення проти наявних товарів/клієнтів.
 // Повертає { missingProducts: [назви], customerMissing: bool, ok: bool }.
 export const checkOrderRefs = (order, productIds, customerIds) => {

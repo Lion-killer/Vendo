@@ -290,17 +290,23 @@ export const TopActions = ({ t, online, connecting, syncing, pending = 0, onSync
 // Тягнемо рядок вліво → з-під нього виїжджає червона кнопка «Видалити». Сам свайп НЕ
 // видаляє — лише відкриває; видалення спрацьовує тільки по натисканню кнопки. Тап по
 // відкритому рядку (або свайп назад) — закриває. Вертикальний скрол не блокуємо (pan-y).
-export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label }) => {
-  const { t: tr } = useTranslation();
-  const lbl = label || tr("common.delete"); // дефолт локалізований (#49)
-  const REVEAL = 92, OPEN_AT = 40;
-  const [dx, setDx] = useState(0);            // 0 — закрито, -REVEAL — відкрито
+// Свайп відкриває бічну панель довільного вмісту. `side="right"` (типово) — свайп вліво,
+// панель праворуч (видалення); `side="left"` — свайп вправо, панель ліворуч (історія
+// кількостей #63, як продовження лівої плашки). Тут вирішено головне: розрізнення
+// горизонтального свайпу від вертикального скролу, прилипання відкрито/закрито, ковтання
+// синтетичного click одразу після свайпу. `panel` — вузол або функція (close) => вузол.
+export const SwipeReveal = ({ children, panel, width = 92, openAt = 40, side = "right", t, disabled = false }) => {
+  const dir = side === "left" ? 1 : -1;       // +1: свайп вправо; -1: свайп вліво
+  const [dx, setDx] = useState(0);            // 0 — закрито, dir*width — відкрито
   const [dragging, setDragging] = useState(false);
   const s = useRef(null);
   const dxRef = useRef(0);
   const armed = useRef(false);                // ковтнути синтетичний click одразу після свайпу
   if (disabled) return children;
   const setX = (v) => { dxRef.current = v; setDx(v); };
+  const close = () => setX(0);
+  const clamp = (v) => dir < 0 ? Math.max(-width, Math.min(0, v)) : Math.min(width, Math.max(0, v));
+  const isOpen = (v) => dir < 0 ? v <= -openAt : v >= openAt;
   const down = (e) => { s.current = { x: e.clientX, y: e.clientY, base: dxRef.current, on: false }; };
   const move = (e) => {
     if (!s.current) return;
@@ -310,32 +316,46 @@ export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label }
       else if (Math.abs(ddy) > 8) { s.current = null; return; } // вертикальний скрол
       else return;
     }
-    setX(Math.max(-REVEAL, Math.min(0, s.current.base + ddx)));
+    setX(clamp(s.current.base + ddx));
   };
   const up = () => {
     const on = s.current && s.current.on; s.current = null; setDragging(false);
     if (!on) return;
-    setX(dxRef.current <= -OPEN_AT ? -REVEAL : 0); // прилипання: відкрито / закрито
+    setX(isOpen(dxRef.current) ? dir * width : 0); // прилипання: відкрито / закрито
     armed.current = true; setTimeout(() => { armed.current = false; }, 250);
   };
-  const open = dx <= -OPEN_AT;
+  const open = isOpen(dx);
   return (
     <div style={{ position: "relative", overflow: "hidden" }}>
-      {/* Кнопку показуємо лише коли рядок відкривають/тягнуть — у закритому стані її
-          немає взагалі (щоб червоне не проступало під рядками). */}
-      {dx < 0 && (
-        <button onClick={(e) => { e.stopPropagation(); setX(0); onDelete && onDelete(); }}
-          style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: REVEAL, background: t.err, color: "#fff", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700 }}>
-          <MIcon name="trash" size={16} color="#fff" />
-          {lbl}
-        </button>
+      {/* Панель показуємо лише коли рядок відкривають/тягнуть — у закритому стані її немає
+          взагалі (щоб під рядками нічого не проступало). */}
+      {dx !== 0 && (
+        <div style={{ position: "absolute", top: 0, bottom: 0, [side]: 0, width, display: "flex" }}>
+          {typeof panel === "function" ? panel(close) : panel}
+        </div>
       )}
       <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-        onClickCapture={(e) => { if (armed.current) { armed.current = false; e.stopPropagation(); e.preventDefault(); return; } if (open) { e.stopPropagation(); e.preventDefault(); setX(0); } }}
+        onClickCapture={(e) => { if (armed.current) { armed.current = false; e.stopPropagation(); e.preventDefault(); return; } if (open) { e.stopPropagation(); e.preventDefault(); close(); } }}
         style={{ transform: `translateX(${dx}px)`, transition: dragging ? "none" : "transform .2s ease", touchAction: "pan-y", position: "relative", background: t.surface }}>
         {children}
       </div>
     </div>
+  );
+};
+
+export const SwipeToDelete = ({ children, onDelete, t, disabled = false, label }) => {
+  const { t: tr } = useTranslation();
+  const lbl = label || tr("common.delete"); // дефолт локалізований (#49)
+  return (
+    <SwipeReveal t={t} disabled={disabled} width={92} panel={(close) => (
+      <button onClick={(e) => { e.stopPropagation(); close(); onDelete && onDelete(); }}
+        style={{ width: "100%", background: t.err, color: "#fff", border: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: "pointer", fontFamily: "inherit", fontSize: 11, fontWeight: 700 }}>
+        <MIcon name="trash" size={16} color="#fff" />
+        {lbl}
+      </button>
+    )}>
+      {children}
+    </SwipeReveal>
   );
 };
 

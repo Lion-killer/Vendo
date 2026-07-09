@@ -125,6 +125,8 @@
     "products": "Товари",
     "productsWord": "товарів",
     "outOfStock": "немає",
+    "orderedBefore": "Замовляв раніше",
+    "orderedQtyHint": "Замовляв {{qty}}, {{date}} — тап підставить кількість",
     "empty": "Порожньо",
     "toOrder": "До замовлення →",
     "orderCtx": "Замовлення {{id}}",

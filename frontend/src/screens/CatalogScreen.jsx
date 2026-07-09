@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput } from '../components/ui';
-import { fmtMoney, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY } from '../i18n';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal } from '../components/ui';
+import { fmtMoney, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY, byName } from '../i18n';
 import { Z } from '../theme';
 import { scanBarcode } from '../api/scanner';
 
@@ -42,14 +42,14 @@ const flattenProducts = (node, trail = []) => {
 };
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
-// Товари без залишку (stock ≤ 0) — в кінець (#59). Сорт СТАБІЛЬНИЙ (Array.sort у V8/
-// WebView зберігає порядок рівних), тож відносний порядок бекенду в межах кожної групи
-// «в наявності»/«без залишку» не міняється. Не мутуємо вихідний масив.
-const outOfStockLast = (list) => list.slice().sort((a, b) =>
-    (Number(a.stock) <= 0 ? 1 : 0) - (Number(b.stock) <= 0 ? 1 : 0));
+// Порядок товарів (#59 + #61): «без залишку — в кінець» первинний ключ, назва — вторинний.
+// Тобто в межах кожної групи «в наявності»/«без залишку» товари йдуть за абеткою.
+// Не мутуємо вихідний масив.
+const sortProducts = (list) => list.slice().sort((a, b) =>
+    (Number(a.stock) <= 0 ? 1 : 0) - (Number(b.stock) <= 0 ? 1 : 0) || byName(a, b));
 
 // ─── Рядок товару з інлайн-степпером ──────────────────────────────────────────
-const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType }) => {
+const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType, ordered, recentQtys }) => {
     const { t: tr } = useTranslation();
     const noPrice = price == null; // тип вибрано, а ціни цього типу для товару немає
     const out = Number(p.stock) <= 0;
@@ -57,8 +57,14 @@ const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType }) =>
     const low = !out && Number(p.stock) < 5;
     const stockColor = out ? t.err : low ? t.warn : t.ok;
     const stockLabel = out ? tr("catalog.outOfStock") : `${p.stock}`;
-    return (
-        <Card t={t} style={{ padding: 12, marginBottom: 8 }}>
+    // #63: рядок «замовляного» товару, доступного до додавання, свайпається — відкриває
+    // чіпи останніх кількостей цього контрагента (тап ставить кількість у поле).
+    const swipeable = !blocked && recentQtys && recentQtys.length > 0;
+    const row = (
+        <Card t={t} style={{ padding: 12, marginBottom: 8, position: "relative" }}>
+            {/* Зелена вертикальна смужка (#62) — товар цей контрагент уже замовляв. Абсолютна,
+                в лівому полі картки → не забирає місця в рядка (як у замовленнях на головному). */}
+            {ordered && <div title={tr("catalog.orderedBefore")} aria-label={tr("catalog.orderedBefore")} style={{ position: "absolute", left: 4, top: 8, bottom: 8, width: 4, background: t.ok, borderRadius: 2 }} />}
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <ProductImage t={t} img={p.img} sku={p.sku} name={p.name} barcode={p.barcode} price={price} currency={p.currency} stock={p.stock} unit={p.unit} prices={p.prices} priceTypes={priceTypes} activePriceType={activePriceType} size={56} radius={10} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -90,6 +96,27 @@ const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType }) =>
             </div>
         </Card>
     );
+    if (!swipeable) return row;
+    // Свайп ВПРАВО відкриває панель ЛІВОРУЧ (side="left") — там, де зелена плашка (#62).
+    // Фон панелі зелений (t.ok) → візуально плашка розкривається в історію кількостей.
+    // Ширина під чіпи (до 3); тап ставить кількість (delta = qty чіпа − поточна).
+    const revealW = Math.min(recentQtys.length, 3) * 52 + 8;
+    return (
+        <SwipeReveal t={t} width={revealW} side="left" panel={(close) => (
+            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 6, padding: "0 8px", background: t.ok }}>
+                {recentQtys.slice(0, 3).map((r, i) => (
+                    <button key={i} onClick={(e) => { e.stopPropagation(); onAdd(p, r.qty - qty); close(); }}
+                        title={tr("catalog.orderedQtyHint", { qty: r.qty, date: fmtDate(r.date) })}
+                        style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 44, height: 44, padding: "0 6px", borderRadius: 10, background: t.surface, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+                        <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700, color: t.ink }}>{r.qty}</span>
+                        <span style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1 }}>{fmtDate(r.date).slice(0, 5)}</span>
+                    </button>
+                ))}
+            </div>
+        )}>
+            {row}
+        </SwipeReveal>
+    );
 };
 
 const GroupRow = ({ t, node, onOpen }) => {
@@ -115,7 +142,7 @@ const GroupRow = ({ t, node, onOpen }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], activePriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, notify, connecting, offsetTop = 0 }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], activePriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, orderedProductIds = new Set(), recentQtysByProduct = new Map(), notify, connecting, offsetTop = 0 }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -123,6 +150,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
     const root = useMemo(() => buildTree(categories, products), [categories, products]);
     const node = getNode(root, path);
     const subgroups = node.children || [];
+    const sortedSubgroups = useMemo(() => subgroups.slice().sort(byName), [subgroups]); // підгрупи за назвою (#61)
     const levelProducts = node.products || [];
 
     const crumbs = [{ name: tr("catalog.root"), path: [] }];
@@ -135,11 +163,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
 
     const searching = query.trim().length > 0;
     const results = useMemo(() => searching
-        ? outOfStockLast(flattenProducts(root).filter(p =>
+        ? sortProducts(flattenProducts(root).filter(p =>
             p.name.toLowerCase().includes(query.toLowerCase()) ||
             (p.sku || "").toLowerCase().includes(query.toLowerCase())))
         : [], [searching, query, root]);
-    const sortedLevelProducts = useMemo(() => outOfStockLast(levelProducts), [levelProducts]);
+    const sortedLevelProducts = useMemo(() => sortProducts(levelProducts), [levelProducts]);
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
 
@@ -259,20 +287,20 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                                 <MIcon name="search" size={36} color={t.line} />
                                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
                             </ListPlaceholder>
-                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} />)}
+                        ) : results.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} ordered={orderedProductIds.has(p.id)} recentQtys={recentQtysByProduct.get(p.id)} />)}
                     </>
                 ) : (
                     <>
                         {subgroups.length > 0 && (
                             <>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "2px 4px 8px" }}>{tr("catalog.subgroups")} · {subgroups.length}</div>
-                                {subgroups.map(g => <GroupRow key={g.id} t={t} node={g} onOpen={() => setPath([...path, g.id])} />)}
+                                {sortedSubgroups.map(g => <GroupRow key={g.id} t={t} node={g} onOpen={() => setPath([...path, g.id])} />)}
                             </>
                         )}
                         {levelProducts.length > 0 && (
                             <>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {levelProducts.length}</div>
-                                {sortedLevelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} />)}
+                                {sortedLevelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} ordered={orderedProductIds.has(p.id)} recentQtys={recentQtysByProduct.get(p.id)} />)}
                             </>
                         )}
                         {subgroups.length === 0 && levelProducts.length === 0 && (

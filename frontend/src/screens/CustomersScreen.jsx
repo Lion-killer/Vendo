@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet } from '../components/ui';
-import { fmtMoney, fmtDate, orderNum, curSymbol } from '../i18n';
+import { fmtMoney, fmtDate, orderNum, curSymbol, byName } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
 import { statusColor } from '../status';
@@ -138,6 +138,7 @@ export const CustomersScreen = ({ t, customers = [], orders = [], onNav, connect
                 .filter(Boolean).join(" ").toLowerCase().includes(q);
         });
     }
+    list = list.slice().sort(byName); // контрагенти за назвою (#61) — не мутуємо проп customers
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>

@@ -62,5 +62,7 @@ export { dateISO, todayISO } from './dates.js'; // чисті дата-хелп�
 export const fmtDate = (iso) => iso ? String(iso).split('-').reverse().join('.') : '';
 // Людський лейбл замовлення: номер документа або короткий №<id>.
 export const orderNum = (o) => (o && o.num) ? o.num : (o && o.id ? `№${String(o.id).slice(0, 8)}` : '');
+// Порядок за назвою (#61) — чистий компаратор (див. sort.js, тестується окремо).
+export { byName } from './sort.js';
 
 export default i18n;

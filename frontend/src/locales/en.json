@@ -125,6 +125,8 @@
     "products": "Products",
     "productsWord": "products",
     "outOfStock": "none",
+    "orderedBefore": "Ordered before",
+    "orderedQtyHint": "Ordered {{qty}} on {{date}} — tap to set quantity",
     "empty": "Empty",
     "toOrder": "To order →",
     "orderCtx": "Order {{id}}",

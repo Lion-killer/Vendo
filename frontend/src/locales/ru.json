@@ -125,6 +125,8 @@
     "products": "Товары",
     "productsWord": "товаров",
     "outOfStock": "нет",
+    "orderedBefore": "Заказывал ранее",
+    "orderedQtyHint": "Заказывал {{qty}}, {{date}} — тап подставит количество",
     "empty": "Пусто",
     "toOrder": "К заказу →",
     "orderCtx": "Заказ {{id}}",

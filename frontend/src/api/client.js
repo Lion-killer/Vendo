@@ -111,6 +111,12 @@ export const fetchCustomers = async () =>
 export const fetchCategories = async () =>
     (await tfetch(`${apiUrl()}/categories`, { headers: h() })).json();
 
+// Товари, які контрагент уже замовляв за всю історію (#62) — масив GUID. У 1С джерело —
+// обороти регістра ЗаказыПокупателей (не обмежені глибиною історії, як /orders). Викликач
+// має толерувати не-масив (404 для невідомого контрагента → { success:false }).
+export const fetchOrderedProducts = async (customerId) =>
+    (await tfetch(`${apiUrl()}/customers/${encodeURIComponent(customerId)}/ordered-products`, { headers: h() })).json();
+
 // Доступні типи цін пристрою (для селектора в каталозі): [{ id, name, default }].
 export const fetchPriceTypes = async () =>
     (await tfetch(`${apiUrl()}/price-types`, { headers: h() })).json();

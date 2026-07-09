@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LIGHT, DARK } from './theme';
 import { BottomNav, TopActions, Lightbox, closeLightbox, ConfirmDialog } from './components/ui';
@@ -10,14 +10,14 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer, fetchOrderedProducts } from './api/client';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
-import { idSet, checkOrderRefs, mergeOrders } from './api/refs';
+import { idSet, checkOrderRefs, mergeOrders, recentQtysForCustomer } from './api/refs';
 import { addSyncRun } from './api/syncHistory';
 import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 import { HelpScreen } from './screens/HelpScreen';
@@ -70,6 +70,58 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
+  // Раніше замовлені товари поточним контрагентом (#62) — множина GUID для підсвітки в
+  // каталозі. Порожня, коли контрагента не обрано (без нього немає «замовляв раніше»).
+  const [orderedProductIds, setOrderedProductIds] = useState(() => new Set());
+  const orderedCacheRef = useRef(new Map()); // customerId → Set<productId> (сесійний кеш)
+  // Джерело істини — 1С по всій історії (обхід глибини кешу замовлень), але одразу
+  // показуємо дешевий сигнал із кешованих замовлень вікна, а відповідь бекенду доливаємо.
+  // Кеш per-customer: сесійний (Map) + IndexedDB (офлайн-повтор). Каталог не блокуємо.
+  useEffect(() => {
+    const cid = editCustomer?.id;
+    if (!cid) { setOrderedProductIds(new Set()); return; }
+    let cancelled = false;
+    const idbKey = `ordered_products:${cid}`;
+
+    // 1) Дешевий сигнал із кешованих замовлень вікна (миттєво, працює офлайн).
+    const windowSet = new Set();
+    for (const o of mergeOrders(orders, getLocalOrders())) {
+      if (o.deletionMark || (o.customerId || o.customer?.id) !== cid) continue;
+      for (const it of (o.items || [])) { const pid = it.productId ?? it.product?.id; if (pid != null) windowSet.add(pid); }
+    }
+    const emit = () => {
+      if (cancelled) return;
+      const s = new Set(windowSet);
+      (orderedCacheRef.current.get(cid) || []).forEach(x => s.add(x));
+      setOrderedProductIds(s);
+    };
+    emit();
+
+    // Один похід у кеш/1С на контрагента за сесію — orders-зміни лише перераховують вікно.
+    if (!orderedCacheRef.current.has(cid)) {
+      dataGet(idbKey).then(list => {
+        if (cancelled || !Array.isArray(list) || orderedCacheRef.current.has(cid)) return;
+        orderedCacheRef.current.set(cid, new Set(list)); emit();
+      });
+      if (onlineRef.current) {
+        fetchOrderedProducts(cid).then(list => {
+          if (cancelled || !Array.isArray(list)) return; // 404/помилка → лишаємось на вікні
+          const full = new Set(list); windowSet.forEach(x => full.add(x));
+          orderedCacheRef.current.set(cid, full);
+          dataPut(idbKey, [...full]);
+          emit();
+        }).catch(() => { });
+      }
+    }
+    return () => { cancelled = true; };
+  }, [editCustomer, orders]);
+  // Останні кількості на товар для поточного контрагента (#63) — до 3 із вікна кешованих
+  // замовлень (без бекенду). Виключаємо саме відкрите замовлення, щоб воно не пропонувало
+  // власну кількість. Каталог показує їх чіпами по свайпу «замовляного» рядка.
+  const recentQtysByProduct = useMemo(
+    () => recentQtysForCustomer(mergeOrders(orders, getLocalOrders()).filter(o => o.id !== editOrderId), editCustomer?.id, 3),
+    [editCustomer, orders, editOrderId]
+  );
   const [priceTypes, setPriceTypes] = useState([]); // доступні типи цін пристрою (для селектора)
   const [selectedPriceType, setSelectedPriceType] = useState(() => localStorage.getItem(K.priceType) || ""); // вибраний тип у каталозі
   const [pendingPriceType, setPendingPriceType] = useState(""); // тип, на який чекаємо підтвердження перерахунку (є позиції)
@@ -740,7 +792,7 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} update={update} onShowUpdate={() => { setUpdPhase(null); setShowUpdatePrompt(true); }} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} orderedProductIds={orderedProductIds} recentQtysByProduct={recentQtysByProduct} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
           {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} comment={editComment} pushComment={setEditComment} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
