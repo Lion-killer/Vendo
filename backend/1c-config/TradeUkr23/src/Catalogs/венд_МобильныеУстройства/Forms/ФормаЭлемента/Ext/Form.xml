@@ -51,25 +51,25 @@
 					<ContextMenu name="МенеджерКонтекстноеМеню" id="16" />
 					<ExtendedTooltip name="МенеджерРасширеннаяПодсказка" id="17" />
 				</InputField>
-				<CheckBoxField name="АвтоПроведение" id="50">
-					<DataPath>Объект.АвтоПроведение</DataPath>
+				<InputField name="РежимОбработкиЗаказа" id="50">
+					<DataPath>РежимОбработкиЗаказа</DataPath>
 					<Title>
 						<v8:item>
 							<v8:lang>ru</v8:lang>
-							<v8:content>Автопроведение заказов</v8:content>
+							<v8:content>Обработка заказа</v8:content>
 						</v8:item>
 						<v8:item>
 							<v8:lang>uk</v8:lang>
-							<v8:content>Автопроведення замовлень</v8:content>
+							<v8:content>Обробка замовлення</v8:content>
 						</v8:item>
 						<v8:item>
 							<v8:lang>en</v8:lang>
-							<v8:content>Auto-post orders</v8:content>
+							<v8:content>Order processing</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="АвтоПроведениеКонтекстноеМеню" id="51" />
-					<ExtendedTooltip name="АвтоПроведениеРасширеннаяПодсказка" id="52" />
-				</CheckBoxField>
+					<ContextMenu name="РежимОбработкиЗаказаКонтекстноеМеню" id="51" />
+					<ExtendedTooltip name="РежимОбработкиЗаказаРасширеннаяПодсказка" id="52" />
+				</InputField>
 				<InputField name="ГлубинаИсторииЗаказов" id="64">
 					<DataPath>Объект.ГлубинаИсторииЗаказов</DataPath>
 					<Title>
@@ -335,6 +335,15 @@
 			</Type>
 		</Attribute>
 		<Attribute name="КодПривязки" id="70">
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="РежимОбработкиЗаказа" id="71">
 			<Type>
 				<v8:Type>xs:string</v8:Type>
 				<v8:StringQualifiers>
