@@ -96,6 +96,20 @@
         "responses": { "200": { "description": "Список контрагентів", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
       }
     },
+    "/customers/{id}/ordered-products": {
+      "get": {
+        "tags": ["Довідники"], "summary": "GUID товарів, які контрагент замовляв за всю історію",
+        "description": "Множина товарів, які контрагент колись замовляв — для підсвітки в каталозі (#62). На відміну від /orders НЕ обмежена глибиною історії. У 1С джерело — обороти регістра ЗаказыПокупателей (лише проведені документи, по всіх менеджерах); мок наближає як distinct productId із непомічених на видалення замовлень контрагента.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "GUID контрагента" }
+        ],
+        "responses": {
+          "200": { "description": "Масив GUID товарів (порожній, якщо контрагент нічого не замовляв)", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "string" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "description": "Контрагента не знайдено", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
     "/orders": {
       "get": {
         "tags": ["Замовлення"], "summary": "Замовлення менеджера пристрою за період",

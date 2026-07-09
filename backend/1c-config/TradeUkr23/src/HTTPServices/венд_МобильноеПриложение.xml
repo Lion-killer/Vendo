@@ -144,6 +144,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="f00732ca-3a89-4791-81af-7d9daba3bbe1">
+				<Properties>
+					<Name>CustomerOrderedProducts</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>CustomerOrderedProducts</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/customers/{id}/ordered-products</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="90c87a9b-725c-4188-8812-3773d1d25f4d">
+						<Properties>
+							<Name>Get</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Get</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>GET</HTTPMethod>
+							<Handler>OrderedProductsGet</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 			<URLTemplate uuid="208d9e5b-6512-4190-a2fb-9b25763115ef">
 				<Properties>
 					<Name>Orders</Name>

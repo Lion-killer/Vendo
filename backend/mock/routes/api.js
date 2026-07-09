@@ -146,6 +146,23 @@ router.get('/customers', (req, res) => {
     res.json(store.customers.map(c => ({ ...c, debtCurrency: '980' })));
 });
 
+// GET /customers/:id/ordered-products (#62) — GUID товарів, які контрагент замовляв за всю
+// історію (не обмежену глибиною, як /orders). У 1С джерело — обороти регістра
+// ЗаказыПокупателей (лише проведені документи); mock без регістрів наближає це як distinct
+// productId із непомічених на видалення замовлень контрагента.
+router.get('/customers/:id/ordered-products', (req, res) => {
+    const { id } = req.params;
+    if (!store.customerById(id)) {
+        return res.status(404).json({ success: false, message: msg(req, 'customerNotFound').replace('%1', String(id)) });
+    }
+    const ids = new Set();
+    for (const o of store.orders) {
+        if (o.deletionMark || o.customerId !== id) continue;
+        for (const it of (o.items || [])) if (it.productId != null) ids.add(String(it.productId));
+    }
+    res.json([...ids]);
+});
+
 router.get('/orders', (req, res) => {
     const { startDate, endDate } = req.query;
     let orders = [...store.orders]
