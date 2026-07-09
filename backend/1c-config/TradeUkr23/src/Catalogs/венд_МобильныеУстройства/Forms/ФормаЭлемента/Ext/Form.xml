@@ -67,6 +67,72 @@
 							<v8:content>Order processing</v8:content>
 						</v8:item>
 					</Title>
+					<ChoiceList>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation>
+									<v8:item>
+										<v8:lang>uk</v8:lang>
+										<v8:content>Створити замовлення</v8:content>
+									</v8:item>
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Создать заказ</v8:content>
+									</v8:item>
+									<v8:item>
+										<v8:lang>en</v8:lang>
+										<v8:content>Create order</v8:content>
+									</v8:item>
+								</Presentation>
+								<Value xsi:type="xs:string">create</Value>
+							</xr:Value>
+						</xr:Item>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation>
+									<v8:item>
+										<v8:lang>uk</v8:lang>
+										<v8:content>Створити замовлення і провести</v8:content>
+									</v8:item>
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Создать заказ и провести</v8:content>
+									</v8:item>
+									<v8:item>
+										<v8:lang>en</v8:lang>
+										<v8:content>Create order and post</v8:content>
+									</v8:item>
+								</Presentation>
+								<Value xsi:type="xs:string">post</Value>
+							</xr:Value>
+						</xr:Item>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation>
+									<v8:item>
+										<v8:lang>uk</v8:lang>
+										<v8:content>Створити замовлення, провести і створити РТУ</v8:content>
+									</v8:item>
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Создать заказ, провести и создать РТУ</v8:content>
+									</v8:item>
+									<v8:item>
+										<v8:lang>en</v8:lang>
+										<v8:content>Create order, post and create sale</v8:content>
+									</v8:item>
+								</Presentation>
+								<Value xsi:type="xs:string">post_sale</Value>
+							</xr:Value>
+						</xr:Item>
+					</ChoiceList>
+					<ListChoiceMode>true</ListChoiceMode>
 					<ContextMenu name="РежимОбработкиЗаказаКонтекстноеМеню" id="51" />
 					<ExtendedTooltip name="РежимОбработкиЗаказаРасширеннаяПодсказка" id="52" />
 				</InputField>
