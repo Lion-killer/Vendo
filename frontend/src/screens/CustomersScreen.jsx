@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet } from '../components/ui';
-import { fmtMoney, fmtDate, orderNum, curSymbol, byName } from '../i18n';
+import { CustomerTree } from '../components/CustomerTree';
+import { fmtMoney, fmtDate, orderNum, curSymbol } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
 import { statusColor } from '../status';
@@ -115,7 +116,7 @@ const ClientRow = ({ t, c, onClick }) => {
     );
 };
 
-export const CustomersScreen = ({ t, customers = [], orders = [], onNav, connecting }) => {
+export const CustomersScreen = ({ t, customers = [], customerGroups = [], orders = [], onNav, connecting }) => {
     const { t: tr } = useTranslation();
     const [filter, setFilter] = useState("all");
     const [query, setQuery] = useState("");
@@ -127,18 +128,10 @@ export const CustomersScreen = ({ t, customers = [], orders = [], onNav, connect
         { id: "debt", label: tr("customers.withDebt"), n: withDebt.length },
     ];
 
-    let list = filter === "debt" ? withDebt : customers;
-    if (query.trim()) {
-        const q = query.toLowerCase();
-        // Пошук за назвою, кодом, адресою, телефоном і контактними особами (#11).
-        list = list.filter(c => {
-            const contacts = Array.isArray(c.contacts)
-                ? c.contacts.map(p => `${p.name || ""} ${p.phone || ""}`).join(" ") : "";
-            return [c.name, c.code, c.address, c.phone, c.contact, contacts]
-                .filter(Boolean).join(" ").toLowerCase().includes(q);
-        });
-    }
-    list = list.slice().sort(byName); // контрагенти за назвою (#61) — не мутуємо проп customers
+    // Дерево контрагентів (#64) будує/фільтрує CustomerTree: «З боргом» → плоский список
+    // боржників; пошук → плоский по всьому дереву; інакше → навігація папками. Сортування
+    // за назвою (#61) — усередині CustomerTree.
+    const treeCustomers = filter === "debt" ? withDebt : customers;
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
@@ -175,14 +168,16 @@ export const CustomersScreen = ({ t, customers = [], orders = [], onNav, connect
                 </div>
             </div>
 
-            {/* Список */}
+            {/* Список / дерево папок */}
             <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
-                {list.length === 0 ? (
-                    <ListPlaceholder loading={connecting && customers.length === 0} t={t}>
-                        <MIcon name="users" size={36} color={t.line} />
-                        <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
-                    </ListPlaceholder>
-                ) : list.map(c => <ClientRow key={c.id || c.code} t={t} c={c} onClick={() => setSelected(c)} />)}
+                <CustomerTree t={t} groups={customerGroups} customers={treeCustomers} query={query} forceFlat={filter === "debt"}
+                    renderClient={c => <ClientRow key={c.id || c.code} t={t} c={c} onClick={() => setSelected(c)} />}
+                    empty={
+                        <ListPlaceholder loading={connecting && customers.length === 0} t={t}>
+                            <MIcon name="users" size={36} color={t.line} />
+                            <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("common.nothing")}</div>
+                        </ListPlaceholder>
+                    } />
                 <div style={{ height: 16 }} />
             </div>
 

@@ -40,3 +40,22 @@ if (cfgUpdated === cfg && !cfg.includes(`<Version>${version}</Version>`)) {
 }
 writeFileSync(cfgPath, cfgUpdated);
 console.log(`sync-version: 1С Configuration.xml → Version ${version}`);
+
+// Версія бекенду в /health (#66). Configuration.xml після об'єднання з УТ версію не несе
+// (Метаданные.Версия = версія УТ), тому в HTTP-модулі 1С — рядок-літерал із маркером,
+// який синкаємо тут. Mock віддає версію зі свого package.json — синкаємо і його.
+const bslPath = join(root, '..', 'backend', '1c-config', 'TradeUkr23', 'src', 'HTTPServices', 'венд_МобильноеПриложение', 'Ext', 'Module.bsl');
+const bsl = readFileSync(bslPath, 'utf8');
+const bslUpdated = bsl.replace(/Возврат "[^"]*"; \/\/ vendo-sync-version/, `Возврат "${version}"; // vendo-sync-version`);
+if (bslUpdated === bsl && !bsl.includes(`Возврат "${version}"; // vendo-sync-version`)) {
+    console.error('sync-version: не знайшов маркер vendo-sync-version у Module.bsl HTTP-сервісу');
+    process.exit(1);
+}
+writeFileSync(bslPath, bslUpdated);
+console.log(`sync-version: 1С Module.bsl → ВерсияБекенда "${version}"`);
+
+const mockPkgPath = join(root, '..', 'backend', 'mock', 'package.json');
+const mockPkg = JSON.parse(readFileSync(mockPkgPath, 'utf8'));
+mockPkg.version = version;
+writeFileSync(mockPkgPath, JSON.stringify(mockPkg, null, 2) + '\n');
+console.log(`sync-version: mock package.json → version ${version}`);

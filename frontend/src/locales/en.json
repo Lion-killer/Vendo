@@ -15,6 +15,11 @@
     "loadBanner": "Loading errors: {{what}}",
     "details": "Details"
   },
+  "compat": {
+    "banner": "The backend (1C) is older than the app — some features may not work. Contact your administrator.",
+    "appOld": "The app version is too old for this backend — please update the app.",
+    "updateWarn": "This update needs a newer backend (1C). The deployed version isn't ready yet — the update may not work correctly until the administrator updates 1C."
+  },
   "log": {
     "title": "Error log",
     "showAll": "All",
@@ -159,6 +164,8 @@
     "count": "{{count}} clients",
     "searchPlaceholder": "Search: name, code, address, phone…",
     "all": "All",
+    "root": "Clients",
+    "clientsWord": "clients",
     "withDebt": "With debt",
     "code": "Code",
     "address": "Address",

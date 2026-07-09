@@ -44,4 +44,13 @@ const PRICE_TYPES = [
     { id: 'wholesale', name: 'Оптова', factor: 0.9 },
     { id: 'promo', name: 'Акційна', factor: 0.8 },
 ];
-module.exports = { MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES };
+// Порівняння semver "x.y.z": true, якщо a < b. Толерує префікс "v"; нечислові сегменти → 0.
+// Для хард-гейта сумісності (#66): відхиляємо додаток, старіший за minAppVersion.
+const verLt = (a, b) => {
+    const pa = String(a).replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const pb = String(b).replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) < (pb[i] || 0);
+    return false;
+};
+
+module.exports = { MESSAGES, pickLang, msg, computeTotal, BASE_CURRENCY, MOCK_CURRENCY, convertPrice, PRICE_TYPES, verLt };

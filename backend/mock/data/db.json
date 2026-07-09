@@ -370,7 +370,8 @@
       "contact": "Іваненко І.",
       "phone": "+380671112233",
       "debt": 12500,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg5"
     },
     {
       "id": "06ea8699-8475-4cad-b743-c1b6f2cfe983",
@@ -380,7 +381,8 @@
       "contact": "Петренко П.",
       "phone": "+380505556677",
       "debt": 0,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "789f1429-6fdb-41a5-8c8a-7f8041519ece",
@@ -390,7 +392,8 @@
       "contact": "Коваль О.",
       "phone": "+380638889900",
       "debt": 3200,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "8dbedd41-f184-46a7-acb9-942d3864e35a",
@@ -400,7 +403,8 @@
       "contact": "",
       "phone": "",
       "debt": 0,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg3"
     },
     {
       "id": "d26e839a-ddfe-4e10-ab3d-a44eb02159ba",
@@ -420,7 +424,8 @@
         }
       ],
       "debt": 8400,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "9b5c2ac8-160b-46b6-856a-6cb4393421d6",
@@ -440,7 +445,8 @@
         }
       ],
       "debt": 0,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "bea5959f-275e-4623-9f04-5d096019e9f0",
@@ -464,7 +470,8 @@
         }
       ],
       "debt": 45200,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "b67b4aa6-3820-40b7-a4da-a2400b823856",
@@ -474,7 +481,8 @@
       "contact": "Гнатюк Л.П.",
       "phone": "+380975234808",
       "debt": -1500,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg3"
     },
     {
       "id": "fb30e7cb-7d47-44e9-a56b-e5c9d27cec08",
@@ -494,7 +502,8 @@
         }
       ],
       "debt": 23100,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "e4bae8b6-69a8-46e0-a811-d2646a818c8c",
@@ -504,7 +513,8 @@
       "contact": "Стельмах Б.Я.",
       "phone": "+380677235011",
       "debt": 1750,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg5"
     },
     {
       "id": "00fa9282-8ab2-4674-9b31-3c1675951cb3",
@@ -524,7 +534,8 @@
         }
       ],
       "debt": 0,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg5"
     },
     {
       "id": "9f460317-852a-4d0a-9ab5-a0ce9192f205",
@@ -534,7 +545,8 @@
       "contact": "Гриценко А.М.",
       "phone": "+380443235214",
       "debt": 5600,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg2"
     },
     {
       "id": "764ada25-530c-4b42-9bbd-16b6e45dadbb",
@@ -554,7 +566,8 @@
         }
       ],
       "debt": 12800,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg2"
     },
     {
       "id": "bf869a1b-a724-4b81-8ea8-5797abbf3111",
@@ -564,7 +577,8 @@
       "contact": "Шевчук О.І.",
       "phone": "+380975235417",
       "debt": 320,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg3"
     },
     {
       "id": "c7e5141c-391e-4255-81f6-dc6287ec9a2d",
@@ -574,7 +588,8 @@
       "contact": "Романюк С.П.",
       "phone": "+380445235518",
       "debt": 0,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg5"
     },
     {
       "id": "c3658f9a-417b-4b25-b109-6f157f511152",
@@ -594,7 +609,8 @@
         }
       ],
       "debt": 9900,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg2"
     },
     {
       "id": "e33e5fbd-9f12-477b-95f2-1cb621a6a5d9",
@@ -604,7 +620,8 @@
       "contact": "Білик Р.О.",
       "phone": "+380612235721",
       "debt": -800,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg5"
     },
     {
       "id": "2ba57a01-ce0a-4da2-85e0-4abbbe4d1200",
@@ -614,7 +631,8 @@
       "contact": "Назаренко Т.Л.",
       "phone": "+380567235822",
       "debt": 4100,
-      "status": "inactive"
+      "status": "inactive",
+      "groupId": "cg3"
     },
     {
       "id": "f0a3ebec-e4e0-46d3-84f9-4e4e1e3adde3",
@@ -624,7 +642,8 @@
       "contact": "Федорів Г.М.",
       "phone": "+380677235923",
       "debt": 670,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg2"
     },
     {
       "id": "460eb0ee-5e83-4fe6-83c1-5af789a6d6de",
@@ -648,7 +667,8 @@
         }
       ],
       "debt": 67300,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "6801b00a-c67d-43e2-b79a-1d6ff3442545",
@@ -658,7 +678,8 @@
       "contact": "Бондаренко Н.С.",
       "phone": "+380975236127",
       "debt": 0,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg3"
     },
     {
       "id": "d9be991b-6168-4c45-9b93-7dd1eb0fb462",
@@ -668,7 +689,8 @@
       "contact": "Попеску В.Д.",
       "phone": "+380372236228",
       "debt": 2900,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg5"
     },
     {
       "id": "6975bc93-3bf4-4317-a73f-59e7634f4945",
@@ -688,7 +710,8 @@
         }
       ],
       "debt": 38500,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg4"
     },
     {
       "id": "2fee10e3-33ce-48ff-85fb-a091d0a64ab3",
@@ -698,7 +721,8 @@
       "contact": "Кириленко А.О.",
       "phone": "+380562236431",
       "debt": 1450,
-      "status": "active"
+      "status": "active",
+      "groupId": "cg2"
     }
   ],
   "categories": [
@@ -1595,5 +1619,32 @@
   },
   "telemetry": {
     "requestLog": false
-  }
+  },
+  "customerGroups": [
+    {
+      "id": "cg1",
+      "name": "Роздрібні мережі",
+      "parentId": null
+    },
+    {
+      "id": "cg2",
+      "name": "HoReCa",
+      "parentId": null
+    },
+    {
+      "id": "cg3",
+      "name": "ФОПи та дрібний опт",
+      "parentId": null
+    },
+    {
+      "id": "cg4",
+      "name": "Національні",
+      "parentId": "cg1"
+    },
+    {
+      "id": "cg5",
+      "name": "Локальні",
+      "parentId": "cg1"
+    }
+  ]
 }

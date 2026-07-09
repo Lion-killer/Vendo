@@ -1,0 +1,14 @@
+#!/bin/sh
+# Vendo pre-commit (#66): коли коміт зачіпає бекенд — перевіряємо контракт і мінімальну
+# сумісну версію додатка (minAppVersion). Зламна зміна контракту без підняття minAppVersion
+# або розходження mock↔1С зупиняють коміт.
+# Вмикається через core.hooksPath=.githooks (npm-хук "prepare" у кореневому package.json).
+# ponytail: перевіряє робоче дерево (не точний staged-знімок) — для суцільного коміту це те
+# саме; для часткового staging може бути ширше. Обійти разово: git commit --no-verify.
+if git diff --cached --name-only | grep -q '^backend/'; then
+  echo "pre-commit: перевірка контракту бекенду (minAppVersion, #66)…"
+  ( cd backend/mock && node --test contract.test.mjs ) || {
+    echo "pre-commit: перевірка контракту провалилась — коміт зупинено (обхід: --no-verify)." >&2
+    exit 1
+  }
+fi

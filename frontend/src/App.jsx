@@ -10,7 +10,8 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
-import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, pingServer, fetchOrderedProducts } from './api/client';
+import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, setOnAppTooOld, pingServer, fetchOrderedProducts, fetchCustomerGroups, fetchHealth } from './api/client';
+import { checkCompat, backendSatisfies } from './contract';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
@@ -68,6 +69,7 @@ export default function App() {
   const [editComment, setEditComment] = useState(""); // коментар до замовлення (#60)
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [customerGroups, setCustomerGroups] = useState([]); // папки контрагентів (#64) — дерево клієнтів
   const [customers, setCustomers] = useState([]);
   const [orders, setOrders] = useState([]);
   // Раніше замовлені товари поточним контрагентом (#62) — множина GUID для підсвітки в
@@ -129,6 +131,10 @@ export default function App() {
   // (нова версія може виправляти саму авторизацію). Перевірка анонімна (токен не потрібен).
   const [update, setUpdate] = useState(null);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+  // Сумісність бекенду (#66): health із /health + результат каскаду. null compat = невідомо
+  // (офлайн/помилка) → без банера. Онови в loadData й при поверненні зв'язку.
+  const [backendHealth, setBackendHealth] = useState(null);
+  const [backendCompat, setBackendCompat] = useState(null);
   const [updPhase, setUpdPhase] = useState(null); // null → downloading → installing/permission/error
   const [updProgress, setUpdProgress] = useState(0);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
@@ -359,11 +365,32 @@ export default function App() {
     } catch { /* офлайн — лишаємось на кеші */ }
   };
 
+  // Папки контрагентів (#64) — окремо від 4-колекційного знімка (рідко змінюються, як
+  // priceTypes): кеш одразу (offline-first), далі мережа. Збій груп не блокує основні дані.
+  const loadCustomerGroups = async () => {
+    try { const cached = await dataGet('customerGroups'); if (Array.isArray(cached)) setCustomerGroups(cached); } catch { /* немає кешу */ }
+    try {
+      const fresh = await fetchCustomerGroups();
+      if (Array.isArray(fresh)) { dataPut('customerGroups', fresh); setCustomerGroups(fresh); }
+    } catch { /* офлайн — лишаємось на кеші */ }
+  };
+
+  // Сумісність бекенду (#66): читаємо /health і проганяємо версійний каскад. null health
+  // (офлайн/помилка) → compat=null (не знаємо, банера немає). Викликається на завантаженні
+  // й при поверненні зв'язку — старий 1С без поля version дасть банер, щойно зв'язок є.
+  const refreshCompat = async () => {
+    const hp = await fetchHealth();
+    setBackendHealth(hp);
+    setBackendCompat(hp ? checkCompat(hp, APP_VERSION) : null);
+  };
+
   // Запуск: спершу кеш (одразу), далі мережа у фоні (не блокує UI).
   const loadData = async () => {
     collectionsFpRef.current = {}; // нова сесія/перезавантаження — перший знімок застосовується завжди
     await loadFromCache();
     loadPriceTypes(); // паралельно, не блокує основні дані
+    loadCustomerGroups(); // папки контрагентів (#64) — паралельно
+    refreshCompat(); // сумісність бекенду (#66) — паралельно
     await fetchFromNetwork();
   };
 
@@ -487,7 +514,7 @@ export default function App() {
     if (!isLoggedIn) return;
 
     // Повернення звʼязку/додатку на передній план — одразу тягнемо свіже.
-    const handleOnline = () => fetchFromNetwork(true);
+    const handleOnline = () => { fetchFromNetwork(true); refreshCompat(); };
     const handleOffline = () => { onlineRef.current = false; setIsOnline(false); };
     const handleVisible = () => { if (document.visibilityState === 'visible') fetchFromNetwork(true); };
 
@@ -590,7 +617,8 @@ export default function App() {
   sessionRevokedRef.current = sessionRevoked;
   useEffect(() => {
     setOnAuthReject(() => sessionRevokedRef.current());
-    return () => setOnAuthReject(null);
+    setOnAppTooOld(() => refreshCompat()); // #66: 426 від бекенду → перечитати /health → банер «оновіть додаток»
+    return () => { setOnAuthReject(null); setOnAppTooOld(null); };
   }, []);
 
   // #34: очистити всі локальні дані, ОКРІМ авторизації/налаштувань. Видаляємо все з
@@ -600,7 +628,7 @@ export default function App() {
     Object.keys(localStorage).forEach(k => { if (!CLEAR_KEEP.includes(k)) localStorage.removeItem(k); });
     clearImageCache();
     clearDataCache();
-    setProducts([]); setCategories([]); setCustomers([]); setOrders([]); setLoadError(null);
+    setProducts([]); setCategories([]); setCustomerGroups([]); setCustomers([]); setOrders([]); setLoadError(null);
     setOrderItems([]); setEditOrderId(null); setEditCustomer(null);
     notify(tr('toast.dataCleared'));
     // Перезавантаження з сервера — ФОРСОВАНЕ (минаємо guard): на повільній 1С фоновий
@@ -761,7 +789,12 @@ export default function App() {
 
   // Зсув плаваючих верхніх кластерів (глобальний TopActions + власні дії каталогу) на
   // висоту банера помилки, щоб вони лишались вирівняними з посунутим донизу контентом.
-  const topOffset = loadError ? 42 : 0;
+  // Сумісність (#66): банер, коли бекенд старіший за BACKEND_FULL (обмеження) або додаток
+  // старіший за minAppVersion бекенду (оновіть додаток — сильніший, має пріоритет).
+  // Гейт оновлення — коли реліз потребує новішого бекенду, ніж розгорнутий.
+  const compatWarn = !!(backendCompat && !backendCompat.ok);
+  const updateNeedsBackend = !!(update?.req && backendHealth && !backendSatisfies(backendHealth, update.req));
+  const topOffset = (loadError ? 42 : 0) + (isLoggedIn && compatWarn ? 42 : 0);
 
   return (
     <>
@@ -788,14 +821,23 @@ export default function App() {
           </button>
         )}
 
+        {/* Банер сумісності (#66) — інформаційний (жовтий), не блокує роботу: бекенд
+            старіший за додаток (обмеження) або додаток застарілий для бекенду (оновіть). */}
+        {isLoggedIn && compatWarn && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: t.warnSoft, color: t.warn, padding: "10px 16px", borderBottom: `1px solid ${t.warn}33` }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>{tr(backendCompat.needsAppUpdate ? "compat.appOld" : "compat.banner")}</span>
+          </div>
+        )}
+
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} update={update} onShowUpdate={() => { setUpdPhase(null); setShowUpdatePrompt(true); }} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} orderedProductIds={orderedProductIds} recentQtysByProduct={recentQtysByProduct} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
-          {screen === "customers" && <CustomersScreen t={t} customers={customers} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
+          {screen === "customers" && <CustomersScreen t={t} customers={customers} customerGroups={customerGroups} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
-          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} comment={editComment} pushComment={setEditComment} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
+          {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} comment={editComment} pushComment={setEditComment} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} customerGroups={customerGroups} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
 
         {/* Нижня навігація (тільки після логіну) */}
@@ -822,7 +864,7 @@ export default function App() {
       <Lightbox />
 
       {/* Промпт оновлення — глобальний, поверх будь-якого екрана (зокрема логіну) */}
-      {showUpdatePrompt && <UpdatePrompt t={t} appVersion={APP_VERSION} update={update} phase={updPhase} progress={updProgress} onStart={startUpdate} onLater={closeUpdate} onOpenSettings={openInstallSettings} />}
+      {showUpdatePrompt && <UpdatePrompt t={t} appVersion={APP_VERSION} update={update} needsBackend={updateNeedsBackend} phase={updPhase} progress={updProgress} onStart={startUpdate} onLater={closeUpdate} onOpenSettings={openInstallSettings} />}
 
       {/* Підтвердження зміни типу цін для замовлення з позиціями (перерахувати / лишити поточний) */}
       {pendingPriceType && (

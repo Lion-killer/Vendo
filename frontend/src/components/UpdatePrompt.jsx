@@ -8,7 +8,7 @@ import { Z } from '../theme';
 // App (глобальний оверлей), тому з'являється НЕЗАЛЕЖНО від входу — зокрема на екрані логіну,
 // бо нова версія може виправляти саму авторизацію. checkForUpdate анонімний (токен не потрібен).
 // phase: null (пропозиція) → downloading → installing / permission / error.
-export const UpdatePrompt = ({ t, appVersion, update, phase, progress, onStart, onLater, onOpenSettings }) => {
+export const UpdatePrompt = ({ t, appVersion, update, needsBackend, phase, progress, onStart, onLater, onOpenSettings }) => {
   const { t: tr } = useTranslation();
   if (!update) return null;
   return (
@@ -75,6 +75,13 @@ export const UpdatePrompt = ({ t, appVersion, update, phase, progress, onStart, 
       )}
       {!phase && (
         <>
+          {/* Гейт сумісності (#66): реліз потребує новішого бекенду, ніж розгорнутий — оновитись
+              дозволяємо (за рішенням), але із застереженням. */}
+          {needsBackend && (
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: t.warn, background: t.warn + "18", border: `1px solid ${t.warn}44`, borderRadius: 12, padding: "10px 12px", marginBottom: 10, flexShrink: 0 }}>
+              {tr("compat.updateWarn")}
+            </div>
+          )}
           <button onClick={onStart} style={{ width: "100%", height: 52, borderRadius: 14, background: t.accent, border: "none", color: "#fff", fontSize: 15.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
             {tr("profile.update", { version: update.version })}
           </button>

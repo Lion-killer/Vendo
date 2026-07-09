@@ -7,17 +7,18 @@
 // @capacitor/core — статичний (client.js його однаково тягне в основний чанк); динамічним
 // лишається лише те, що справді код-спліт (filesystem — потрібен тільки на нативі).
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { cmpVer } from '../contract.js'; // з розширенням — файл ганяється й у node --test
+
+export { cmpVer }; // жив тут історично; переїхав у contract.js (чистий — потрібен changelog.mjs у ноді)
 
 const RELEASES_LIST = "https://api.github.com/repos/Lion-killer/Vendo/releases?per_page=30";
 
-// Порівняння semver-рядків: -1 (a<b) / 0 / 1. Нечислові сегменти → 0.
-export const cmpVer = (a, b) => {
-    const pa = String(a).replace(/^v/, "").split(".").map(n => parseInt(n, 10) || 0);
-    const pb = String(b).replace(/^v/, "").split(".").map(n => parseInt(n, 10) || 0);
-    for (let i = 0; i < 3; i++) {
-        if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) < (pb[i] || 0) ? -1 : 1;
-    }
-    return 0;
+// Маркер вимог контракту в нотатках релізу (#66), напр.
+// <!-- vendo-contract: {"minBackend":"0.17.0"} --> — вшиває changelog.mjs із коду.
+const parseContractReq = (body) => {
+    const m = String(body || "").match(/<!--\s*vendo-contract:\s*(\{[\s\S]*?\})\s*-->/);
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch { return null; }
 };
 
 let cached; // одна перевірка за сесію (undefined = ще не питали, null = оновлення немає)
@@ -90,10 +91,13 @@ export function pickUpdate(list, current) {
     const notes = newer.length === 1
         ? (newer[0].body || "").trim()
         : newer.map(r => `## v${r.ver}\n\n${(r.body || "").trim()}`).join("\n\n");
-    return { version: target.ver, notes, url: apk?.browser_download_url || target.html_url };
+    // req (#66) — вимоги контракту релізу з маркера; гейт «needsBackend» рахує App реактивно
+    // від поточного /health (щоб не кешувати стан до логіну, коли бекенд ще невідомий).
+    const req = parseContractReq(target.body);
+    return { version: target.ver, notes, url: apk?.browser_download_url || target.html_url, req };
 }
 
-// → { version, notes, url } якщо на GitHub є новіша версія, інакше null. Помилки мережі → null.
+// → { version, notes, url, req } якщо є новіша версія, інакше null. Помилки мережі → null.
 export async function checkForUpdate(current) {
     if (cached !== undefined) return cached;
     try {

@@ -238,6 +238,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="ffce22d1-8bb7-4b39-bad9-451cea9b3f07">
+				<Properties>
+					<Name>CustomerGroups</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>CustomerGroups</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/customer-groups</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="ab912df9-39f0-4147-8811-781996c2b95e">
+						<Properties>
+							<Name>Get</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Get</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>GET</HTTPMethod>
+							<Handler>CustomerGroupsGet</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 			<URLTemplate uuid="27828ca8-4a1f-424d-ab51-9cc686cf2880">
 				<Properties>
 					<Name>PriceTypes</Name>

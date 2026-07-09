@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Чисті хелпери (кольори статусів, локалізація, формат суми, підрахунок) — у lib/orders.js,
 // щоб їх можна було юніт-тестувати без БД (#21).
-const { msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES } = require('../lib/orders');
+const { msg, computeTotal, MOCK_CURRENCY, convertPrice, PRICE_TYPES, verLt } = require('../lib/orders');
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -90,10 +90,29 @@ router.post('/auth', (req, res) => {
     res.json({ success: true, user: { name: "Олексій К.", role: "sales_rep" }, token: "mock_token_123" });
 });
 
+// Сумісність (#66): version — версія релізу бекенду (package.json, синкається
+// sync-version.mjs); minAppVersion — мінімальний додаток, який бекенд ще обслуговує
+// (руками, росте лише при зламній зміні контракту).
+const BACKEND_VERSION = require('../package.json').version;
+const MIN_APP_VERSION = '0.1.0';
+
 // GET/HEAD /health — найдешевша перевірка доступності. Без авторизації: лише підтверджує,
 // що процес живий. Використовується клієнтом для online-пінгу.
 router.head('/health', (req, res) => res.status(200).end());
-router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString(), version: BACKEND_VERSION, minAppVersion: MIN_APP_VERSION }));
+
+// #66 Хард-гейт сумісності: застарілий додаток (X-App-Version < minAppVersion) → 426,
+// щоб він не бив по змінених ендпоінтах і не падав тихо. Реєструється ПІСЛЯ /health і /auth
+// (лишаються відкритими: додаток має прочитати minAppVersion, вхід — дізнатися стан).
+// /telemetry теж відкритий — застряглий старий пристрій має звітувати. Заголовок відсутній
+// (веб/dev/curl) → пропускаємо: гейт лише коли версія відома й точно менша.
+router.use((req, res, next) => {
+    const appVer = req.get('X-App-Version');
+    if (req.path !== '/telemetry' && appVer && verLt(appVer, MIN_APP_VERSION)) {
+        return res.status(426).json({ error: 'app_too_old', minAppVersion: MIN_APP_VERSION, appVersion: appVer });
+    }
+    next();
+});
 
 // POST /telemetry (#42) — снапшот стану пристрою. У 1С пишеться в періодичний регістр
 // відомостей; мок лише тримає останній снапшот у пам'яті й логує в консоль.
@@ -138,6 +157,12 @@ router.get('/products/:id/image', (req, res) => {
 
 router.get('/categories', (req, res) => {
     res.json(store.categories);
+});
+
+// GET /customer-groups (#64) — папки контрагентів (плоско, parentId), як /categories для
+// товарів. Фронт будує з них дерево (customer.groupId → батько). У 1С — Контрагенты з ЭтоГруппа.
+router.get('/customer-groups', (req, res) => {
+    res.json(store.customerGroups);
 });
 
 router.get('/customers', (req, res) => {

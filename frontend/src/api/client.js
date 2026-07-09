@@ -44,6 +44,13 @@ const maybeAuthReject = (sentToken) => {
     if (sentToken && sentToken === token() && onAuthReject) onAuthReject();
 };
 
+// #66 Хард-гейт: бекенд відхиляє застарілий додаток кодом 426 (X-App-Version < minAppVersion).
+// Повідомляємо App (показати банер «оновіть додаток») і кидаємо типізовану помилку, щоб виклик
+// не розпарсив тіло 426 як дані (інакше — загальна помилка завантаження). /health не гейтиться,
+// тож каскад сумісності показує той самий банер і без цього шляху.
+let onAppTooOld = null;
+export const setOnAppTooOld = (fn) => { onAppTooOld = fn; };
+
 // fetch із таймаутом — без нього недоступний бекенд висить до системного TCP-таймауту
 // (~30 с) і офлайн виявляється надто пізно.
 // Таймаут АДАПТИВНИЙ, per-ендпоінт: бойова 1С відповідає легітимно довго (велика
@@ -75,8 +82,10 @@ const tfetch = async (url, opts = {}, timeout) => {
         // запиту може означати не відкликаний токен, а відсутнє право на метод у 1С
         // (телеметрія на старішій конфігурації) — з сесії за це не викидаємо.
         if (res.status === 401 && opts.authReject !== false) maybeAuthReject(opts.headers && opts.headers['X-Auth-Token']);
+        if (res.status === 426) { if (onAppTooOld) onAppTooOld(); const err = new Error('app_too_old'); err.appTooOld = true; throw err; }
         return res;
     } catch (e) {
+        if (e && e.appTooOld) throw e; // #66 не мережева помилка — не логуємо як таймаут/ескалацію
         const aborted = e && e.name === 'AbortError';
         if (aborted && !timeout) { netTimes[path] = limit; saveNetTimes(); } // ескалація на наступну спробу
         logError(`${method} ${path} → ${NET_ERROR_MARK}`, aborted ? `таймаут ${limit}ms` : String(e && e.message || e));
@@ -110,6 +119,11 @@ export const fetchCustomers = async () =>
 
 export const fetchCategories = async () =>
     (await tfetch(`${apiUrl()}/categories`, { headers: h() })).json();
+
+// Папки контрагентів (#64) — [{ id, name, parentId }], для дерева на екрані «Клієнти»
+// й у вибірнику замовлення. Плоский список, як /categories.
+export const fetchCustomerGroups = async () =>
+    (await tfetch(`${apiUrl()}/customer-groups`, { headers: h() })).json();
 
 // Товари, які контрагент уже замовляв за всю історію (#62) — масив GUID. У 1С джерело —
 // обороти регістра ЗаказыПокупателей (не обмежені глибиною історії, як /orders). Викликач
@@ -233,5 +247,16 @@ export const pingServer = async () => {
         return res.ok;
     } catch (e) {
         return false;
+    }
+};
+
+// Версії бекенду (#66): GET /health → { status, time, version, minAppVersion }.
+// Для каскаду сумісності та гейта оновлення. Помилка/офлайн → null (не знаємо → без банера).
+export const fetchHealth = async () => {
+    try {
+        const res = await tfetch(`${apiUrl()}/health`, { headers: h() }, 12000);
+        return res.ok ? await res.json() : null;
+    } catch (e) {
+        return null;
     }
 };

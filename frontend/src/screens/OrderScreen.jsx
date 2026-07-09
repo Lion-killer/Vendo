@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
-import { fmtMoney, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText, byName } from '../i18n';
+import { fmtMoney, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
+import { CustomerTree } from '../components/CustomerTree';
 import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
 import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
@@ -9,7 +10,7 @@ import { idSet } from '../api/refs';
 
 const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
-export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, comment = "", pushComment, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
+export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, comment = "", pushComment, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, customerGroups = [], products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
     // Валюта замовлення: заморожена (редагування) або валюта пристрою (нове). Символ — з коду.
     const orderCurrency = currency || products?.[0]?.currency || DEFAULT_CURRENCY;
@@ -33,11 +34,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     const [showComment, setShowComment] = useState(false); // панель коментаря (#60)
     const [askUnmark, setAskUnmark] = useState(false); // діалог «зняти помітку при перезаписі видаленого»
 
-    // Пошук контрагента по назві / адресі / телефону / коду (для великих списків).
-    const custQ = custQuery.trim().toLowerCase();
-    const filteredCustomers = (custQ
-        ? customers.filter(c => [c.name, c.address, c.phone, c.code].filter(Boolean).join(" ").toLowerCase().includes(custQ))
-        : customers).slice().sort(byName); // вибір клієнта — за назвою (#61)
+    // Вибір контрагента — дерево папок (#64) у CustomerTree: тап по групі вглиб, по клієнту —
+    // обрати й закрити; пошук плоский по всьому дереву.
     const closeCustPicker = () => { setShowCustPicker(false); setCustQuery(""); };
     const [isDirty, setIsDirty] = useState(false);
     const [orderDate, setOrderDate] = useState(date || todayISO());
@@ -416,7 +414,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <BottomSheet t={t} onClose={closeCustPicker}>
                         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 0 12px" }}>
                             <span style={{ fontSize: 16, fontWeight: 700 }}>{tr("order.selectCustomer")}</span>
-                            <span style={{ fontSize: 11, color: t.inkMuted, fontFamily: F_NUM }}>{tr("order.ofTotal", { shown: filteredCustomers.length, total: customers.length })}</span>
+                            <span style={{ fontSize: 11, color: t.inkMuted, fontFamily: F_NUM }}>{customers.length}</span>
                         </div>
                         {/* Пошук по назві / адресі / телефону */}
                         <div style={{ display: "flex", alignItems: "center", gap: 10, height: 44, padding: "0 14px", background: t.surfaceMuted, border: `1px solid ${t.line}`, borderRadius: 12, marginBottom: 12 }}>
@@ -425,24 +423,23 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                 style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
                             {custQuery && <div onClick={() => setCustQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
                         </div>
-                        <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
-                            {filteredCustomers.length === 0 && (
-                                <div style={{ padding: "24px 8px", textAlign: "center", color: t.inkMuted, fontSize: 13 }}>{tr("common.nothing")}</div>
-                            )}
-                            {filteredCustomers.map(c => {
-                                const on = customer?.id === c.id;
-                                const sub = [c.code, c.address, c.phone].filter(Boolean).join(" · ");
-                                return (
-                                    <div key={c.id} onClick={() => { setCustomer(c); setIsDirty(true); closeCustPicker(); }} style={{ padding: "11px 8px", borderBottom: `1px solid ${t.lineSoft}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
-                                        <MIcon name="building" size={18} color={on ? t.accent : t.inkMuted} />
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 14, fontWeight: on ? 700 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
-                                            {sub && <div style={{ fontSize: 11, color: t.inkMuted, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
+                        <div style={{ maxHeight: "56vh", overflowY: "auto" }}>
+                            <CustomerTree t={t} groups={customerGroups} customers={customers} query={custQuery}
+                                renderClient={c => {
+                                    const on = customer?.id === c.id;
+                                    const sub = [c.code, c.address, c.phone].filter(Boolean).join(" · ");
+                                    return (
+                                        <div key={c.id} onClick={() => { setCustomer(c); setIsDirty(true); closeCustPicker(); }} style={{ padding: "11px 8px", borderBottom: `1px solid ${t.lineSoft}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+                                            <MIcon name="building" size={18} color={on ? t.accent : t.inkMuted} />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontSize: 14, fontWeight: on ? 700 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</div>
+                                                {sub && <div style={{ fontSize: 11, color: t.inkMuted, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
+                                            </div>
+                                            {on && <MIcon name="check" size={16} color={t.accent} />}
                                         </div>
-                                        {on && <MIcon name="check" size={16} color={t.accent} />}
-                                    </div>
-                                );
-                            })}
+                                    );
+                                }}
+                                empty={<div style={{ padding: "24px 8px", textAlign: "center", color: t.inkMuted, fontSize: 13 }}>{tr("common.nothing")}</div>} />
                         </div>
                 </BottomSheet>
             )}

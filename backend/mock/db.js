@@ -19,6 +19,12 @@ const customers = (seed.customers || []).map(c => ({
     id: c.id, name: c.name, code: c.code ?? null, address: c.address ?? null,
     contact: c.contact ?? null, phone: c.phone ?? null,
     contacts: c.contacts ?? undefined, debt: c.debt ?? 0, status: c.status ?? null,
+    groupId: c.groupId ?? null, // папка-батько в довіднику (#64); null = корінь
+}));
+
+// Папки контрагентів (#64) — плоский список із parentId, як categories для товарів.
+const customerGroups = (seed.customerGroups || []).map(g => ({
+    id: g.id, name: g.name, parentId: g.parentId ?? null,
 }));
 
 const categories = (seed.categories || []).map(c => ({
@@ -50,7 +56,7 @@ const telemetry = { requestLog: !!seed.telemetry?.requestLog, last: null };
 console.log('In-memory store seeded from db.json');
 
 module.exports = {
-    products, customers, categories, orders, meta, telemetry,
+    products, customers, categories, customerGroups, orders, meta, telemetry,
     productById: (id) => products.find(p => p.id === id) || null,
     customerById: (id) => customers.find(c => c.id === id) || null,
     orderById: (id) => orders.find(o => o.id === id) || null,

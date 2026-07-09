@@ -3,7 +3,7 @@
   "info": {
     "title": "Vendo — Mobile API",
     "version": "1.0.0",
-    "description": "Контракт REST API мобільного застосунку торгпреда Vendo. Дві реалізації з однаковим контрактом: демо-бекенд (Node, `backend/`) і HTTP-сервіс 1С (`венд_МобильноеПриложение`). Усі дані фільтруються за пристроєм (заголовок `X-Device-Id`); запити (крім `/auth`) підписуються bearer-токеном."
+    "description": "Контракт REST API мобільного застосунку торгпреда Vendo. Дві реалізації з однаковим контрактом: демо-бекенд (Node, `backend/`) і HTTP-сервіс 1С (`венд_МобильноеПриложение`). Усі дані фільтруються за пристроєм (заголовок `X-Device-Id`); запити (крім `/auth`) підписуються bearer-токеном. Сумісність (#66): додаток шле `X-App-Version`; будь-який data-ендпоінт при версії, старішій за `minAppVersion` із `/health`, повертає `426` (див. `UpgradeRequired`). `/health`, `/auth`, `/telemetry` не гейтяться."
   },
   "servers": [
     { "url": "http://localhost:3000/api", "description": "Демо-бекенд (Node)" },
@@ -35,9 +35,9 @@
       "get": {
         "tags": ["Діагностика"],
         "summary": "Дешева перевірка доступності (без авторизації, без БД)",
-        "description": "Найлегший пінг: підтверджує, що сервіс живий. Клієнт використовує HEAD для online-детекції замість важкого /products.",
+        "description": "Найлегший пінг: підтверджує, що сервіс живий, і віддає версії для перевірки сумісності додатка (#66). Клієнт використовує HEAD для online-детекції замість важкого /products.",
         "security": [],
-        "responses": { "200": { "description": "Сервіс живий", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" }, "time": { "type": "string" } } } } } } }
+        "responses": { "200": { "description": "Сервіс живий", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" }, "time": { "type": "string" }, "version": { "type": "string", "description": "Версія релізу бекенду (semver, синкається релізним скриптом); додаток порівнює зі своїм порогом BACKEND_FULL", "example": "0.17.0" }, "minAppVersion": { "type": "string", "description": "Мінімальна версія додатка, яку бекенд ще обслуговує; росте лише при зламній зміні контракту", "example": "0.1.0" } } } } } } }
       },
       "head": {
         "tags": ["Діагностика"], "summary": "Пінг доступності (HEAD)", "security": [],
@@ -82,6 +82,13 @@
       "get": {
         "tags": ["Довідники"], "summary": "Групи номенклатури (повна ієрархія через parentId)",
         "responses": { "200": { "description": "Список категорій", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/customer-groups": {
+      "get": {
+        "tags": ["Довідники"], "summary": "Папки контрагентів (повна ієрархія через parentId)",
+        "description": "Дерево папок довідника Контрагенти для екрана «Клієнти» й вибірника в замовленні (#64). Плоский список, як /categories; фронт будує дерево (customer.groupId → parentId). Лише папки в межах призначених пристрою.",
+        "responses": { "200": { "description": "Список папок контрагентів", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/CustomerGroup" } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
       }
     },
     "/price-types": {
@@ -165,7 +172,8 @@
     },
     "responses": {
       "Unauthorized": { "description": "Не авторизовано (немає/невірний пристрій або токен)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
-      "Conflict": { "description": "Конфлікт версій (запис змінили на сервері після ваших правок)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Conflict" } } } }
+      "Conflict": { "description": "Конфлікт версій (запис змінили на сервері після ваших правок)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Conflict" } } } },
+      "UpgradeRequired": { "description": "Хард-гейт сумісності (#66): X-App-Version старіша за minAppVersion — бекенд відхиляє запит. Повертає будь-який data-ендпоінт; /health, /auth, /telemetry — ні.", "content": { "application/json": { "schema": { "type": "object", "properties": { "error": { "type": "string", "example": "app_too_old" }, "minAppVersion": { "type": "string", "example": "0.1.0" }, "appVersion": { "type": "string", "example": "0.0.9" } } } } } }
     },
     "schemas": {
       "TelemetrySnapshot": {
@@ -247,7 +255,16 @@
           "contacts": { "type": "array", "items": { "$ref": "#/components/schemas/Contact" }, "description": "Кілька контактних осіб (опційно)" },
           "debt": { "type": "number", "description": "Борг (>0) / переплата (<0), в управлінській валюті (debtCurrency)" },
           "debtCurrency": { "type": "string", "description": "Числовий код валюти боргу ISO 4217 (управлінський облік, одна на відповідь)" },
+          "groupId": { "type": "string", "nullable": true, "description": "GUID папки-батька в довіднику Контрагенти (#64); \"\"/null = корінь" },
           "status": { "type": "string" }
+        }
+      },
+      "CustomerGroup": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "GUID папки (у моці — cg1…)" },
+          "name": { "type": "string" },
+          "parentId": { "type": "string", "nullable": true, "description": "GUID батьківської папки; \"\"/null = коренева" }
         }
       },
       "OrderItemInput": {
