@@ -1,15 +1,18 @@
 # Скріншоти посібника
 
-Знімки зроблено автоматично (headless-браузер, демо-дані, мобільний вʼюпорт, світла тема). Мова інтерфейсу = мова посібника.
+Знімки генеруються **автоматично** — headless Chromium (Playwright), демо-дані з мок-бекенду,
+мобільний вʼюпорт 390×844 @2x (→ 780×1688), світла тема, мова = uk.
 
-## ✅ Готові (вбудовані в текст)
-Головні екрани: `login` · `dashboard` · `profile-menu` · `catalog` · `customers` · `orders` · `bottom-nav` · `online-offline`
-Каталог: `catalog-search` · `product-fullscreen` · `catalog-add`
-Клієнти: `customers-search` · `debt-filter` · `customer-card`
-Замовлення: `order-save` · `action-menu` · `select-customer`
-Синхронізація/конфлікти: `conflict-banner` · `posted-message` · `unmark-dialog` · `sync-history` · `sync-history-expanded`
-Сервіс: `log-panel` · `clear-data-warning` · `error-screen`
+## Як перезняти
+Підніми обидва сервери (`start.bat`: мок :3000 + Vite :5173), тоді з `frontend/`:
 
-Покрито всі екрани, стани й діалоги демо-збірки. Кадри з живою камерою (наведення на QR, сканер штрихкодів) свідомо не додаємо — описано текстом.
+```
+npm run screenshots            # усі кадри з маніфесту
+npm run screenshots customers  # лише ті, чиє імʼя містить «customers»
+```
 
-> Замінюй мітку `[скріншот: …]` на `![опис](images/файл.png)` після додавання файлу.
+Маніфест кадрів (`SHOTS`) — у `frontend/scripts/screenshots.mjs`, там же вся навігація.
+Додати/оновити кадр = один запис `{ file, at(page) }`. Кадр пише PNG прямо в цю теку.
+
+> Живі кадри (наведення на QR, сканер штрихкодів) свідомо не автоматизуємо — описано текстом.
+> Заміняй мітку `[скріншот: …]` на `![опис](images/файл.png)` після додавання файлу.
