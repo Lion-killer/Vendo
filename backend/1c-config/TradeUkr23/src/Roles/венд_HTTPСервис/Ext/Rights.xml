@@ -97,4 +97,18 @@
             <value>true</value>
         </right>
     </object>
+    <object>
+        <name>HTTPService.венд_МобильноеПриложение.URLTemplate.CustomerGroups.Method.Get</name>
+        <right>
+            <name>Use</name>
+            <value>true</value>
+        </right>
+    </object>
+    <object>
+        <name>HTTPService.венд_МобильноеПриложение.URLTemplate.CustomerOrderedProducts.Method.Get</name>
+        <right>
+            <name>Use</name>
+            <value>true</value>
+        </right>
+    </object>
 </Rights>

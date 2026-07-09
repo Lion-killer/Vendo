@@ -766,6 +766,10 @@
 							<v8:lang>uk</v8:lang>
 							<v8:content>Типи цін</v8:content>
 						</v8:item>
+						<v8:item>
+							<v8:lang>en</v8:lang>
+							<v8:content>Price types</v8:content>
+						</v8:item>
 					</Synonym>
 					<Comment>Доступні типи цін для вибору в каталозі. Порожньо = лише основний (ТипЦен)</Comment>
 					<ToolTip />
@@ -812,6 +816,10 @@
 								<v8:item>
 									<v8:lang>uk</v8:lang>
 									<v8:content>Тип цін</v8:content>
+								</v8:item>
+								<v8:item>
+									<v8:lang>en</v8:lang>
+									<v8:content>Price type</v8:content>
 								</v8:item>
 							</Synonym>
 							<Comment />
