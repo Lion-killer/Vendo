@@ -17,8 +17,7 @@
   },
   "compat": {
     "banner": "The backend (1C) is older than the app — some features may not work. Contact your administrator.",
-    "appOld": "The app version is too old for this backend — please update the app.",
-    "updateWarn": "This update needs a newer backend (1C). The deployed version isn't ready yet — the update may not work correctly until the administrator updates 1C."
+    "appOld": "The app version is too old for this backend — please update the app."
   },
   "log": {
     "title": "Error log",

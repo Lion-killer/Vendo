@@ -32,7 +32,3 @@ export const checkCompat = (health, appVersion) => {
     return { ok: !limited && !needsAppUpdate, limited, needsAppUpdate };
 };
 
-// Чи задовольняє розгорнутий бекенд вимоги релізу (гейт оновлення).
-// req: { minBackend } з маркера нотаток релізу; без маркера/поля (легасі) — не гейтимо.
-export const backendSatisfies = (health, req) =>
-    !req?.minBackend || cmpVer(health?.version || '0', req.minBackend) >= 0;

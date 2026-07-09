@@ -1,7 +1,7 @@
 // node --test src/contract.test.mjs — версійний каскад сумісності (#66)
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { BACKEND_FULL, checkCompat, backendSatisfies } from './contract.js';
+import { BACKEND_FULL, checkCompat } from './contract.js';
 
 const APP = '9.9.9'; // свідомо вище за будь-який minAppVersion у тестах
 
@@ -31,10 +31,3 @@ test('додаток старіший за minAppVersion бекенду → он
   assert.equal(r.needsAppUpdate, true);
 });
 
-test('backendSatisfies: гейт оновлення за minBackend', () => {
-  assert.equal(backendSatisfies({ version: '1.2.0' }, { minBackend: '1.2.0' }), true);
-  assert.equal(backendSatisfies({ version: '1.1.9' }, { minBackend: '1.2.0' }), false);
-  assert.equal(backendSatisfies({ status: 'ok' }, { minBackend: '0.0.1' }), false); // без version → "0"
-  assert.equal(backendSatisfies({ version: '0.0.1' }, null), true);                 // легасі-реліз без маркера
-  assert.equal(backendSatisfies({ version: '0.0.1' }, {}), true);                   // маркер без minBackend
-});

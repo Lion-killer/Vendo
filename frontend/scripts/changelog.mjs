@@ -9,7 +9,6 @@ import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { BACKEND_FULL } from '../src/contract.js'; // #66 — мінімальний бекенд релізу, з коду
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const changelogPath = join(root, '..', 'CHANGELOG.md');
@@ -56,10 +55,7 @@ if (process.argv.includes('--draft')) {
 // Погоджений текст (якщо є) перемагає автогенерацію.
 const approved = existsSync(draftPath) ? readFileSync(draftPath, 'utf8').trim() + '\n' : null;
 const date = new Date().toISOString().slice(0, 10);
-// Маркер вимог контракту (#66) — з коду (contract.js), невидимий у markdown. Йде в нотатки
-// релізу; додаток парсить його з тіла релізу для гейта сумісності. Не у --draft (нижче).
-const contractMarker = `<!-- vendo-contract: ${JSON.stringify({ minBackend: BACKEND_FULL })} -->`;
-const section = `## v${version} — ${date}\n\n` + (approved ?? generated).trimEnd() + '\n\n' + contractMarker + '\n';
+const section = `## v${version} — ${date}\n\n` + (approved ?? generated).trimEnd() + '\n';
 
 const header = '# Changelog\n\nІсторія версій Vendo. Генерується з комітів при релізі (`npm run release`).\n';
 const existing = existsSync(changelogPath) ? readFileSync(changelogPath, 'utf8') : header;

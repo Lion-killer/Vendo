@@ -11,7 +11,7 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, setOnAppTooOld, pingServer, fetchOrderedProducts, fetchCustomerGroups, fetchHealth } from './api/client';
-import { checkCompat, backendSatisfies } from './contract';
+import { checkCompat } from './contract';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
@@ -131,9 +131,8 @@ export default function App() {
   // (нова версія може виправляти саму авторизацію). Перевірка анонімна (токен не потрібен).
   const [update, setUpdate] = useState(null);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
-  // Сумісність бекенду (#66): health із /health + результат каскаду. null compat = невідомо
-  // (офлайн/помилка) → без банера. Онови в loadData й при поверненні зв'язку.
-  const [backendHealth, setBackendHealth] = useState(null);
+  // Сумісність бекенду (#66): результат каскаду з /health. null = невідомо (офлайн/помилка)
+  // → без банера. Онови в loadData й при поверненні зв'язку.
   const [backendCompat, setBackendCompat] = useState(null);
   const [updPhase, setUpdPhase] = useState(null); // null → downloading → installing/permission/error
   const [updProgress, setUpdProgress] = useState(0);
@@ -380,7 +379,6 @@ export default function App() {
   // й при поверненні зв'язку — старий 1С без поля version дасть банер, щойно зв'язок є.
   const refreshCompat = async () => {
     const hp = await fetchHealth();
-    setBackendHealth(hp);
     setBackendCompat(hp ? checkCompat(hp, APP_VERSION) : null);
   };
 
@@ -791,9 +789,7 @@ export default function App() {
   // висоту банера помилки, щоб вони лишались вирівняними з посунутим донизу контентом.
   // Сумісність (#66): банер, коли бекенд старіший за BACKEND_FULL (обмеження) або додаток
   // старіший за minAppVersion бекенду (оновіть додаток — сильніший, має пріоритет).
-  // Гейт оновлення — коли реліз потребує новішого бекенду, ніж розгорнутий.
   const compatWarn = !!(backendCompat && !backendCompat.ok);
-  const updateNeedsBackend = !!(update?.req && backendHealth && !backendSatisfies(backendHealth, update.req));
   const topOffset = (loadError ? 42 : 0) + (isLoggedIn && compatWarn ? 42 : 0);
 
   return (
@@ -864,7 +860,7 @@ export default function App() {
       <Lightbox />
 
       {/* Промпт оновлення — глобальний, поверх будь-якого екрана (зокрема логіну) */}
-      {showUpdatePrompt && <UpdatePrompt t={t} appVersion={APP_VERSION} update={update} needsBackend={updateNeedsBackend} phase={updPhase} progress={updProgress} onStart={startUpdate} onLater={closeUpdate} onOpenSettings={openInstallSettings} />}
+      {showUpdatePrompt && <UpdatePrompt t={t} appVersion={APP_VERSION} update={update} phase={updPhase} progress={updProgress} onStart={startUpdate} onLater={closeUpdate} onOpenSettings={openInstallSettings} />}
 
       {/* Підтвердження зміни типу цін для замовлення з позиціями (перерахувати / лишити поточний) */}
       {pendingPriceType && (

@@ -37,6 +37,12 @@ test('pickUpdate: один пропущений реліз — без загол
     assert.equal(u.notes, '### Нове\n- валюти'); // як є, без «## v»
 });
 
+test('pickUpdate: HTML-коментарі (маркери) вирізаються з нотаток', () => {
+    const u = pickUpdate([rel('0.11.0', '### Нове\n- фіча\n\n<!-- vendo-contract: {"minBackend":"0.11.0"} -->')], '0.10.0');
+    assert.match(u.notes, /фіча/);
+    assert.doesNotMatch(u.notes, /vendo-contract|<!--/); // маркер не потрапляє в UI
+});
+
 test('pickUpdate: немає новіших / чернетки й пре-релізи ігноруються', () => {
     assert.equal(pickUpdate(LIST, '0.10.0'), null);
     assert.equal(pickUpdate(LIST, '1.0.0'), null);

@@ -13,13 +13,10 @@ export { cmpVer }; // жив тут історично; переїхав у cont
 
 const RELEASES_LIST = "https://api.github.com/repos/Lion-killer/Vendo/releases?per_page=30";
 
-// Маркер вимог контракту в нотатках релізу (#66), напр.
-// <!-- vendo-contract: {"minBackend":"0.17.0"} --> — вшиває changelog.mjs із коду.
-const parseContractReq = (body) => {
-    const m = String(body || "").match(/<!--\s*vendo-contract:\s*(\{[\s\S]*?\})\s*-->/);
-    if (!m) return null;
-    try { return JSON.parse(m[1]); } catch { return null; }
-};
+// Прибрати HTML-коментарі з тіла релізу перед показом: react-markdown (без rehype-raw)
+// рендерить їх як звичайний текст — це давало артефакт на екрані оновлення. Захисно
+// чистимо завжди (навіть якщо коментарів більше не додаємо).
+const stripHtmlComments = (s) => String(s || "").replace(/<!--[\s\S]*?-->/g, "").trim();
 
 let cached; // одна перевірка за сесію (undefined = ще не питали, null = оновлення немає)
 
@@ -89,15 +86,12 @@ export function pickUpdate(list, current) {
     const target = newer[0]; // найновіша — її і встановлюємо
     const apk = (target.assets || []).find(a => a.name?.endsWith(".apk"));
     const notes = newer.length === 1
-        ? (newer[0].body || "").trim()
-        : newer.map(r => `## v${r.ver}\n\n${(r.body || "").trim()}`).join("\n\n");
-    // req (#66) — вимоги контракту релізу з маркера; гейт «needsBackend» рахує App реактивно
-    // від поточного /health (щоб не кешувати стан до логіну, коли бекенд ще невідомий).
-    const req = parseContractReq(target.body);
-    return { version: target.ver, notes, url: apk?.browser_download_url || target.html_url, req };
+        ? stripHtmlComments(newer[0].body)
+        : newer.map(r => `## v${r.ver}\n\n${stripHtmlComments(r.body)}`).join("\n\n");
+    return { version: target.ver, notes, url: apk?.browser_download_url || target.html_url };
 }
 
-// → { version, notes, url, req } якщо є новіша версія, інакше null. Помилки мережі → null.
+// → { version, notes, url } якщо є новіша версія, інакше null. Помилки мережі → null.
 export async function checkForUpdate(current) {
     if (cached !== undefined) return cached;
     try {
