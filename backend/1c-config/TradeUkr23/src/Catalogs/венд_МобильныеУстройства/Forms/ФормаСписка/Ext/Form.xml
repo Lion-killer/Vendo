@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcssch="http://v8.1c.ru/8.1/data-composition-system/schema" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
 	<Title>
 		<v8:item>
@@ -34,7 +34,7 @@
 						<v8:content>Service settings</v8:content>
 					</v8:item>
 				</Title>
-				<ExtendedTooltip name="НастройкиСервисаРасширеннаяПодсказка" id="58"/>
+				<ExtendedTooltip name="НастройкиСервисаРасширеннаяПодсказка" id="58" />
 			</Button>
 			<Button name="ОткрытьТелеметрию" id="45">
 				<Type>CommandBarButton</Type>
@@ -53,7 +53,7 @@
 						<v8:content>Telemetry (journal)</v8:content>
 					</v8:item>
 				</Title>
-				<ExtendedTooltip name="ОткрытьТелеметриюРасширеннаяПодсказка" id="46"/>
+				<ExtendedTooltip name="ОткрытьТелеметриюРасширеннаяПодсказка" id="46" />
 			</Button>
 			<Button name="ЗапроситьЛог" id="55">
 				<Type>CommandBarButton</Type>
@@ -72,7 +72,7 @@
 						<v8:content>Request log</v8:content>
 					</v8:item>
 				</Title>
-				<ExtendedTooltip name="ЗапроситьЛогРасширеннаяПодсказка" id="56"/>
+				<ExtendedTooltip name="ЗапроситьЛогРасширеннаяПодсказка" id="56" />
 			</Button>
 		</ChildItems>
 	</AutoCommandBar>
@@ -85,37 +85,37 @@
 			<DataPath>Список</DataPath>
 			<CommandBarLocation>None</CommandBarLocation>
 			<RowPictureDataPath>Список.DefaultPicture</RowPictureDataPath>
-			<ContextMenu name="СписокКонтекстноеМеню" id="4"/>
+			<ContextMenu name="СписокКонтекстноеМеню" id="4" />
 			<AutoCommandBar name="СписокКоманднаяПанель" id="5">
 				<Autofill>false</Autofill>
 			</AutoCommandBar>
-			<SearchStringAddition name="СписокСтрокаПоиска" id="6"/>
-			<ViewStatusAddition name="СписокСостояниеПросмотра" id="7"/>
-			<SearchControlAddition name="СписокУправлениеПоиском" id="8"/>
+			<SearchStringAddition name="СписокСтрокаПоиска" id="6" />
+			<ViewStatusAddition name="СписокСостояниеПросмотра" id="7" />
+			<SearchControlAddition name="СписокУправлениеПоиском" id="8" />
 			<Events>
 				<Event name="OnGetDataAtServer">СписокПриПолученииДанныхНаСервере</Event>
 			</Events>
 			<ChildItems>
 				<InputField name="Наименование" id="9">
 					<DataPath>Список.Наименование</DataPath>
-					<ContextMenu name="НаименованиеКонтекстноеМеню" id="10"/>
-					<ExtendedTooltip name="НаименованиеРасширеннаяПодсказка" id="11"/>
+					<ContextMenu name="НаименованиеКонтекстноеМеню" id="10" />
+					<ExtendedTooltip name="НаименованиеРасширеннаяПодсказка" id="11" />
 				</InputField>
 				<InputField name="ИдентификаторУстройства" id="12">
 					<DataPath>Список.ИдентификаторУстройства</DataPath>
-					<ContextMenu name="ИдентификаторУстройстваКонтекстноеМеню" id="13"/>
-					<ExtendedTooltip name="ИдентификаторУстройстваРасширеннаяПодсказка" id="14"/>
+					<ContextMenu name="ИдентификаторУстройстваКонтекстноеМеню" id="13" />
+					<ExtendedTooltip name="ИдентификаторУстройстваРасширеннаяПодсказка" id="14" />
 				</InputField>
 				<InputField name="Менеджер" id="15">
 					<DataPath>Список.Менеджер</DataPath>
-					<ContextMenu name="МенеджерКонтекстноеМеню" id="16"/>
-					<ExtendedTooltip name="МенеджерРасширеннаяПодсказка" id="17"/>
+					<ContextMenu name="МенеджерКонтекстноеМеню" id="16" />
+					<ExtendedTooltip name="МенеджерРасширеннаяПодсказка" id="17" />
 				</InputField>
 				<CheckBoxField name="Заблокировано" id="18">
 					<DataPath>Список.Заблокировано</DataPath>
 					<TitleLocation>Right</TitleLocation>
-					<ContextMenu name="ЗаблокированоКонтекстноеМеню" id="19"/>
-					<ExtendedTooltip name="ЗаблокированоРасширеннаяПодсказка" id="20"/>
+					<ContextMenu name="ЗаблокированоКонтекстноеМеню" id="19" />
+					<ExtendedTooltip name="ЗаблокированоРасширеннаяПодсказка" id="20" />
 				</CheckBoxField>
 				<InputField name="Активность" id="23">
 					<DataPath>Список.Активность</DataPath>
@@ -133,8 +133,8 @@
 							<v8:content>Last activity</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="АктивностьКонтекстноеМеню" id="24"/>
-					<ExtendedTooltip name="АктивностьРасширеннаяПодсказка" id="25"/>
+					<ContextMenu name="АктивностьКонтекстноеМеню" id="24" />
+					<ExtendedTooltip name="АктивностьРасширеннаяПодсказка" id="25" />
 				</InputField>
 				<InputField name="Версия" id="26">
 					<DataPath>Список.Версия</DataPath>
@@ -152,8 +152,8 @@
 							<v8:content>Version</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ВерсияКонтекстноеМеню" id="27"/>
-					<ExtendedTooltip name="ВерсияРасширеннаяПодсказка" id="28"/>
+					<ContextMenu name="ВерсияКонтекстноеМеню" id="27" />
+					<ExtendedTooltip name="ВерсияРасширеннаяПодсказка" id="28" />
 				</InputField>
 				<InputField name="Модель" id="29">
 					<DataPath>Список.Модель</DataPath>
@@ -171,8 +171,8 @@
 							<v8:content>Model</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="МодельКонтекстноеМеню" id="30"/>
-					<ExtendedTooltip name="МодельРасширеннаяПодсказка" id="31"/>
+					<ContextMenu name="МодельКонтекстноеМеню" id="30" />
+					<ExtendedTooltip name="МодельРасширеннаяПодсказка" id="31" />
 				</InputField>
 				<InputField name="Синхронизация" id="32">
 					<DataPath>Список.Синхронизация</DataPath>
@@ -190,8 +190,8 @@
 							<v8:content>Last sync</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="СинхронизацияКонтекстноеМеню" id="33"/>
-					<ExtendedTooltip name="СинхронизацияРасширеннаяПодсказка" id="34"/>
+					<ContextMenu name="СинхронизацияКонтекстноеМеню" id="33" />
+					<ExtendedTooltip name="СинхронизацияРасширеннаяПодсказка" id="34" />
 				</InputField>
 				<InputField name="Очередь" id="35">
 					<DataPath>Список.Очередь</DataPath>
@@ -209,8 +209,8 @@
 							<v8:content>Queue</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ОчередьКонтекстноеМеню" id="36"/>
-					<ExtendedTooltip name="ОчередьРасширеннаяПодсказка" id="37"/>
+					<ContextMenu name="ОчередьКонтекстноеМеню" id="36" />
+					<ExtendedTooltip name="ОчередьРасширеннаяПодсказка" id="37" />
 				</InputField>
 				<InputField name="Ошибки" id="38">
 					<DataPath>Список.Ошибки</DataPath>
@@ -228,8 +228,8 @@
 							<v8:content>Errors</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ОшибкиКонтекстноеМеню" id="39"/>
-					<ExtendedTooltip name="ОшибкиРасширеннаяПодсказка" id="40"/>
+					<ContextMenu name="ОшибкиКонтекстноеМеню" id="39" />
+					<ExtendedTooltip name="ОшибкиРасширеннаяПодсказка" id="40" />
 				</InputField>
 				<InputField name="Таймауты" id="48">
 					<DataPath>Список.Таймауты</DataPath>
@@ -247,8 +247,19 @@
 							<v8:content>Timeouts</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ТаймаутыКонтекстноеМеню" id="49"/>
-					<ExtendedTooltip name="ТаймаутыРасширеннаяПодсказка" id="50"/>
+					<ContextMenu name="ТаймаутыКонтекстноеМеню" id="49" />
+					<ExtendedTooltip name="ТаймаутыРасширеннаяПодсказка" id="50" />
+				</InputField>
+				<InputField name="ЗапросыЗаСутки" id="54">
+					<DataPath>Список.ЗапросыЗаСутки</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Запросы (24 ч)</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ЗапросыЗаСуткиКонтекстноеМеню" id="55" />
+					<ExtendedTooltip name="ЗапросыЗаСуткиРасширеннаяПодсказка" id="56" />
 				</InputField>
 				<CheckBoxField name="ЗапросЛога" id="51">
 					<DataPath>Список.ЗапросЛога</DataPath>
@@ -267,8 +278,8 @@
 							<v8:content>Log requested</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ЗапросЛогаКонтекстноеМеню" id="52"/>
-					<ExtendedTooltip name="ЗапросЛогаРасширеннаяПодсказка" id="53"/>
+					<ContextMenu name="ЗапросЛогаКонтекстноеМеню" id="52" />
+					<ExtendedTooltip name="ЗапросЛогаРасширеннаяПодсказка" id="53" />
 				</CheckBoxField>
 			</ChildItems>
 		</Table>
@@ -296,6 +307,7 @@
 	Телеметрия.Очередь КАК Очередь,
 	Телеметрия.Ошибки КАК Ошибки,
 	Телеметрия.СетевыеТаймауты КАК Таймауты,
+	0 КАК ЗапросыЗаСутки,
 	ЛОЖЬ КАК ЗапросЛога
 ИЗ
 	Справочник.венд_МобильныеУстройства КАК Устройства

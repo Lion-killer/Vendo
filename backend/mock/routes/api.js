@@ -125,7 +125,7 @@ router.use((req, res, next) => {
 router.post('/telemetry', (req, res) => {
     const b = req.body || {};
     store.telemetry.last = { ...b, deviceId: req.headers['x-device-id'] || null, receivedAt: new Date().toISOString() };
-    console.log(`telemetry: v${b.version || '?'} ${b.model || '?'} queue=${b.pendingOrders ?? '?'} net=${b.netErrors ?? 0}` +
+    console.log(`telemetry: v${b.version || '?'} ${b.model || '?'} queue=${b.pendingOrders ?? '?'} net=${b.netErrors ?? 0} req=${b.requests ?? 0}` +
         (b.log ? ` errors=${b.logErrors ?? 0} log=${b.log.length}b` : ''));
     if (b.log) store.telemetry.requestLog = false; // лог отримано — запит виконано
     res.json({ ok: true, requestLog: store.telemetry.requestLog });

@@ -66,9 +66,22 @@ const saveNetTimes = () => { try { localStorage.setItem(K.netTimes, JSON.stringi
 const timeoutFor = (path) => Math.min(Math.max(TIMEOUT, (netTimes[path] || 0) * 3), TIMEOUT_MAX);
 // Шлях без хоста — для компактного логу (метод + ендпоінт, без секретів у query немає).
 const shortPath = (url) => { try { return new URL(url).pathname; } catch { return url; } };
+
+// Лічильник запитів (#69): усе, крім /health (пінг/компат — не показник активності).
+// Персистентний (переживає перезапуск); їде в снапшоті телеметрії полем requests,
+// після успішного відправлення зменшується на надіслане (consumeRequestCount).
+const countRequest = (path) => {
+    if (path === '/health') return;
+    try { localStorage.setItem(K.reqCount, String(pendingRequestCount() + 1)); } catch { /* квота — лічильник не критичний */ }
+};
+export const pendingRequestCount = () => parseInt(localStorage.getItem(K.reqCount), 10) || 0;
+export const consumeRequestCount = (n) => {
+    try { localStorage.setItem(K.reqCount, String(Math.max(0, pendingRequestCount() - n))); } catch { /* не критично */ }
+};
 const tfetch = async (url, opts = {}, timeout) => {
     const method = (opts.method || 'GET').toUpperCase();
     const path = shortPath(url);
+    countRequest(path); // #69: рахуємо спроби (і таймаути) — це теж навантаження на сервер
     const limit = timeout || timeoutFor(path); // явний аргумент (пінг) не адаптується
     const ctrl = new AbortController();
     const id = setTimeout(() => ctrl.abort(), limit);
@@ -160,10 +173,19 @@ export const fetchAuthedBlobRaw = async (relPath) => {
     try {
         const url = `${apiUrl()}${relPath}`;
         if (Capacitor.isNativePlatform()) {
+            // CapacitorHttp іде повз tfetch, тож логуємо тут у тому ж форматі («GET шлях →
+            // статус», ms) — інакше завантаження картинок невидиме в журналі пристрою.
+            // Обсяг не страшний: штатно докачуються лише змінені картинки (кеш-перш),
+            // повний прохід — один раз після прив'язки.
+            const path = shortPath(url);
+            countRequest(path); // #69: нативна гілка йде повз tfetch
             const headers = h();
+            const started = Date.now();
             const res = await CapacitorHttp.get({ url, headers, responseType: 'blob' });
+            const ok = res.status >= 200 && res.status < 300 && !!res.data;
+            (ok ? logInfo : logWarn)(`GET ${path} → ${res.status}`, `${Date.now() - started}ms`);
             if (res.status === 401) maybeAuthReject(headers['X-Auth-Token']);
-            if (res.status < 200 || res.status >= 300 || !res.data) return null;
+            if (!ok) return null;
             const ct = res.headers && (res.headers['Content-Type'] || res.headers['content-type']);
             return base64ToBlob(res.data, ct);
         }
@@ -171,6 +193,8 @@ export const fetchAuthedBlobRaw = async (relPath) => {
         if (!res.ok) return null;
         return await res.blob();
     } catch (e) {
+        // Веб-гілка помилку вже залогувала в tfetch; нативні винятки CapacitorHttp — тут.
+        if (Capacitor.isNativePlatform()) logWarn(`GET ${shortPath(`${apiUrl()}${relPath}`)} → мережа`, String(e && e.message || e));
         return null;
     }
 };

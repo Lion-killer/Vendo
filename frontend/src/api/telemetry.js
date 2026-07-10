@@ -7,7 +7,7 @@
 // або оператор явно запросив повний лог (requestLog у відповіді).
 import { getEntries, buildReport, setOnError } from '../logger';
 import { getLocalOrders } from './localOrders';
-import { postTelemetry, NET_ERROR_MARK } from './client';
+import { postTelemetry, NET_ERROR_MARK, pendingRequestCount, consumeRequestCount } from './client';
 import { K } from '../storageKeys';
 
 const MARK_KEY = K.telemetryMark;        // t останнього запису, покритого відправленим логом
@@ -60,10 +60,14 @@ export const sendTelemetry = async (fullLog = false) => {
             lastSyncAt: lastMs ? new Date(lastMs).toISOString() : null,
             pendingOrders: getLocalOrders().length,
             netErrors: netErrs.length, // мережеві таймаути за вікно (окремо від logErrors)
+            requests: pendingRequestCount(), // #69: запити (крім /health) від попереднього снапшота
             ...(withLog ? { log: buildReport(fullLog ? 'запит оператора' : 'нові помилки'), logErrors: errs.length } : {}),
         };
         const res = await postTelemetry(payload);
         if (!res || res.ok !== true) return;
+        // #69: списуємо САМЕ надіслане — запити, що встигли статися паралельно
+        // (включно з цим POST /telemetry), лишаються на наступний снапшот.
+        consumeRequestCount(payload.requests);
         const entries = getEntries();
         if (entries.length) {
             const lastT = entries[entries.length - 1].t;

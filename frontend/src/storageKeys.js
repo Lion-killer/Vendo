@@ -18,6 +18,7 @@ export const K = {
     syncHistory: 'vendo_sync_history', // історія прогонів синхронізації (#20)
     telemetryMark: 'vendo_telemetry_mark',        // маркер логу телеметрії (#42)
     telemetryNetMark: 'vendo_telemetry_net_mark', // маркер вікна таймаутів (#42)
+    reqCount: 'vendo_req_count',     // лічильник запитів для телеметрії (#69), крім /health
     ordersStart: 'vendo_orders_start', // період списку замовлень
     ordersEnd: 'vendo_orders_end',
 };
