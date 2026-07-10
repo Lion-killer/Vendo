@@ -95,11 +95,15 @@ router.post('/auth', (req, res) => {
 // (руками, росте лише при зламній зміні контракту).
 const BACKEND_VERSION = require('../package.json').version;
 const MIN_APP_VERSION = '0.1.0';
+// #68: інтервали фонових циклів додатка (секунди). Фронт хардкодів не має — без цих
+// значень цикли не запускаються; 0 = цикл вимкнено. В 1С — група «Интервалы приложения»
+// у «Налаштуваннях сервісу».
+const APP_INTERVALS = { syncSec: 300, pingSec: 15, telemetrySec: 900 };
 
 // GET/HEAD /health — найдешевша перевірка доступності. Без авторизації: лише підтверджує,
 // що процес живий. Використовується клієнтом для online-пінгу.
 router.head('/health', (req, res) => res.status(200).end());
-router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString(), version: BACKEND_VERSION, minAppVersion: MIN_APP_VERSION }));
+router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString(), version: BACKEND_VERSION, minAppVersion: MIN_APP_VERSION, intervals: APP_INTERVALS }));
 
 // #66 Хард-гейт сумісності: застарілий додаток (X-App-Version < minAppVersion) → 426,
 // щоб він не бив по змінених ендпоінтах і не падав тихо. Реєструється ПІСЛЯ /health і /auth

@@ -1,7 +1,7 @@
-// node --test src/contract.test.mjs — версійний каскад сумісності (#66)
+// node --test src/contract.test.mjs — версійний каскад сумісності (#66) + інтервали (#68)
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { BACKEND_FULL, checkCompat } from './contract.js';
+import { BACKEND_FULL, checkCompat, parseIntervals } from './contract.js';
 
 const APP = '9.9.9'; // свідомо вище за будь-який minAppVersion у тестах
 
@@ -29,5 +29,26 @@ test('додаток старіший за minAppVersion бекенду → он
   const r = checkCompat({ version: '99.0.0', minAppVersion: '2.0.0' }, '1.0.0');
   assert.equal(r.ok, false);
   assert.equal(r.needsAppUpdate, true);
+});
+
+test('parseIntervals: бекенд без intervals (стара збірка) → null, циклів немає', () => {
+  assert.equal(parseIntervals({ status: 'ok', version: '0.18.0' }), null);
+  assert.equal(parseIntervals(null), null);
+  assert.equal(parseIntervals({ intervals: 'garbage' }), null);
+});
+
+test('parseIntervals: валідні значення проходять, дробові обрізаються', () => {
+  assert.deepEqual(
+    parseIntervals({ intervals: { syncSec: 300, pingSec: '15', telemetrySec: 900.9 } }),
+    { syncSec: 300, pingSec: 15, telemetrySec: 900 });
+});
+
+test('parseIntervals: 0/відсутнє/сміття у полі → 0 (цикл вимкнено), решта живе', () => {
+  assert.deepEqual(
+    parseIntervals({ intervals: { syncSec: 0, pingSec: -5, telemetrySec: 'abc' } }),
+    { syncSec: 0, pingSec: 0, telemetrySec: 0 });
+  assert.deepEqual(
+    parseIntervals({ intervals: { pingSec: 15 } }),
+    { syncSec: 0, pingSec: 15, telemetrySec: 0 });
 });
 

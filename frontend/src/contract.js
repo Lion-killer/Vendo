@@ -11,7 +11,7 @@
 // Бампати до ПОТОЧНОЇ версії package.json тим самим комітом, що додає залежність від
 // нового endpoint'а. Деплої існують лише з релізів, тож жоден бекенд не звітує версію
 // з проміжку між релізами — «поточна dev-версія» завжди коректний поріг.
-export const BACKEND_FULL = '0.18.0'; // #62 ordered-products, #64 customer-groups (виходять у 0.18.0)
+export const BACKEND_FULL = '0.19.0'; // #68 intervals у /health (виходять у 0.19.0) — без них фонові цикли не працюють
 
 // Порівняння semver-рядків: -1 (a<b) / 0 / 1. Толерує префікс v; нечислові сегменти → 0.
 export const cmpVer = (a, b) => {
@@ -30,5 +30,15 @@ export const checkCompat = (health, appVersion) => {
     const limited = cmpVer(health?.version || '0', BACKEND_FULL) < 0;
     const needsAppUpdate = !!health?.minAppVersion && cmpVer(appVersion, health.minAppVersion) < 0;
     return { ok: !limited && !needsAppUpdate, limited, needsAppUpdate };
+};
+
+// Інтервали фонових циклів (#68) — ЄДИНЕ джерело: /health.intervals. Фронт власних
+// умолчань не має: null (бекенд поля не віддає — стара збірка) → жоден цикл не
+// запускається; 0/некоректне значення → відповідний цикл вимкнено.
+export const parseIntervals = (health) => {
+    const i = health?.intervals;
+    if (!i || typeof i !== 'object') return null;
+    const sec = (v) => (Number.isFinite(+v) && +v > 0 ? Math.floor(+v) : 0);
+    return { syncSec: sec(i.syncSec), pingSec: sec(i.pingSec), telemetrySec: sec(i.telemetrySec) };
 };
 

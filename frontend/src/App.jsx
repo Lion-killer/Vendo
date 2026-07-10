@@ -11,7 +11,7 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, setOnAppTooOld, pingServer, fetchOrderedProducts, fetchCustomerGroups, fetchHealth } from './api/client';
-import { checkCompat } from './contract';
+import { checkCompat, parseIntervals } from './contract';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
@@ -134,6 +134,10 @@ export default function App() {
   // Сумісність бекенду (#66): результат каскаду з /health. null = невідомо (офлайн/помилка)
   // → без банера. Онови в loadData й при поверненні зв'язку.
   const [backendCompat, setBackendCompat] = useState(null);
+  // Інтервали фонових циклів (#68) — ЛИШЕ з /health.intervals; null (старий бекенд/ще не
+  // прочитано) → цикли не запускаються. Оновлюється разом із compat; офлайн-збій /health
+  // чинних інтервалів не скидає (тимчасова відсутність мережі не мусить глушити цикли).
+  const [appIntervals, setAppIntervals] = useState(null);
   const [updPhase, setUpdPhase] = useState(null); // null → downloading → installing/permission/error
   const [updProgress, setUpdProgress] = useState(0);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
@@ -380,6 +384,12 @@ export default function App() {
   const refreshCompat = async () => {
     const hp = await fetchHealth();
     setBackendCompat(hp ? checkCompat(hp, APP_VERSION) : null);
+    // #68: свіжі інтервали циклів; порівняння по вмісту — щоб не перезапускати таймери
+    // на кожному рефетчі /health без реальних змін.
+    if (hp) setAppIntervals((prev) => {
+      const next = parseIntervals(hp);
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
   };
 
   // Запуск: спершу кеш (одразу), далі мережа у фоні (не блокує UI).
@@ -524,39 +534,49 @@ export default function App() {
     enableErrorTelemetry(); // при помилці додатка — позачерговий снапшот із логом
     sendTelemetry(); // #42: снапшот при старті сесії
 
-    // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (12 с таймаут, без БД):
-    // важкі запити даних можуть хвилинами таймаутити на повільній 1С — це «синхронізація
-    // повзе», а не офлайн. Гістерезис: в офлайн — лише після 2 невдач поспіль (одиночний
-    // пропуск на повільному тунелі — шум, бойовий лог 06.07.2026 миготів саме так).
-    // Повернення зв'язку після офлайну → одразу свіжий рефетч.
-    let pingFails = 0;
-    const ping = async () => {
-      const ok = await pingServer();
-      pingFails = ok ? 0 : pingFails + 1;
-      const was = onlineRef.current;
-      const next = ok ? true : (pingFails >= 2 ? false : was);
-      onlineRef.current = next;
-      setIsOnline(next);
-      if (ok && !was) fetchFromNetwork(true); // зв'язок повернувся — тягнемо свіже
-    };
-    ping();
-    const pingInterval = setInterval(ping, 15000);
-
-    // Фонова синхронізація: тихо перечитуємо дані кожні 20с. Так нові товари/замовлення
-    // з сервера підтягуються самі, поки додаток онлайн, — а не лише при переході
-    // офлайн→онлайн.
-    const syncInterval = setInterval(() => { fetchFromNetwork(true); }, 20000);
-    const telemetryInterval = setInterval(() => { sendTelemetry(); }, 15 * 60 * 1000); // #42
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', handleVisible);
-      clearInterval(pingInterval);
-      clearInterval(syncInterval);
-      clearInterval(telemetryInterval);
     };
   }, [isLoggedIn]);
+
+  // #68: фонові цикли. Інтервали — ЛИШЕ з /health.intervals (refreshCompat: логін,
+  // повернення мережі, 426): фолбеків немає, старий бекенд без поля → цикли не працюють
+  // (подієві фетчі вище і ручний синк — працюють як завжди); 0 вимикає конкретний цикл.
+  // Зміна значень на бекенді підхоплюється наступним рефетчем /health і перезапускає таймери.
+  useEffect(() => {
+    if (!isLoggedIn || !appIntervals) return;
+    const timers = [];
+
+    if (appIntervals.pingSec) {
+      // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (12 с таймаут, без БД):
+      // важкі запити даних можуть хвилинами таймаутити на повільній 1С — це «синхронізація
+      // повзе», а не офлайн. Гістерезис: в офлайн — лише після 2 невдач поспіль (одиночний
+      // пропуск на повільному тунелі — шум, бойовий лог 06.07.2026 миготів саме так).
+      // Повернення зв'язку після офлайну → одразу свіжий рефетч. Пінг вимкнено (0) →
+      // індикатор живе лише подіями браузера й успіхами фетчів.
+      let pingFails = 0;
+      const ping = async () => {
+        const ok = await pingServer();
+        pingFails = ok ? 0 : pingFails + 1;
+        const was = onlineRef.current;
+        const next = ok ? true : (pingFails >= 2 ? false : was);
+        onlineRef.current = next;
+        setIsOnline(next);
+        if (ok && !was) fetchFromNetwork(true); // зв'язок повернувся — тягнемо свіже
+      };
+      ping();
+      timers.push(setInterval(ping, appIntervals.pingSec * 1000));
+    }
+
+    // Фонова синхронізація: тихо перечитуємо дані. Так нові товари/замовлення з сервера
+    // підтягуються самі, поки додаток онлайн, — а не лише при переході офлайн→онлайн.
+    if (appIntervals.syncSec) timers.push(setInterval(() => { fetchFromNetwork(true); }, appIntervals.syncSec * 1000));
+    if (appIntervals.telemetrySec) timers.push(setInterval(() => { sendTelemetry(); }, appIntervals.telemetrySec * 1000)); // #42
+
+    return () => timers.forEach(clearInterval);
+  }, [isLoggedIn, appIntervals]);
 
   // Апаратна кнопка «Назад» (Android): без обробника Capacitor одразу виходить із додатку.
   // Перехоплюємо й навігуємо всередині: журнал → закрити; підекран → на головну; головна/
