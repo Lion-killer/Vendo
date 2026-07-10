@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet } from '../components/ui';
 import { CustomerTree } from '../components/CustomerTree';
-import { fmtMoney, fmtDate, orderNum, curSymbol } from '../i18n';
+import { fmtMoney, fmtDate, orderNum, curSymbol, fmtCur, parseMoney } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
 import { statusColor } from '../status';
@@ -67,7 +67,8 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
                             <div style={{ fontSize: 11, color: t.inkMuted, marginTop: 1 }}>{fmtDate(o.date)}</div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 700, fontFamily: F_NUM }}>{o.total}</div>
+                            {/* Той самий грошовий формат, що в списку замовлень (2 знаки + символ валюти) */}
+                            <div style={{ fontSize: 13.5, fontWeight: 700, fontFamily: F_NUM, whiteSpace: "nowrap" }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</div>
                             <div style={{ fontSize: 10.5, fontWeight: 600, color: statusColor(o, t), marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
                         </div>
                     </div>

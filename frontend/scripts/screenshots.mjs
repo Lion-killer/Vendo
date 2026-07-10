@@ -13,8 +13,11 @@
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'user-guide', 'images');
+// Версія додатка — для стаба /health (динамічно, а не літерал: інакше стаб старіє з релізами).
+const APP_VERSION = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8')).version;
 const MOCK = 'http://localhost:3000/api';
 const BASE = 'http://localhost:5173';
 const FURSHET = 'ТОВ «Фуршет Плюс»'; // клієнт із багатою історією замовлень (демо-дані)
@@ -173,10 +176,11 @@ const run = async () => {
 
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'light' });
-  // /health → сумісний, щоб не було банера «бекенд застарілий» у кадрі.
+  // /health → сумісний, щоб не було банера «бекенд застарілий» у кадрі; intervals (#68) —
+  // щоб онлайн-індикатор ожив (без них додаток не запускає фонові цикли, включно з пінгом).
   await context.route('**/api/health', route =>
     route.request().method() === 'GET'
-      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'ok', version: '0.18.0', minAppVersion: '0.1.0' }) })
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'ok', version: APP_VERSION, minAppVersion: '0.1.0', intervals: { syncSec: 300, pingSec: 15, telemetrySec: 900 } }) })
       : route.continue());
   const page = await context.newPage();
 
