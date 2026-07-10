@@ -1,22 +1,35 @@
-# CODING AGENTS: READ THIS FIRST
+# design/ — макети редизайну (Claude Design)
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Архівний **handoff-бандл із Claude Design** (claude.ai/design): користувацький редизайн
+інтерфейсу Vendo у вигляді HTML/CSS/JS-прототипів. **Ще не впроваджено** — поточні екрани
+`frontend/src` з ним не пов'язані.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+- `project/redesign.jsx` — основне джерело макета;
+- `project/TradeRep Redesign.html` — експортований прототип (**TradeRep** — стара назва
+  Vendo до перейменування, див. коміт `0872960`);
+- `project/design-canvas.jsx`, `ios-frame.jsx`, `tweaks-panel.jsx` — службові файли канви.
 
-## What you should do — IMPORTANT
+Шляхи `traderep/…` в оригінальному тексті бандла відповідають цьому каталогу `design/`.
+Оригінальний single-file мокап (`vendo-app.jsx`), з якого колись розрізали `frontend/src`,
+видалено — його роль виконує сам код застосунку.
 
-**Read `traderep/project/TradeRep Redesign.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+<details>
+<summary>Оригінальні інструкції handoff-бандла (для агента, що впроваджуватиме редизайн)</summary>
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+**Read `project/TradeRep Redesign.html` in full.** The user had this file open when they
+triggered the handoff, so it's almost certainly the primary design they want built. Read it
+top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared
+components, CSS, scripts) so you understand how the pieces fit together before you start
+implementing.
 
-## About the design files
+**If anything is ambiguous, ask the user to confirm before you start implementing.**
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is
+to **recreate them pixel-perfectly** in whatever technology makes sense for the target
+codebase. Match the visual output; don't copy the prototype's internal structure unless it
+happens to fit.
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+**Don't render these files in a browser or take screenshots unless the user asks you to.**
+Everything you need — dimensions, colors, layout rules — is spelled out in the source.
 
-## Bundle contents
-
-- `traderep/README.md` — this file
-- `traderep/project/` — the `TradeRep` project files (HTML prototypes, assets, components)
+</details>

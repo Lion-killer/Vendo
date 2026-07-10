@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Vendo is a mobile-first B2B order-taking app for field sales representatives (Ukrainian UI: catalog, customers, orders). It is a prototype with mock-seeded data. `backend/` is a container for interchangeable backends behind one REST contract: `backend/mock/` (a Node/Express demo API, in-memory seeded from `db.json` — the contract reference for local dev) and `backend/1c-config/` (the real 1C HTTP-service mini-config, merged into «Управление торговлей для Украины» 2.3). `frontend/` (React + Vite, wrapped with Capacitor for Android) is a separate Node project — plus `design/vendo-app.jsx`, the original single-file mockup that the `frontend/src` screens were split out from.
+Vendo is a mobile-first B2B order-taking app for field sales representatives (Ukrainian UI: catalog, customers, orders). It is a prototype with mock-seeded data. `backend/` is a container for interchangeable backends behind one REST contract: `backend/mock/` (a Node/Express demo API, in-memory seeded from `db.json` — the contract reference for local dev) and `backend/1c-config/` (the real 1C HTTP-service mini-config, merged into «Управление торговлей для Украины» 2.3). `frontend/` (React + Vite, wrapped with Capacitor for Android) is a separate Node project. `design/project/` holds a Claude Design redesign handoff bundle (`redesign.jsx` is the primary mockup; not implemented yet) — the original single-file mockup the screens were split out from has been removed.
 
 ## Commands
 

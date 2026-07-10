@@ -32,23 +32,39 @@ Vendo/
 │  ├─ mock/                # мок-бекенд: Node + Express, in-memory (для dev/тесту)
 │  │  ├─ server.js         #   точка входу (порт 3000)
 │  │  ├─ db.js             #   in-memory стор (сід із db.json при старті)
-│  │  ├─ routes/api.js     #   ендпоінти (prepared statements)
+│  │  ├─ routes/api.js     #   ендпоінти (усі мутації в пам'яті, атомарні)
 │  │  ├─ openapi.json      #   контракт (Swagger UI на /api/docs)
 │  │  └─ data/db.json      #   сід-фікстура
-│  └─ 1c-config/TradeUkr23/src/   # справжній бекенд: міні-конфіг 1С для УТ 2.3
-│     └─ HTTPServices/венд_МобильноеПриложение/   # HTTP-сервіс: /auth, /products, /orders…
+│  └─ 1c-config/TradeUkr23/       # справжній бекенд: міні-конфіг 1С для УТ 2.3
+│     ├─ README.md         #   довідник «Мобільні пристрої» — для оператора УТ
+│     ├─ DEVELOPER.md      #   вбудування в УТ, API, реалізація — для розробника
+│     ├─ iis/              #   публікація на IIS: взірці web.config і default.vrd
+│     └─ src/HTTPServices/венд_МобильноеПриложение/   # HTTP-сервіс: /auth, /products, /orders…
 ├─ frontend/               # React + Vite (+ Android-проект Capacitor)
-│  └─ src/
-│     ├─ App.jsx           # оркестратор: навігація, стан, offline/sync-логіка
-│     ├─ api/              # REST-клієнт, локальна черга, кеш зображень, історія sync
-│     ├─ screens/          # login, dashboard, catalog, customers, order, ordersList
-│     ├─ components/       # Icon, ProductImage, ErrorBoundary, LogPanel, SyncHistoryPanel…
-│     ├─ logger.js         # журнал роботи + надсилання логу («Поділитися»)
-│     ├─ i18n.js, locales/ # локалізація uk/ru/en
-│     └─ theme.js          # токени світлої/темної теми
-├─ design/                 # початковий single-file мокап
+│  ├─ src/
+│  │  ├─ App.jsx           # оркестратор: навігація, стан, offline/sync-логіка
+│  │  ├─ api/              # REST-клієнт, локальна черга, кеш зображень, історія sync
+│  │  ├─ screens/          # login, dashboard, catalog, customers, order, ordersList
+│  │  ├─ components/       # ui.jsx (набір MIcon/BottomNav/Card…), Icon, LogPanel…
+│  │  ├─ logger.js         # журнал роботи + надсилання логу («Поділитися»)
+│  │  ├─ i18n.js, locales/ # локалізація uk/ru/en
+│  │  └─ theme.js          # токени світлої/темної теми
+│  ├─ scripts/             # release, sync-version, changelog, copy-help, screenshots
+│  └─ releases/            # локальні копії підписаних APK (gitignored; канон — GitHub Releases)
+├─ docs/user-guide/        # посібник користувача (єдине джерело; вшивається в APK як довідка)
+├─ design/                 # бандл редизайну з Claude Design (design/project/, ще не впроваджено)
+├─ ROADMAP.md              # інвентар можливостей із посиланнями на issues
 └─ start.bat               # запуск backend + frontend (Windows)
 ```
+
+## Документація
+
+- [ROADMAP.md](ROADMAP.md) — що вміє застосунок і що заплановано (з посиланнями на issues)
+- [Посібник користувача](docs/user-guide/README.md) — для торгового агента (він же — вбудована довідка в застосунку)
+- [1С: довідник «Мобільні пристрої»](backend/1c-config/TradeUkr23/README.md) — для оператора УТ
+- [1С: для розробника](backend/1c-config/TradeUkr23/DEVELOPER.md) — вбудування в УТ, реалізація сервісу
+- [Публікація HTTP-сервісу на IIS](backend/1c-config/TradeUkr23/iis/README.md) — налаштування веб-шару, взірці
+- [CHANGELOG.md](CHANGELOG.md) — історія релізів
 
 ## Запуск (демо-бекенд)
 

@@ -23,7 +23,7 @@ frontend/android/app/src/main/assets/public/
 # Ключ підпису release-APK (створює scripts/release.mjs; втрата = оновлення не встановляться)
 frontend/android/*.keystore
 frontend/android/keystore.properties
-frontend/vendo-v*.apk
+frontend/releases/
 
 # Транзитні файли релізу (чернетка чейнджлогу на погодження, нотатки для gh)
 frontend/.changelog-draft.md

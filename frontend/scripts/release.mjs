@@ -12,7 +12,7 @@
 // При першому запуску keystore генерується автоматично (keytool із JDK) — ЗРОБИ БЕКАП:
 // втрата keystore = нові APK не встановляться поверх старих (інший підпис).
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, copyFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, copyFileSync, rmSync, mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -86,7 +86,11 @@ if (!existsSync(apkSrc)) {
     console.error('release: не знайдено підписаний app-release.apk — перевір signingConfig');
     process.exit(1);
 }
-const apk = join(root, `vendo-${tag}.apk`);
+// Локальні копії APK — в окремому каталозі releases/ (gitignored), а не в корені frontend/:
+// канонічне сховище — GitHub Releases, тут лише архів збірок.
+const releasesDir = join(root, 'releases');
+mkdirSync(releasesDir, { recursive: true });
+const apk = join(releasesDir, `vendo-${tag}.apk`);
 copyFileSync(apkSrc, apk);
 
 // 3–4. Пуш і реліз на GitHub; нотатки — свіжа секція CHANGELOG.md (згенерована хуком version).
