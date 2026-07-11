@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { registerBack } from '../backNav';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal, SearchInput } from '../components/ui';
 import { fmtMoney2, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY, byName } from '../i18n';
 import { Z } from '../theme';
@@ -161,6 +162,12 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
     }
 
     const searching = query.trim().length > 0;
+    // Апаратний «Назад» усередині дерева категорій — на рівень угору, а не вихід з екрана (#71).
+    // Реєструємо перехоплювач лише коли заглиблені й не в режимі пошуку (тоді показано плоскі результати).
+    useEffect(() => {
+        if (path.length === 0 || searching) return;
+        return registerBack(() => { setPath(p => p.slice(0, -1)); return true; });
+    }, [path.length, searching]);
     const results = useMemo(() => searching
         ? sortProducts(flattenProducts(root).filter(p =>
             p.name.toLowerCase().includes(query.toLowerCase()) ||

@@ -26,6 +26,7 @@ import { UpdatePrompt } from './components/UpdatePrompt';
 import { checkForUpdate, isUpdatePromptShown, markUpdatePromptShown, downloadAndInstall, openInstallSettings } from './api/updates';
 import { parseMoney, orderNum as orderLabel, fmtDate, DEFAULT_CURRENCY } from './i18n';
 import { STATUS, normalizeOrder } from './status';
+import { runBack } from './backNav';
 import { K, CLEAR_KEEP, LEGACY } from './storageKeys';
 
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
@@ -611,6 +612,7 @@ export default function App() {
         if (showLog) { setShowLog(false); return; }
         if (showSyncHistory) { setShowSyncHistory(false); return; }
         if (closeLightbox()) return;      // відкритий лайтбокс фото — спершу закриваємо його
+        if (runBack()) return;            // #71: заглиблене дерево (каталог/клієнти) — на рівень угору
         if (screen === 'dashboard') { CapApp.exitApp(); return; } // головна — вихід із додатку
         if (navigateBack()) return;       // інакше — на попередній екран зі стека
         CapApp.exitApp();                 // стек порожній — виходимо

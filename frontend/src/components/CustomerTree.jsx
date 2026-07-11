@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { registerBack } from '../backNav';
 import { MIcon, Card, F_NUM, ScrollRow } from './ui';
 import { fmtMoney0, curSymbol, byName } from '../i18n';
 import { buildCustomerTree, getCustomerNode, leavesUnder, sumDebt } from '../customerTree';
@@ -64,6 +65,14 @@ export const CustomerTree = ({ t, groups = [], customers = [], query = "", force
     const q = query.trim().toLowerCase();
 
     const root = useMemo(() => buildCustomerTree(groups, customers), [groups, customers]);
+
+    // Апаратний «Назад» усередині дерева папок — на рівень угору, а не вихід з екрана (#71).
+    // Лише коли справді показано папки (заглиблені й не в плоскому режимі пошуку/forceFlat).
+    // Хук — ДО раннього return нижче (правило хуків).
+    useEffect(() => {
+        if (path.length === 0 || q || forceFlat) return;
+        return registerBack(() => { setPath(p => p.slice(0, -1)); return true; });
+    }, [path.length, q, forceFlat]);
 
     // Плоский режим: пошук фільтрує передані customers; forceFlat — усі (вже відфільтровані батьком).
     if (q || forceFlat) {
