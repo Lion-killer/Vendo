@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ScrollRow } from './ui';
-import { fmtMoney, curSymbol, byName } from '../i18n';
+import { fmtMoney0, curSymbol, byName } from '../i18n';
 import { buildCustomerTree, getCustomerNode, leavesUnder, sumDebt } from '../customerTree';
-
-const money = (n) => fmtMoney(n, { maximumFractionDigits: 0 });
 
 // Пошук контрагента: назва / код / адреса / телефон / контактні особи (#11).
 const matchCustomer = (c, q) => {
@@ -12,7 +10,25 @@ const matchCustomer = (c, q) => {
     return [c.name, c.code, c.address, c.phone, c.contact, contacts].filter(Boolean).join(" ").toLowerCase().includes(q);
 };
 
-// Рядок папки: іконка + назва + к-сть клієнтів + сумарний борг (червоним) / переплата (зеленим).
+// Колонка боргу/переплати праворуч у рядку списку — ОДНА для контрагента й для папки, щоб
+// вигляд не розходився: борг червоним, переплата (від'ємний борг) зеленим, нуль — тире;
+// короткий підпис під сумою.
+export const DebtCell = ({ t, debt, currency }) => {
+    const { t: tr } = useTranslation();
+    const n = Number(debt) || 0;
+    return (
+        <div style={{ flexShrink: 0, textAlign: "right", marginLeft: 8, minWidth: 72 }}>
+            {n === 0
+                ? <div style={{ fontSize: 13, color: t.inkMuted }}>—</div>
+                : <>
+                    <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: n > 0 ? t.err : t.ok }}>{fmtMoney0(Math.abs(n))} {curSymbol(currency)}</div>
+                    <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr(n > 0 ? "customers.debtShort" : "customers.overpayShort")}</div>
+                </>}
+        </div>
+    );
+};
+
+// Рядок папки: іконка + назва + к-сть клієнтів + колонка боргу (як у контрагента) + шеврон.
 const GroupRow = ({ t, node, onOpen }) => {
     const { t: tr } = useTranslation();
     const leaves = leavesUnder(node);
@@ -28,9 +44,9 @@ const GroupRow = ({ t, node, onOpen }) => {
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{node.name}</div>
                     <div style={{ fontSize: 11.5, color: t.inkMuted, marginTop: 3 }}>
                         <span style={{ fontFamily: F_NUM }}>{leaves.length}</span> {tr("customers.clientsWord")}
-                        {debt !== 0 && <> · {debt > 0 ? tr("customers.debtShort") : tr("customers.overpayShort")} <span style={{ fontFamily: F_NUM, color: debt > 0 ? t.err : t.ok, fontWeight: 600 }}>{money(Math.abs(debt))} {curSymbol(cur)}</span></>}
                     </div>
                 </div>
+                <DebtCell t={t} debt={debt} currency={cur} />
                 <MIcon name="chevron" size={18} color={t.inkMuted} />
             </div>
         </Card>

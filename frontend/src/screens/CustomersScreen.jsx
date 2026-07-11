@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet } from '../components/ui';
-import { CustomerTree } from '../components/CustomerTree';
-import { fmtMoney, fmtDate, orderNum, curSymbol, fmtCur, parseMoney } from '../i18n';
+import { MIcon, Card, F_NUM, ListPlaceholder, BottomSheet, SearchInput } from '../components/ui';
+import { CustomerTree, DebtCell } from '../components/CustomerTree';
+import { fmtMoney0, fmtDate, orderNum, curSymbol, fmtCur2, parseMoney } from '../i18n';
 import { mergeOrders } from '../api/refs';
 import { getLocalOrders } from '../api/localOrders';
 import { statusColor } from '../status';
-
-const money = (n) => fmtMoney(n, { maximumFractionDigits: 0 });
 
 // Картка клієнта (нижня шторка) — деталі + контактні особи.
 const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
@@ -36,7 +34,7 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.25 }}>{c.name}</div>
-                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? tr("customers.debt", { sum: `${money(debt)} ${curSymbol(c.debtCurrency)}` }) : tr("customers.overpay", { sum: `${money(-debt)} ${curSymbol(c.debtCurrency)}` })}</div>}
+                        {debt !== 0 && <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, color: debt > 0 ? t.err : t.ok }}>{debt > 0 ? tr("customers.debt", { sum: `${fmtMoney0(debt)} ${curSymbol(c.debtCurrency)}` }) : tr("customers.overpay", { sum: `${fmtMoney0(-debt)} ${curSymbol(c.debtCurrency)}` })}</div>}
                     </div>
                 </div>
 
@@ -68,7 +66,7 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
                             {/* Той самий грошовий формат, що в списку замовлень (2 знаки + символ валюти) */}
-                            <div style={{ fontSize: 13.5, fontWeight: 700, fontFamily: F_NUM, whiteSpace: "nowrap" }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</div>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, fontFamily: F_NUM, whiteSpace: "nowrap" }}>{fmtCur2(parseMoney(o.total), o.currency)}</div>
                             <div style={{ fontSize: 10.5, fontWeight: 600, color: statusColor(o, t), marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
                         </div>
                     </div>
@@ -78,7 +76,6 @@ const ClientCard = ({ t, c, orders = [], onNav, onClose }) => {
 };
 
 const ClientRow = ({ t, c, onClick }) => {
-    const { t: tr } = useTranslation();
     const debt = Number(c.debt) || 0;
     return (
         <Card t={t} onClick={onClick} style={{ padding: 12, marginBottom: 8, cursor: "pointer" }}>
@@ -96,22 +93,8 @@ const ClientRow = ({ t, c, onClick }) => {
                         </div>
                     )}
                 </div>
-                {/* Колонка боргу/переплати: борг — червоним, переплата (від'ємний борг) — зеленим */}
-                <div style={{ flexShrink: 0, textAlign: "right", marginLeft: 8, minWidth: 72 }}>
-                    {debt > 0 ? (
-                        <>
-                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.err }}>{money(debt)} {curSymbol(c.debtCurrency)}</div>
-                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr("customers.debtShort")}</div>
-                        </>
-                    ) : debt < 0 ? (
-                        <>
-                            <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 700, color: t.ok }}>{money(-debt)} {curSymbol(c.debtCurrency)}</div>
-                            <div style={{ fontSize: 9.5, color: t.inkMuted, marginTop: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>{tr("customers.overpayShort")}</div>
-                        </>
-                    ) : (
-                        <div style={{ fontSize: 13, color: t.inkMuted }}>—</div>
-                    )}
-                </div>
+                {/* Колонка боргу/переплати — спільний DebtCell (той самий вигляд, що й у папці) */}
+                <DebtCell t={t} debt={debt} currency={c.debtCurrency} />
             </div>
         </Card>
     );
@@ -148,12 +131,7 @@ export const CustomersScreen = ({ t, customers = [], customerGroups = [], orders
                 </div>
 
                 {/* Пошук */}
-                <div style={{ background: t.surface, border: `1px solid ${query ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
-                    <MIcon name="search" size={18} color={query ? t.accent : t.inkMuted} />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder={tr("customers.searchPlaceholder")}
-                        style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
-                    {query && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
-                </div>
+                <SearchInput t={t} value={query} onChange={setQuery} placeholder={tr("customers.searchPlaceholder")} />
 
                 {/* Сегментований фільтр */}
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
