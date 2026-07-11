@@ -41,6 +41,12 @@ export const recentQtysForCustomer = (orders = [], customerId, limit = 3) => {
     return map;
 };
 
+// Множина GUID товарів, які контрагент замовляв (недовидалені замовлення) — для підсвітки
+// «замовляв раніше» в каталозі (#62). Ключі recentQtysForCustomer — саме цей набір pid
+// (limit впливає на кількість записів у значенні, не на набір ключів), тож не дублюємо предикат.
+export const orderedIdsFromOrders = (orders, customerId) =>
+    new Set(recentQtysForCustomer(orders, customerId, 1).keys());
+
 // Перевірка посилань замовлення проти наявних товарів/клієнтів.
 // Повертає { missingProducts: [назви], customerMissing: bool, ok: bool }.
 export const checkOrderRefs = (order, productIds, customerIds) => {

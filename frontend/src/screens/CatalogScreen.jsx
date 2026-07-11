@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal } from '../components/ui';
-import { fmtMoney, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY, byName } from '../i18n';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal, SearchInput } from '../components/ui';
+import { fmtMoney2, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY, byName } from '../i18n';
 import { Z } from '../theme';
 import { scanBarcode } from '../api/scanner';
 
@@ -40,7 +40,6 @@ const flattenProducts = (node, trail = []) => {
     if (node.children) node.children.forEach(c => { out = out.concat(flattenProducts(c, [...trail, c.name])); });
     return out;
 };
-const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
 // Порядок товарів (#59 + #61): «без залишку — в кінець» первинний ключ, назва — вторинний.
 // Тобто в межах кожної групи «в наявності»/«без залишку» товари йдуть за абеткою.
@@ -76,7 +75,7 @@ const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType, orde
                         {noPrice
                             ? <span style={{ fontSize: 12.5, fontWeight: 700, color: t.err }}>{tr("catalog.noPrice")}</span>
                             : <>
-                                <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(price)}</span>
+                                <span style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{fmtMoney2(price)}</span>
                                 <span style={{ fontSize: 11, color: t.inkMuted }}>{curSymbol(p.currency)}{p.unit ? ` / ${p.unit}` : ""}</span>
                               </>}
                         <span style={{ fontFamily: F_NUM, fontSize: 11, color: stockColor, fontWeight: 600, marginLeft: "auto" }}>{stockLabel}</span>
@@ -224,12 +223,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                 </div>
 
                 {/* Пошук по всьому дереву */}
-                <div style={{ background: t.surface, border: `1px solid ${searching ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
-                    <MIcon name="search" size={18} color={searching ? t.accent : t.inkMuted} />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder={tr("catalog.searchPlaceholder")}
-                        style={{ flex: 1, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
-                    {searching && <div onClick={() => setQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
-                </div>
+                <SearchInput t={t} value={query} onChange={setQuery} placeholder={tr("catalog.searchPlaceholder")} />
 
                 {/* Селектор типу ціни (Варіант Б): тонкий ряд чіпів під пошуком — усі типи видно
                     одразу, перемик у 1 тап. Ховається, коли доступний лише один тип. */}
@@ -322,7 +316,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                             <MIcon name="cart" size={18} color="#fff" />
                             <div style={{ textAlign: "left" }}>
                                 <div style={{ fontSize: 11, opacity: 0.6 }}>{tr("catalog.positions", { count: cartCount })}</div>
-                                <div style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{money(cartTotal)} {curSymbol(currency)}</div>
+                                <div style={{ fontFamily: F_NUM, fontSize: 15, fontWeight: 700 }}>{fmtMoney2(cartTotal)} {curSymbol(currency)}</div>
                             </div>
                         </div>
                         <div style={{ background: "rgba(255,255,255,0.12)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{tr("catalog.toOrder")}</div>

@@ -17,8 +17,8 @@ import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
 import { logWarn } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
-import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum } from './api/localOrders';
-import { idSet, checkOrderRefs, mergeOrders, recentQtysForCustomer } from './api/refs';
+import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum, orderRecordFields } from './api/localOrders';
+import { idSet, checkOrderRefs, mergeOrders, recentQtysForCustomer, orderedIdsFromOrders } from './api/refs';
 import { addSyncRun } from './api/syncHistory';
 import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 import { HelpScreen } from './screens/HelpScreen';
@@ -55,6 +55,8 @@ export default function App() {
   const [isOnline, setIsOnline] = useState(true);
   const onlineRef = useRef(true); // свіже значення для пінга (стан у замиканні ефекту застаріває)
   const [connecting, setConnecting] = useState(true); // true на старті: до першого завантаження показуємо спінер, а не «порожньо»
+  // Єдина точка зміни онлайн-стану: ref (свіже значення для замикань пінга) + стан (ре-рендер).
+  const setOnline = (next) => { onlineRef.current = next; setIsOnline(next); };
   const [userName, setUserName] = useState(() => getSession()?.userName || "");
   const [orderItems, setOrderItems] = useState([]);
   const [editOrderId, setEditOrderId] = useState(null);
@@ -86,11 +88,7 @@ export default function App() {
     const idbKey = `ordered_products:${cid}`;
 
     // 1) Дешевий сигнал із кешованих замовлень вікна (миттєво, працює офлайн).
-    const windowSet = new Set();
-    for (const o of mergeOrders(orders, getLocalOrders())) {
-      if (o.deletionMark || (o.customerId || o.customer?.id) !== cid) continue;
-      for (const it of (o.items || [])) { const pid = it.productId ?? it.product?.id; if (pid != null) windowSet.add(pid); }
-    }
+    const windowSet = orderedIdsFromOrders(mergeOrders(orders, getLocalOrders()), cid);
     const emit = () => {
       if (cancelled) return;
       const s = new Set(windowSet);
@@ -178,27 +176,53 @@ export default function App() {
     if (editOrderId && ![STATUS.NEW, STATUS.SENT].includes(editStatus)) return;
     // Нічого не змінилось від моменту відкриття — не зберігаємо й не показуємо повідомлення.
     if (orderSig(orderItems, editCustomer?.id, editDate, editComment) === orderBaseline.current) return;
-    const total = orderItems.reduce((s, it) => s + it.product.price * it.qty, 0);
     // Зберігаємо реальний статус: правка відправленого лишається "Відправлено" (черга
     // на оновлення), нове — "Нове". Так doSync зробить upsert із правильним статусом.
     const queueStatus = editStatus === STATUS.SENT ? STATUS.SENT : STATUS.NEW;
     const id = saveLocalOrder({
       id: editOrderId || undefined,
       num: editNum || undefined,
-      customer: editCustomer || null,
-      customerId: editCustomer?.id || null,
-      client: editCustomer?.name || tr("common.unknownClient"),
-      items: orderItems,
-      date: editDate || undefined,
-      total: total,            // число (контракт #35)
-      currency: editCurrency,  // заморожена валюта замовлення
-      priceType: editPriceType, // тип цін замовлення (→ 1С Заказ.ТипЦен)
-      comment: editComment ?? "", // коментар — завжди рядок, щоб очищення "" дійшло (#60)
+      ...orderRecordFields({
+        customer: editCustomer, items: orderItems, date: editDate,
+        currency: editCurrency, priceType: editPriceType, comment: editComment,
+        unknownClient: tr("common.unknownClient"),
+      }),
       status: queueStatus,
       // База версії лише для правок серверного замовлення (виявлення конфлікту).
       baseVersion: queueStatus === STATUS.SENT ? editVersion : undefined,
     });
     notify(tr("toast.saved", { label: orderLabel({ id, num: editNum }), date: fmtDate(editDate) || tr("common.today") }));
+  };
+
+  // Єдина точка наповнення/скидання стану редагованого замовлення (11 слотів + baseline).
+  // Нове поле замовлення додається ТУТ, а не в кожній гілці навігації.
+  const openOrderEdit = (order, deviceCurrency) => {
+    setEditOrderId(order.id);
+    setEditCustomer(order.customer || null);
+    setOrderItems(order.items || []);
+    setEditLocked([STATUS.POSTED, STATUS.DELETED].includes(order.status)); // проведене/видалене — лише перегляд
+    setEditDate(order.date || null);
+    setEditStatus(order.status || STATUS.NEW);
+    setEditNum(order.num || null);
+    setEditVersion(order.version ?? null);
+    setEditCurrency(order.currency || deviceCurrency); // заморожена валюта; старі → пристрою
+    setEditPriceType(order.priceType || selectedPriceType);
+    setEditComment(order.comment || "");
+    orderBaseline.current = orderSig(order.items, order.customer?.id, order.date, order.comment);
+  };
+  const resetOrderEdit = (deviceCurrency) => {
+    setEditOrderId(null);
+    setEditCustomer(null);
+    setOrderItems([]);
+    setEditLocked(false);
+    setEditDate(null);
+    setEditStatus(STATUS.NEW);
+    setEditNum(nextDraftNum());
+    setEditVersion(null);
+    setEditCurrency(deviceCurrency);
+    setEditPriceType(selectedPriceType);
+    setEditComment("");
+    orderBaseline.current = orderSig([], null, null, null);
   };
 
   // Поки користувач не обрав тему вручну — слідуємо за системною.
@@ -287,8 +311,7 @@ export default function App() {
       // запитів даних — це повільний сервер, не відсутність мережі. Успіх даних —
       // позитивний сигнал (прапорець можна підняти, але опускати звідси — ні).
       if (okCount === 0) { return false; } // лишаємось на кеші; офлайн визначить пінг
-      onlineRef.current = true;
-      setIsOnline(true);
+      setOnline(true);
 
       // Оновлюємо лише ті колекції, що прийшли; rejected (мережевий таймаут) не затирає дані.
       // arr() коерсить {success:false} до [], інакше .map на екрані валить у білий екран.
@@ -523,7 +546,7 @@ export default function App() {
 
     // Повернення звʼязку/додатку на передній план — одразу тягнемо свіже.
     const handleOnline = () => { fetchFromNetwork(true); refreshCompat(); };
-    const handleOffline = () => { onlineRef.current = false; setIsOnline(false); };
+    const handleOffline = () => setOnline(false);
     const handleVisible = () => { if (document.visibilityState === 'visible') fetchFromNetwork(true); };
 
     window.addEventListener('online', handleOnline);
@@ -562,8 +585,7 @@ export default function App() {
         pingFails = ok ? 0 : pingFails + 1;
         const was = onlineRef.current;
         const next = ok ? true : (pingFails >= 2 ? false : was);
-        onlineRef.current = next;
-        setIsOnline(next);
+        setOnline(next);
         if (ok && !was) fetchFromNetwork(true); // зв'язок повернувся — тягнемо свіже
       };
       ping();
@@ -699,46 +721,10 @@ export default function App() {
     const deviceCurrency = products?.[0]?.currency || DEFAULT_CURRENCY;
     if (s === "orders" && params.order) {
       // Редагування існуючого замовлення з дашборду (ідентичність — GUID id)
-      setEditOrderId(params.order.id);
-      setEditCustomer(params.order.customer || null);
-      setOrderItems(params.order.items || []);
-      setEditLocked([STATUS.POSTED, STATUS.DELETED].includes(params.order.status)); // проведене/видалене — лише перегляд
-      setEditDate(params.order.date || null);
-      setEditStatus(params.order.status || STATUS.NEW);
-      setEditNum(params.order.num || null);
-      setEditVersion(params.order.version ?? null);
-      setEditCurrency(params.order.currency || deviceCurrency); // заморожена валюта; старі → пристрою
-      setEditPriceType(params.order.priceType || selectedPriceType); // тип цін замовлення
-      setEditComment(params.order.comment || ""); // коментар (#60)
-      orderBaseline.current = orderSig(params.order.items, params.order.customer?.id, params.order.date, params.order.comment);
-    } else if (s === "orders" && params.newOrder) {
-      // Явно створюємо нове замовлення (наприклад, кнопка з дашборду)
-      setEditOrderId(null);
-      setEditCustomer(null);
-      setOrderItems([]);
-      setEditLocked(false);
-      setEditDate(null);
-      setEditStatus(STATUS.NEW);
-      setEditNum(nextDraftNum());
-      setEditVersion(null);
-      setEditCurrency(deviceCurrency);
-      setEditPriceType(selectedPriceType);
-      setEditComment("");
-      orderBaseline.current = orderSig([], null, null, null);
-    } else if (s === "catalog" && !params.keepOrder) {
-      // Просто перехід в Товари - створюємо нове (скидаємо редаговане замовлення)
-      setEditOrderId(null);
-      setEditCustomer(null);
-      setOrderItems([]);
-      setEditLocked(false);
-      setEditDate(null);
-      setEditStatus(STATUS.NEW);
-      setEditNum(nextDraftNum());
-      setEditVersion(null);
-      setEditCurrency(deviceCurrency);
-      setEditPriceType(selectedPriceType);
-      setEditComment("");
-      orderBaseline.current = orderSig([], null, null, null);
+      openOrderEdit(params.order, deviceCurrency);
+    } else if ((s === "orders" && params.newOrder) || (s === "catalog" && !params.keepOrder)) {
+      // Нове замовлення: явна кнопка або просто перехід у Товари (скидаємо редаговане).
+      resetOrderEdit(deviceCurrency);
     }
     // В іншому випадку (наприклад, при переході з Каталогу в Orders) стан кошика зберігається
     setScreen(s);
@@ -849,7 +835,7 @@ export default function App() {
         {/* Контент екрану */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
-          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} isOnline={isOnline} orders={orders} products={products} customers={customers} productsCount={products.length} customersCount={customers.length} refreshOrders={refreshOrders} onSync={doSync} syncing={syncing} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} connecting={connecting} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} update={update} onShowUpdate={() => { setUpdPhase(null); setShowUpdatePrompt(true); }} />}
+          {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} orders={orders} products={products} customersCount={customers.length} onSync={doSync} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} update={update} onShowUpdate={() => { setUpdPhase(null); setShowUpdatePrompt(true); }} />}
           {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} orderedProductIds={orderedProductIds} recentQtysByProduct={recentQtysByProduct} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} customerGroups={customerGroups} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}

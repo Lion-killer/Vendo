@@ -47,6 +47,13 @@ export const curSymbol = (code) => CUR_SYMBOL[String(code)] || String(code ?? ''
 // Сума + символ валюти. code — числовий ISO-код; за замовчуванням грн (старі дані без валюти).
 export const fmtCur = (n, code = DEFAULT_CURRENCY, opts = {}) => `${fmtMoney(n, opts)} ${curSymbol(code)}`;
 
+// Дві канонічні форми сум — щоб опції форматування жили ЛИШЕ тут, а не по екранах (раніше
+// кожен екран мав свою обгортку, і формат боргу встиг розійтися). fmtMoney2 — суми документів
+// і ціни (рівно 2 знаки); fmtMoney0 — агрегати й борг (без копійок); fmtCur2 — сума + валюта.
+export const fmtMoney2 = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
+export const fmtMoney0 = (n) => fmtMoney(n, { maximumFractionDigits: 0 });
+export const fmtCur2 = (n, code) => fmtCur(n, code, { minimumFractionDigits: 2 });
+
 // ─── Спільні форматери замовлень (раніше дублювалися по екранах) ───────────────
 // Сума з рядка ("1 078,00 ₴") або числа → Number. Стійко до пробілів-роздільників і
 // коми як десяткового (uk/ru-локалі) — інакше "1 078,00" перетворилось би на 107800.

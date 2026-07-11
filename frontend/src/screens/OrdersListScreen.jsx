@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, ScrollRow, ListPlaceholder, ConfirmDialog } from '../components/ui';
-import { orderNum, fmtDate as fmtDmy, fmtCur, parseMoney, msgText, dateISO } from '../i18n';
+import { orderNum, fmtDate as fmtDmy, fmtCur2, parseMoney, msgText, dateISO } from '../i18n';
 import { deleteOrder } from '../api/client';
-import { getLocalOrders, removeLocalOrder, saveLocalOrder } from '../api/localOrders';
+import { getLocalOrders, removeLocalOrder, saveLocalOrder, orderRecordFields } from '../api/localOrders';
 import { STATUS, statusColor } from '../status';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 import { K, LEGACY } from '../storageKeys';
@@ -90,6 +90,13 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
 
     const isDraftStatus = (o) => o?.status === STATUS.NEW;
 
+    // Канонічні поля запису черги з наявного замовлення (та сама форма, що в OrderScreen/App).
+    const queueFieldsFor = (o) => orderRecordFields({
+        customer: o.customer, client: o.client, items: o.items || [], date: o.date, total: o.total,
+        currency: o.currency, priceType: o.priceType, comment: o.comment,
+        unknownClient: tr('common.unknownClient'),
+    });
+
     const handleDelete = async () => {
         if (!orderToDelete) return;
         const o = orderToDelete;
@@ -107,9 +114,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                     saveLocalOrder({
                         id: o.id, num: o.num, op: 'delete', status: STATUS.DELETED, baseVersion: o.version,
                         conflict: true, serverState: r.serverState || null, syncError: r.message || 'syncErr.conflict',
-                        customer: o.customer || null, customerId: o.customerId || null,
-                        client: o.client || o.customer?.name || tr('common.unknownClient'),
-                        items: o.items || [], date: o.date, total: o.total,
+                        ...queueFieldsFor(o),
                     });
                     setOrderToDelete(null); recompute(); return;
                 }
@@ -118,9 +123,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                 // Офлайн: ставимо видалення в чергу (op:'delete') — виконається при синхронізації.
                 saveLocalOrder({
                     id: o.id, num: o.num, op: 'delete', status: STATUS.DELETED, baseVersion: o.version,
-                    customer: o.customer || null, customerId: o.customerId || null,
-                    client: o.client || o.customer?.name || tr('common.unknownClient'),
-                    items: o.items || [], date: o.date, total: o.total,
+                    ...queueFieldsFor(o),
                 });
             }
 
@@ -220,7 +223,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                                 <div style={{ textAlign: "right" }}>
-                                    <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: "0 0 2px", whiteSpace: "nowrap" }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</p>
+                                    <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: "0 0 2px", whiteSpace: "nowrap" }}>{fmtCur2(parseMoney(o.total), o.currency)}</p>
                                     <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(o, t) }}>{tr(`status.${o.status}`)}</span>
                                 </div>
                                 {(() => {

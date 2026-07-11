@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet } from '../components/ui';
-import { fmtMoney, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
+import { MIcon, Card, F_NUM, ProductImage, SwipeToDelete, ConfirmDialog, QtyInput, BottomSheet, SearchInput } from '../components/ui';
+import { fmtMoney2, fmtMoney0, fmtDate, todayISO, orderNum, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
 import { CustomerTree } from '../components/CustomerTree';
-import { saveLocalOrder, removeLocalOrder, getLocalOrder } from '../api/localOrders';
+import { saveLocalOrder, removeLocalOrder, getLocalOrder, orderRecordFields, orderTotal } from '../api/localOrders';
 import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
-
-const money = (n) => fmtMoney(n, { minimumFractionDigits: 2 });
 
 export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, comment = "", pushComment, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, customerGroups = [], products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
@@ -38,13 +36,12 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
     // обрати й закрити; пошук плоский по всьому дереву.
     const closeCustPicker = () => { setShowCustPicker(false); setCustQuery(""); };
     const [isDirty, setIsDirty] = useState(false);
-    const [orderDate, setOrderDate] = useState(date || todayISO());
+    // Дата — контрольована пропом (як comment): єдине джерело — App.editDate, onChange штовхає
+    // назад через pushDate. Без локального дзеркала + resync-ефекту.
+    const orderDate = date || todayISO();
 
     const isMounted = React.useRef(true);
     useEffect(() => () => { isMounted.current = false; }, []);
-
-    // Синхронізуємо дату при відкритті іншого замовлення (prop змінюється без розмонтування).
-    useEffect(() => { setOrderDate(date || todayISO()); }, [date]);
 
     const updateQty = (idx, delta) => setQty(idx, orderItems[idx].qty + delta);
     const setQty = (idx, value) => {
@@ -54,23 +51,15 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
         setIsDirty(true);
     };
     const removeItem = (idx) => { setOrderItems(orderItems.filter((_, i) => i !== idx)); setIsDirty(true); };
-    const total = orderItems.reduce((s, it) => s + it.product.price * it.qty, 0);
+    const total = orderTotal(orderItems);
     const debt = Number(customer?.debt) || 0;
 
-    // Спільні поля локального запису замовлення (контрагент/позиції/дата/сума) — однакові
-    // в усіх місцях збереження: чернетка, видалення, відновлення, гілки конфлікту.
-    const orderFields = () => ({
-        customer: customer || null,
-        customerId: customer?.id || null,
-        client: customer?.name || tr("common.unknownClient"),
-        items: orderItems,
-        date: orderDate,
-        total: total,            // число (контракт #35); форматується при показі
-        currency: orderCurrency, // заморожена валюта замовлення
-        priceType: priceType || undefined, // тип цін замовлення (→ 1С Заказ.ТипЦен)
-        // Коментар — ЗАВЖДИ рядок (навіть "" #60): інакше очищення (undefined) губилось у
-        // JSON.stringify і бекенд лишав старий текст. Порожній "" доходить і чистить Комментарий.
-        comment: comment ?? "",
+    // Спільні поля локального запису замовлення — тонка обгортка над канонічним білдером
+    // (api/localOrders): та сама форма, що й у App.saveLeavingDraft та гілках delete/restore.
+    const orderFields = () => orderRecordFields({
+        customer, items: orderItems, date: orderDate, total,
+        currency: orderCurrency, priceType, comment,
+        unknownClient: tr("common.unknownClient"),
     });
 
     // Автозбереження невідправленого замовлення (проведене не чіпаємо — лише перегляд)
@@ -90,7 +79,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
         } catch (e) { console.error("Помилка автозбереження:", e); }
-    }, [orderItems, customer, editOrderId, orderDate, comment, isOnline]);
+    }, [orderItems, customer, editOrderId, date, comment, isOnline]);
 
     // Явне збереження (кнопка «Зберегти») — не залежить від isDirty, тож працює
     // і коли товари додані з каталогу (минаючи зміни безпосередньо в цьому екрані).
@@ -254,7 +243,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                         )}
                         {locked
                             ? <div style={{ ...ctl, padding: "0 10px", fontFamily: F_NUM, fontSize: 11.5, color: t.inkMuted }}>{displayDate}</div>
-                            : <input type="date" value={orderDate} onChange={e => { setOrderDate(e.target.value); pushDate?.(e.target.value); setIsDirty(true); }}
+                            : <input type="date" value={orderDate} onChange={e => { pushDate?.(e.target.value); setIsDirty(true); }}
                                 style={{ ...ctl, padding: "0 10px", fontFamily: "inherit", fontSize: 11.5, color: t.ink, outline: "none" }} />}
                         <button onClick={() => setShowMenu(true)} style={{ ...ctl, width: 32, justifyContent: "center", cursor: "pointer" }}>
                             <MIcon name="more" size={18} color={t.ink} />
@@ -332,7 +321,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <div style={{ fontSize: 11.5, color: t.inkSoft, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap" }}>
                                 {customerMissing && <span style={{ color: t.err, fontWeight: 700 }}>{tr("order.customerDeleted")}</span>}
                                 {customer?.address && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{customer.address}</span>}
-                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>{tr("order.debt", { sum: `${money(debt)} ${curSymbol(customer?.debtCurrency)}` })}</span></>}
+                                {debt > 0 && <>{customer?.address && <span style={{ color: t.line }}>·</span>}<span style={{ color: t.err, fontWeight: 600 }}>{tr("order.debt", { sum: `${fmtMoney0(debt)} ${curSymbol(customer?.debtCurrency)}` })}</span></>}
                             </div>
                         </div>
                         {!locked && <MIcon name="chevron" size={18} color={t.inkMuted} />}
@@ -362,8 +351,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: productMissing(it.product) ? t.err : t.ink }}>{it.product.name}{productMissing(it.product) ? ` · ${tr("order.unavailable")}` : ""}</div>
                                     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 1 }}>
-                                        <div style={{ flex: 1, minWidth: 0, fontFamily: F_NUM, fontSize: 10.5, color: t.inkMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.sku} · {money(it.product.price)} {cur}{it.product.unit ? `/${it.product.unit}` : ""}</div>
-                                        <div style={{ flexShrink: 0, fontFamily: F_NUM, fontSize: 11, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{money(it.product.price * it.qty)} {cur}</div>
+                                        <div style={{ flex: 1, minWidth: 0, fontFamily: F_NUM, fontSize: 10.5, color: t.inkMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.product.sku} · {fmtMoney2(it.product.price)} {cur}{it.product.unit ? `/${it.product.unit}` : ""}</div>
+                                        <div style={{ flexShrink: 0, fontFamily: F_NUM, fontSize: 11, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{fmtMoney2(it.product.price * it.qty)} {cur}</div>
                                     </div>
                                 </div>
                                 {locked ? (
@@ -393,7 +382,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "10px 16px max(12px, env(safe-area-inset-bottom))", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ flexShrink: 0 }}>
                         <div style={{ fontSize: 10.5, fontWeight: 600, color: t.inkMuted, textTransform: "uppercase", letterSpacing: 0.4 }}>{tr("order.toPay")}</div>
-                        <div style={{ fontFamily: F_NUM, fontSize: 20, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{money(total)} {cur}</div>
+                        <div style={{ fontFamily: F_NUM, fontSize: 20, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{fmtMoney2(total)} {cur}</div>
                     </div>
                     <button onClick={saveDraft} style={{ flex: 1, height: 46, borderRadius: 12, border: "none", background: t.accent, color: "#fff", fontFamily: "inherit", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}>
                         <MIcon name="check" size={16} color="#fff" w={2} /> {tr("order.save")}
@@ -405,7 +394,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             {locked && orderItems.length > 0 && (
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: t.surface, borderTop: `1px solid ${t.line}`, padding: "14px 16px max(16px, env(safe-area-inset-bottom))", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                     <span style={{ fontSize: 14, fontWeight: 700 }}>{tr("order.sum")}</span>
-                    <span style={{ fontFamily: F_NUM, fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>{money(total)} {cur}</span>
+                    <span style={{ fontFamily: F_NUM, fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>{fmtMoney2(total)} {cur}</span>
                 </div>
             )}
 
@@ -417,12 +406,7 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
                             <span style={{ fontSize: 11, color: t.inkMuted, fontFamily: F_NUM }}>{customers.length}</span>
                         </div>
                         {/* Пошук по назві / адресі / телефону */}
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, height: 44, padding: "0 14px", background: t.surfaceMuted, border: `1px solid ${t.line}`, borderRadius: 12, marginBottom: 12 }}>
-                            <MIcon name="search" size={18} color={t.inkMuted} />
-                            <input autoFocus value={custQuery} onChange={e => setCustQuery(e.target.value)} placeholder={tr("order.searchCust")}
-                                style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
-                            {custQuery && <div onClick={() => setCustQuery("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
-                        </div>
+                        <SearchInput t={t} value={custQuery} onChange={setCustQuery} placeholder={tr("order.searchCust")} autoFocus highlight={false} bg={t.surfaceMuted} style={{ marginBottom: 12 }} />
                         <div style={{ maxHeight: "56vh", overflowY: "auto" }}>
                             <CustomerTree t={t} groups={customerGroups} customers={customers} query={custQuery}
                                 renderClient={c => {

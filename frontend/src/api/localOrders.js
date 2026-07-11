@@ -22,6 +22,29 @@ export const nextDraftNum = () => {
     return `ЧН-${seq}`;
 };
 
+// Сума замовлення: число (контракт #35), форматується при показі. Коерсія Number —
+// стійкість до рядкових qty/price зі старих чернеток.
+export const orderTotal = (items = []) =>
+    items.reduce((s, it) => s + (Number(it.product?.price) || 0) * (Number(it.qty) || 0), 0);
+
+// Канонічні поля запису замовлення в чергу/чернетку — ЄДИНА форма для всіх місць
+// збереження (автосейв, «Зберегти», вихід з екрана, гілки видалення/відновлення/конфлікту
+// в обох екранах). Раніше збиралися незалежно в 4 місцях і встигли розійтися.
+// Envelope-поля (op/status/baseVersion/conflict/serverState/syncError/deletionMark)
+// доклеює викликач через spread ПІСЛЯ; `unknownClient` — локалізований фолбек назви
+// (щоб шар сховища не тягнув i18n).
+export const orderRecordFields = ({ customer, client, items = [], date, currency, priceType, comment, total, unknownClient = '' }) => ({
+    customer: customer || null,
+    customerId: customer?.id || null,
+    client: client || customer?.name || unknownClient,
+    items,
+    date,
+    total: total != null ? total : orderTotal(items),
+    currency,
+    priceType: priceType || undefined, // тип цін замовлення (→ 1С Заказ.ТипЦен); "" → undefined
+    comment: comment ?? '',             // ЗАВЖДИ рядок (навіть ""), інакше очищення губиться в JSON (#60)
+});
+
 export const getLocalOrders = () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);

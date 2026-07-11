@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchAuthedBlobRaw } from '../api/client';
 import { loadCachedImage } from '../api/imageCache';
 import { F_NUM, F_UI, Z } from '../theme';
-import { curSymbol, fmtMoney } from '../i18n';
+import { curSymbol, fmtMoney2 } from '../i18n';
 
 // Горизонтальний ряд із прихованим скролом і підказками-градієнтами на краях:
 // тінь зліва/справа зʼявляється лише коли є куди гортати (чіпи фільтра, хлібні крихти).
@@ -179,10 +179,10 @@ export const Lightbox = () => {
               const has = v != null && Number(v) > 0; // 0 = немає ціни (#45)
               const on = pt.id === activePriceType;
               return <span key={pt.id} style={{ fontWeight: on ? 700 : 400, color: on ? "#fff" : "rgba(255,255,255,0.85)" }}>
-                <span style={label}>{pt.name}: </span>{has ? <>{fmtMoney(v, { minimumFractionDigits: 2 })} {curSymbol(currency)}</> : tr("lightbox.noPrice")}
+                <span style={label}>{pt.name}: </span>{has ? <>{fmtMoney2(v)} {curSymbol(currency)}</> : tr("lightbox.noPrice")}
               </span>;
             })
-          : price != null && <span><span style={label}>{tr("lightbox.price")}: </span>{fmtMoney(price, { minimumFractionDigits: 2 })} {curSymbol(currency)}</span>}
+          : price != null && <span><span style={label}>{tr("lightbox.price")}: </span>{fmtMoney2(price)} {curSymbol(currency)}</span>}
         {stock != null && <span><span style={label}>{tr("lightbox.stock")}: </span>{stock}{unit ? ` ${unit}` : ""}</span>}
         {sku && <span><span style={label}>{tr("lightbox.sku")}: </span>{sku}</span>}
         {barcode && <span><span style={label}>{tr("lightbox.barcode")}: </span>{barcode}</span>}
@@ -365,6 +365,23 @@ export const Card = ({ children, style = {}, t, ...rest }) => (
     {children}
   </div>
 );
+
+// Пошуковий рядок (лупа + input + хрестик очищення) — спільний для каталогу, клієнтів і
+// вибірника контрагента. highlight — підсвічувати рамку/іконку акцентом за непорожнього
+// запиту (вимкнено у вибірнику); bg — фон (t.surface / t.surfaceMuted); style — на контейнер
+// (напр. marginBottom у пікері). Раніше цей блок був скопійований у трьох екранах.
+export const SearchInput = ({ t, value, onChange, placeholder, autoFocus = false, highlight = true, bg, style = {} }) => {
+  const has = String(value ?? '').trim().length > 0;
+  const active = highlight && has;
+  return (
+    <div style={{ background: bg || t.surface, border: `1px solid ${active ? t.accent : t.line}`, borderRadius: 12, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44, ...style }}>
+      <MIcon name="search" size={18} color={active ? t.accent : t.inkMuted} />
+      <input autoFocus={autoFocus} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "none", fontFamily: "inherit", fontSize: 14, color: t.ink }} />
+      {has && <div onClick={() => onChange("")} style={{ cursor: "pointer", display: "flex" }}><MIcon name="x" size={17} color={t.inkMuted} /></div>}
+    </div>
+  );
+};
 
 // ─── Стан списку: спінер ЛИШЕ коли даних немає взагалі й триває завантаження;
 // інакше — порожній стан (children: іконка + текст). Єдине правило для всіх екранів. ──

@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MIcon, Card, F_NUM, ConfirmDialog, BottomSheet } from '../components/ui';
 import { STATUS, statusColor as statusColorOf } from '../status';
-import { localeTag, fmtMoney as fmtCurLocale, fmtCur, parseMoney, todayISO, orderNum, setLang, SUPPORTED, curSymbol, DEFAULT_CURRENCY } from '../i18n';
+import { localeTag, fmtMoney0, fmtCur2, parseMoney, todayISO, orderNum, setLang, SUPPORTED, curSymbol, DEFAULT_CURRENCY, msgText } from '../i18n';
 import { getLocalOrders } from '../api/localOrders';
 import { mergeOrders } from '../api/refs';
 import { K } from '../storageKeys';
 
 // Версія з package.json, вшита Vite'ом на збірці (define у vite.config.js).
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0';
-
-const fmtMoney = (n) => fmtCurLocale(n, { maximumFractionDigits: 0 });
 
 const initials = (name) => (name || "")
     .split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]?.toUpperCase()).join("") || "?";
@@ -103,10 +101,10 @@ export const DashboardScreen = ({ t, onNav, userName, orders, products = [], cus
             <div style={{ margin: "12px 16px 0", borderRadius: 20, background: t.invBg, color: "#fff", padding: "18px 20px", overflow: "hidden" }}>
                 <div>
                     <div style={{ fontSize: 11, opacity: 0.55, fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.8 }}>{tr("dashboard.revenueToday")}</div>
-                    <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4, fontFamily: F_NUM, letterSpacing: -0.5 }}>{fmtMoney(revenue)} {curSymbol(deviceCurrency)}</div>
+                    <div style={{ fontSize: 32, fontWeight: 700, marginTop: 4, fontFamily: F_NUM, letterSpacing: -0.5 }}>{fmtMoney0(revenue)} {curSymbol(deviceCurrency)}</div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, fontSize: 11, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 14 }}>
-                    {[[tr("dashboard.orders"), String(ordersCount)], [tr("dashboard.avgCheck"), `${fmtMoney(avgCheck)} ${curSymbol(deviceCurrency)}`], [tr("dashboard.clients"), String(customersCount)]].map(([l, v]) => (
+                    {[[tr("dashboard.orders"), String(ordersCount)], [tr("dashboard.avgCheck"), `${fmtMoney0(avgCheck)} ${curSymbol(deviceCurrency)}`], [tr("dashboard.clients"), String(customersCount)]].map(([l, v]) => (
                         <div key={l}>
                             <div style={{ opacity: 0.55 }}>{l}</div>
                             <div style={{ fontFamily: F_NUM, fontWeight: 600, fontSize: 16, marginTop: 1 }}>{v}</div>
@@ -154,14 +152,14 @@ export const DashboardScreen = ({ t, onNav, userName, orders, products = [], cus
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                         <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</span>
                                         {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeNew")}</span>}
-                                        {o.conflict ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeConflict")}</span>
-                                            : o.syncError ? <span title={o.syncError} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeError")}</span>
+                                        {o.conflict ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeConflict")}</span>
+                                            : o.syncError ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeError")}</span>
                                             : (o._pending && !isNew(o)) ? <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeWaiting")}</span> : null}
                                     </div>
                                     <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</div>
                                 </div>
                                 <div style={{ textAlign: "right", marginLeft: 10 }}>
-                                    <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{fmtCur(parseMoney(o.total), o.currency, { minimumFractionDigits: 2 })}</div>
+                                    <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{fmtCur2(parseMoney(o.total), o.currency)}</div>
                                     <div style={{ fontSize: 10.5, color: statusColor(o), fontWeight: 600, marginTop: 1 }}>{tr(`status.${o.status}`)}</div>
                                 </div>
                             </div>
