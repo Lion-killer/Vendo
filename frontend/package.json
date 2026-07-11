@@ -1,6 +1,6 @@
 {
   "name": "vendo-frontend",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "scripts": {
     "copy-help": "node scripts/copy-help.mjs",
     "predev": "node scripts/copy-help.mjs",
