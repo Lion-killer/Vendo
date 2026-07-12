@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { registerBack } from '../backNav';
 import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal, SearchInput } from '../components/ui';
@@ -168,6 +168,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
         if (path.length === 0 || searching) return;
         return registerBack(() => { setPath(p => p.slice(0, -1)); return true; });
     }, [path.length, searching]);
+
+    // Нова група / рівень / режим пошуку — показати список з початку (#72). Ключ по path (не по
+    // довжині: сусідні групи мають однакову глибину), бо тіло — один контейнер прокрутки на всі рівні.
+    const bodyRef = useRef(null);
+    useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [path.join('/'), searching]);
     const results = useMemo(() => searching
         ? sortProducts(flattenProducts(root).filter(p =>
             p.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -279,7 +284,7 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
             </div>
 
             {/* Тіло */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
+            <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
                 {searching ? (
                     <>
                         <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "4px 4px 8px" }}>{tr("catalog.found", { count: results.length })}</div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { registerBack } from '../backNav';
 import { MIcon, Card, F_NUM, ScrollRow } from './ui';
@@ -74,10 +74,22 @@ export const CustomerTree = ({ t, groups = [], customers = [], query = "", force
         return registerBack(() => { setPath(p => p.slice(0, -1)); return true; });
     }, [path.length, q, forceFlat]);
 
+    // Нова папка / рівень / режим пошуку — показати список з початку (#72). Контейнер прокрутки
+    // належить батьку (екран «Клієнти» і пікер у замовленні), тож від якоря йдемо вгору до
+    // найближчого прокручуваного предка й скидаємо його scrollTop. Ключ по path (не по довжині —
+    // сусідні папки мають однакову глибину). Хук — ДО раннього return (правило хуків).
+    const scrollAnchor = useRef(null);
+    useEffect(() => {
+        let el = scrollAnchor.current?.parentElement;
+        while (el && !/(auto|scroll)/.test(getComputedStyle(el).overflowY)) el = el.parentElement;
+        if (el) el.scrollTop = 0;
+    }, [path.join('/'), q, forceFlat]);
+    const anchor = <div ref={scrollAnchor} aria-hidden="true" style={{ height: 0 }} />;
+
     // Плоский режим: пошук фільтрує передані customers; forceFlat — усі (вже відфільтровані батьком).
     if (q || forceFlat) {
         const list = (q ? customers.filter(c => matchCustomer(c, q)) : customers).slice().sort(byName);
-        return list.length ? <>{list.map(renderClient)}</> : empty;
+        return list.length ? <>{anchor}{list.map(renderClient)}</> : empty;
     }
 
     const node = getCustomerNode(root, path);
@@ -94,6 +106,7 @@ export const CustomerTree = ({ t, groups = [], customers = [], query = "", force
 
     return (
         <>
+            {anchor}
             {path.length > 0 && (
                 <ScrollRow fade={t.bg} gap={2} stickEnd={path} style={{ marginBottom: 10, paddingBottom: 2 }}>
                     {crumbs.map((c, i) => {
