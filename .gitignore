@@ -72,3 +72,6 @@ Thumbs.db
 
 # Робочі вихідники іконки (генеруються у android/res через @capacitor/assets)
 frontend/assets/
+
+# Локальні інструменти/вивантаження 1С (не для репозиторію)
+_tools/
