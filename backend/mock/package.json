@@ -1,6 +1,6 @@
 {
   "name": "vendo-mock-backend",
-  "version": "0.21.1",
+  "version": "0.21.2",
   "description": "Демо-реалізація REST-контракту Vendo (in-memory, сід із db.json)",
   "main": "server.js",
   "scripts": {
