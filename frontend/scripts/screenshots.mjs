@@ -76,7 +76,46 @@ const clickHeaderIconBtn = (page) => page.evaluate(() => {
   if (btns[0]) btns[0].click();
 });
 
+// Створити замовлення «на сьогодні» в мока — для кадру дашборда: демо-сід має статичні
+// дати, тож блок «Сьогоднішні замовлення» інакше порожній. Мок in-memory: рестарт чистить,
+// а номери (ЗМ-2043…) детерміновані за свіжого старту мока.
+const seedTodayOrders = async () => {
+  const [customers, products] = await Promise.all([
+    fetch(`${MOCK}/customers`).then(r => r.json()),
+    fetch(`${MOCK}/products`).then(r => r.json()),
+  ]);
+  const today = new Date().toISOString().slice(0, 10);
+  const cust = (name) => customers.find(c => c.name.includes(name))?.id;
+  const prod = (name) => products.find(p => p.name.includes(name))?.id;
+  const post = (customerId, productId, qty, status) => fetch(`${MOCK}/orders`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customerId, date: today, status, priceType: 'retail', orderItems: [{ productId, qty }] }),
+  });
+  await post(cust('Фуршет'), prod('Едам 45%'), 3, 'sent');
+  await post(cust('АТБ'), prod('ультрапастеризоване'), 2, 'new');
+};
+
 const SHOTS = [
+  // Каталог — кореневий рівень: групи, пошук і кнопка дій (⋮, #76).
+  { file: 'catalog', at: async (page) => {
+    await nav(page, 'Каталог');
+    await page.getByText('ПІДГРУПИ', { exact: false }).waitFor();
+  } },
+  // Меню дій каталогу (⋮) — перемикач показу товарів без залишку (#76).
+  { file: 'catalog-actions', at: async (page) => {
+    await nav(page, 'Каталог');
+    await page.getByText('ПІДГРУПИ', { exact: false }).waitFor();
+    await page.getByRole('button', { name: 'Дії' }).click();
+    await page.getByText('Показувати товари без залишку').waitFor();
+    await page.waitForTimeout(400); // анімація шторки
+  } },
+  // Список замовлень — акцент на контрагенті (#75), номер і дата — допоміжні.
+  { file: 'orders', at: async (page) => {
+    await nav(page, 'Замовлення');
+    await page.getByRole('button', { name: 'Весь час' }).click();
+    await page.getByText(FURSHET).first().waitFor();
+    await page.waitForTimeout(300);
+  } },
   // Клієнти — папки довідника (#64), верхній рівень.
   { file: 'customers', at: async (page) => {
     await nav(page, 'Клієнти');
@@ -162,6 +201,15 @@ const SHOTS = [
       await page.mouse.up();
     }
     await page.waitForTimeout(700); // анімація прилипання панелі
+  } },
+  // Головний екран — показники дня і сьогоднішні замовлення (акцент на контрагенті, #75).
+  // ОСТАННІМ у маніфесті: seedTodayOrders мутує мок — щоб не проліз у кадр «Замовлення».
+  { file: 'dashboard', at: async (page) => {
+    await seedTodayOrders();
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.getByText('ВИТОРГ СЬОГОДНІ').waitFor();
+    await page.getByText('Фуршет', { exact: false }).first().waitFor();
+    await page.waitForTimeout(300);
   } },
 ];
 
