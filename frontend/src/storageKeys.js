@@ -9,6 +9,7 @@ export const K = {
     theme: 'vendo_theme',            // 'dark' | 'light'
     lang: 'vendo_lang',              // мова інтерфейсу
     priceType: 'vendo_price_type',   // вибраний тип цін у каталозі
+    showNoStock: 'vendo_show_no_stock', // каталог: показувати товари без залишку (#76; типово off)
     loginNotice: 'vendo_login_notice', // i18n-ключ повідомлення на екрані входу (#40)
     lastSync: 'vendo_last_sync',     // час останньої успішної синхронізації (ms)
     localOrders: 'vendo_local_orders', // чернетки/черга замовлень

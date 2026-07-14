@@ -129,6 +129,8 @@
     "products": "Товари",
     "productsWord": "товарів",
     "outOfStock": "немає",
+    "actions": "Дії",
+    "showOutOfStock": "Показувати товари без залишку",
     "orderedBefore": "Замовляв раніше",
     "orderedQtyHint": "Замовляв {{qty}}, {{date}} — тап підставить кількість",
     "empty": "Порожньо",

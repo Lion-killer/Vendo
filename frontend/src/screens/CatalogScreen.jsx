@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { registerBack } from '../backNav';
-import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal, SearchInput } from '../components/ui';
+import { MIcon, Card, F_NUM, ProductImage, ScrollRow, ListPlaceholder, TOP_ACTIONS_W, QtyInput, SwipeReveal, SearchInput, BottomSheet } from '../components/ui';
 import { fmtMoney2, fmtDate, todayISO, curSymbol, DEFAULT_CURRENCY, byName } from '../i18n';
 import { Z } from '../theme';
 import { scanBarcode } from '../api/scanner';
+import { K } from '../storageKeys';
 
 // ─── Побудова дерева з пласких categories (parentId) + products (categoryId) ───
 function buildTree(categories, products) {
@@ -22,9 +23,11 @@ function buildTree(categories, products) {
     });
     return { id: "", name: "", children: roots, products: orphans };
 }
-const countProducts = (node) => {
-    let n = node.products ? node.products.length : 0;
-    if (node.children) node.children.forEach(c => { n += countProducts(c); });
+// Лічильник товарів у піддереві (#77). includeOOS=false рахує лише доступні (залишок > 0),
+// щоб цифри збігалися з перемикачем показу товарів без залишку (#76).
+const countProducts = (node, includeOOS = true) => {
+    let n = (node.products || []).filter(p => includeOOS || !(Number(p.stock) <= 0)).length;
+    if (node.children) node.children.forEach(c => { n += countProducts(c, includeOOS); });
     return n;
 };
 const getNode = (root, path) => {
@@ -119,10 +122,10 @@ const ProductRow = ({ t, p, price, qty, onAdd, priceTypes, activePriceType, orde
     );
 };
 
-const GroupRow = ({ t, node, onOpen }) => {
+const GroupRow = ({ t, node, onOpen, showNoStock }) => {
     const { t: tr } = useTranslation();
     const subCount = node.children ? node.children.length : 0;
-    const prodCount = countProducts(node);
+    const prodCount = countProducts(node, showNoStock);
     return (
         <Card t={t} style={{ padding: 12, marginBottom: 8, cursor: "pointer" }}>
             <div onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -146,6 +149,13 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
+    // Меню додаткових дій каталогу (kebab) + перемикач показу товарів без залишку (#76).
+    // Типово вимкнено — недоступні товари приховані; стан переживає перезапуск (localStorage).
+    const [showMenu, setShowMenu] = useState(false);
+    const [showNoStock, setShowNoStock] = useState(() => localStorage.getItem(K.showNoStock) === "1");
+    const toggleNoStock = () => setShowNoStock(v => { const next = !v; localStorage.setItem(K.showNoStock, next ? "1" : "0"); return next; });
+    // Недоступний = залишок ≤ 0 (як у сортуванні #59). Приховуємо, доки перемикач вимкнено.
+    const inStockOnly = (list) => showNoStock ? list : list.filter(p => !(Number(p.stock) <= 0));
 
     const root = useMemo(() => buildTree(categories, products), [categories, products]);
     const node = getNode(root, path);
@@ -174,11 +184,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
     const bodyRef = useRef(null);
     useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [path.join('/'), searching]);
     const results = useMemo(() => searching
-        ? sortProducts(flattenProducts(root).filter(p =>
+        ? sortProducts(inStockOnly(flattenProducts(root).filter(p =>
             p.name.toLowerCase().includes(query.toLowerCase()) ||
-            (p.sku || "").toLowerCase().includes(query.toLowerCase())))
-        : [], [searching, query, root]);
-    const sortedLevelProducts = useMemo(() => sortProducts(levelProducts), [levelProducts]);
+            (p.sku || "").toLowerCase().includes(query.toLowerCase()))))
+        : [], [searching, query, root, showNoStock]);
+    const sortedLevelProducts = useMemo(() => sortProducts(inStockOnly(levelProducts)), [levelProducts, showNoStock]);
 
     const qtyOf = (p) => orderItems.find(it => it.product.id === p.id)?.qty || 0;
 
@@ -234,8 +244,13 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                     <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4 }}>{tr("nav.catalog")}</div>
                 </div>
 
-                {/* Пошук по всьому дереву */}
-                <SearchInput t={t} value={query} onChange={setQuery} placeholder={tr("catalog.searchPlaceholder")} />
+                {/* Пошук по всьому дереву + кнопка додаткових дій (kebab, #76) */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <SearchInput t={t} value={query} onChange={setQuery} placeholder={tr("catalog.searchPlaceholder")} style={{ flex: 1 }} />
+                    <button onClick={() => setShowMenu(true)} aria-label={tr("catalog.actions")} style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, background: t.surface, border: `1px solid ${t.line}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit" }}>
+                        <MIcon name="more" size={20} color={t.ink} />
+                    </button>
+                </div>
 
                 {/* Селектор типу ціни (Варіант Б): тонкий ряд чіпів під пошуком — усі типи видно
                     одразу, перемик у 1 тап. Ховається, коли доступний лише один тип. */}
@@ -300,16 +315,16 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                         {subgroups.length > 0 && (
                             <>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: "2px 4px 8px" }}>{tr("catalog.subgroups")} · {subgroups.length}</div>
-                                {sortedSubgroups.map(g => <GroupRow key={g.id} t={t} node={g} onOpen={() => setPath([...path, g.id])} />)}
+                                {sortedSubgroups.map(g => <GroupRow key={g.id} t={t} node={g} onOpen={() => setPath([...path, g.id])} showNoStock={showNoStock} />)}
                             </>
                         )}
-                        {levelProducts.length > 0 && (
+                        {sortedLevelProducts.length > 0 && (
                             <>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {levelProducts.length}</div>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMuted, letterSpacing: 0.8, textTransform: "uppercase", margin: `${subgroups.length > 0 ? 18 : 2}px 4px 8px` }}>{tr("catalog.products")} · {sortedLevelProducts.length}</div>
                                 {sortedLevelProducts.map(p => <ProductRow key={p.id || p.sku} t={t} p={p} price={priceOf(p)} qty={qtyOf(p)} onAdd={addToOrder} priceTypes={priceTypes} activePriceType={activePriceType} ordered={orderedProductIds.has(p.id)} recentQtys={recentQtysByProduct.get(p.id)} />)}
                             </>
                         )}
-                        {subgroups.length === 0 && levelProducts.length === 0 && (
+                        {subgroups.length === 0 && sortedLevelProducts.length === 0 && (
                             <ListPlaceholder loading={connecting && (products || []).length === 0} t={t}>
                                 <MIcon name="grid" size={36} color={t.line} />
                                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 10 }}>{tr("catalog.empty")}</div>
@@ -334,6 +349,17 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                         <div style={{ background: "rgba(255,255,255,0.12)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700 }}>{tr("catalog.toOrder")}</div>
                     </button>
                 </div>
+            )}
+
+            {/* Меню додаткових дій каталогу (kebab, #76) — поки одна дія: перемикач показу
+                товарів без залишку. Той самий патерн, що в редагуванні замовлення. */}
+            {showMenu && (
+                <BottomSheet t={t} onClose={() => setShowMenu(false)} sheetStyle={{ padding: "12px 12px", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+                    <button onClick={toggleNoStock} role="switch" aria-checked={showNoStock} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
+                        <MIcon name="grid" size={20} color={t.ink} /> {tr("catalog.showOutOfStock")}
+                        {showNoStock && <span style={{ marginLeft: "auto", display: "flex" }}><MIcon name="check" size={20} color={t.accent} /></span>}
+                    </button>
+                </BottomSheet>
             )}
         </div>
     );

@@ -129,6 +129,8 @@
     "products": "Товары",
     "productsWord": "товаров",
     "outOfStock": "нет",
+    "actions": "Действия",
+    "showOutOfStock": "Показывать товары без остатка",
     "orderedBefore": "Заказывал ранее",
     "orderedQtyHint": "Заказывал {{qty}}, {{date}} — тап подставит количество",
     "empty": "Пусто",
