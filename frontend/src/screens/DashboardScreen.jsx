@@ -149,14 +149,14 @@ export const DashboardScreen = ({ t, onNav, userName, orders, products = [], cus
                             <div key={o.id} onClick={() => onNav("orders", { order: o })} style={{ display: "flex", alignItems: "center", padding: "12px 14px", borderBottom: i < arr.length - 1 ? `1px solid ${t.lineSoft}` : "none", cursor: "pointer", opacity: o.deletionMark ? 0.55 : 1 }}>
                                 <div style={{ width: 4, alignSelf: "stretch", background: statusColor(o), borderRadius: 2, marginRight: 12 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                        <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</span>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: o.deletionMark ? "line-through" : "none" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                                        <span style={{ fontFamily: F_NUM, fontSize: 12, fontWeight: 600, color: t.inkMuted }}>{orderNum(o)}</span>
                                         {isNew(o) && <span style={{ fontSize: 9.5, fontWeight: 700, color: t.warn, background: t.warn + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeNew")}</span>}
                                         {o.conflict ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeConflict")}</span>
                                             : o.syncError ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeError")}</span>
                                             : (o._pending && !isNew(o)) ? <span style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "22", padding: "1px 6px", borderRadius: 4, letterSpacing: 0.4 }}>{tr("dashboard.badgeWaiting")}</span> : null}
                                     </div>
-                                    <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</div>
                                 </div>
                                 <div style={{ textAlign: "right", marginLeft: 10 }}>
                                     <div style={{ fontFamily: F_NUM, fontSize: 14, fontWeight: 600 }}>{fmtCur2(parseMoney(o.total), o.currency)}</div>

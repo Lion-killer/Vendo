@@ -209,8 +209,9 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                     <MIcon name="doc" size={20} color={t.accent} />
                                 </div>
                                 <div style={{ minWidth: 0 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                                        <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: 0, textDecoration: o.deletionMark ? "line-through" : "none" }}>{orderNum(o)}</p>
+                                    <p style={{ color: t.ink, fontSize: 14, fontWeight: 700, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: o.deletionMark ? "line-through" : "none" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
+                                        <span style={{ color: t.inkMuted, fontSize: 12, fontWeight: 600 }}>{orderNum(o)}</span>
                                         <span style={{ fontSize: 10, color: t.inkMuted }}>{fmtDmy(o.date)}</span>
                                         {!refs.ok && <span title={tr("ordersList.tipStale")} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("ordersList.badgeStale")}</span>}
                                         {o.conflict ? <span title={msgText(o.syncError)} style={{ fontSize: 9.5, fontWeight: 700, color: t.err, background: t.err + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeConflict")}</span>
@@ -218,7 +219,6 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
                                             : o._pending && <span title={tr("ordersList.tipWaiting")} style={{ fontSize: 9.5, fontWeight: 700, color: t.inkMuted, background: t.inkMuted + "1A", padding: "1px 6px", borderRadius: 6 }}>{tr("dashboard.badgeWaiting")}</span>}
                                         {o.comment && <span title={tr("ordersList.hasComment")} aria-label={tr("ordersList.hasComment")} style={{ display: "flex", alignItems: "center" }}><MIcon name="message" size={13} color={t.inkMuted} /></span>}
                                     </div>
-                                    <p style={{ color: t.inkMuted, fontSize: 12, margin: "2px 0 0", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.client || o.customer?.name || tr("common.unknownClient")}</p>
                                 </div>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
