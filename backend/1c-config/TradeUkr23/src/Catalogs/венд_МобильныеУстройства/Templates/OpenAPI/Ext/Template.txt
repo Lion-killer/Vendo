@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Vendo — Mobile API",
-    "version": "0.21.2",
+    "version": "0.22.0",
     "description": "Контракт REST API мобільного застосунку торгпреда Vendo. Дві реалізації з однаковим контрактом: демо-бекенд (Node, `backend/`) і HTTP-сервіс 1С (`венд_МобильноеПриложение`). Усі дані фільтруються за пристроєм (заголовок `X-Device-Id`); запити (крім `/auth`) підписуються bearer-токеном. Сумісність (#66): додаток шле `X-App-Version`; будь-який data-ендпоінт при версії, старішій за `minAppVersion` із `/health`, повертає `426` (див. `UpgradeRequired`). `/health`, `/auth`, `/telemetry` не гейтяться."
   },
   "servers": [
