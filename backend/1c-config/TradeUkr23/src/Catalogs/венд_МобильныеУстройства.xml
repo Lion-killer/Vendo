@@ -969,6 +969,8 @@
 			<Form>ФормаСписка</Form>
 			<Form>НастройкиСервиса</Form>
 			<Template>ГенераторQR</Template>
+			<Template>OpenAPI</Template>
+			<Template>SwaggerUI</Template>
 		</ChildObjects>
 	</Catalog>
 </MetaDataObject>

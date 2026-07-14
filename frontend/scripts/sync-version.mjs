@@ -59,3 +59,16 @@ const mockPkg = JSON.parse(readFileSync(mockPkgPath, 'utf8'));
 mockPkg.version = version;
 writeFileSync(mockPkgPath, JSON.stringify(mockPkg, null, 2) + '\n');
 console.log(`sync-version: mock package.json → version ${version}`);
+
+// Спека OpenAPI → макет 1С (#73). Канонічний backend/mock/openapi.json → макет із запеченою
+// версією релізу в info.version (щоб /openapi.json показував версію бекенда). servers НЕ
+// чіпаємо — 1С-обробник (ПреобразоватьСпекуПотоком) сам підставляє відносний шлях публікації
+// потоково. Порядок ключів зберігаємо (JSON.parse/​stringify у V8 тримає порядок вставки).
+// Пишемо з BOM (конвенція вивантаження макетів).
+const spec = JSON.parse(readFileSync(join(root, '..', 'backend', 'mock', 'openapi.json'), 'utf8').replace(/^﻿/, ''));
+spec.info = spec.info || {};
+spec.info.version = version;            // присвоєння наявному ключу зберігає його позицію
+const specDstPath = join(root, '..', 'backend', '1c-config', 'TradeUkr23', 'src',
+    'Catalogs', 'венд_МобильныеУстройства', 'Templates', 'OpenAPI', 'Ext', 'Template.txt');
+writeFileSync(specDstPath, '﻿' + JSON.stringify(spec, null, 2) + '\n');
+console.log('sync-version: openapi.json → макет 1С OpenAPI (version запечено)');
