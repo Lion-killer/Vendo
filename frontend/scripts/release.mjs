@@ -100,9 +100,28 @@ const changelog = readFileSync(join(root, '..', 'CHANGELOG.md'), 'utf8');
 const section = changelog.match(/## v[\s\S]*?(?=\n## v|$)/)?.[0] || '';
 const notesFile = join(root, '.release-notes.md');
 writeFileSync(notesFile, section.replace(/^## .*\n/, '')); // заголовок = назва релізу, в нотатках зайвий
-try {
-    run(`gh release create ${tag} "${apk}" --title "Vendo ${tag}" --notes-file "${notesFile}"`);
-} finally {
-    rmSync(notesFile, { force: true });
+
+// gh release create періодично падає на транзієнтних мережевих збоях (DNS/обрив) —
+// v0.21.1 і v0.22.1 дотягували вручну (#78). До 3 спроб із паузою 10 с; якщо всі
+// невдалі — нотатки НЕ видаляємо й друкуємо готову команду ручного повтору.
+const ghCmd = `gh release create ${tag} "${apk}" --title "Vendo ${tag}" --notes-file "${notesFile}"`;
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); // синхронний sleep
+let released = false;
+for (let attempt = 1; attempt <= 3 && !released; attempt++) {
+    try {
+        run(ghCmd);
+        released = true;
+    } catch {
+        if (attempt < 3) {
+            console.error(`release: gh release create не вдався (спроба ${attempt}/3) — повтор за 10 с…`);
+            pause(10_000);
+        }
+    }
 }
+if (!released) {
+    console.error(`release: gh release create не вдався після 3 спроб. Нотатки збережено: ${notesFile}`);
+    console.error(`Повтори вручну:\n  ${ghCmd}`);
+    process.exit(1);
+}
+rmSync(notesFile, { force: true });
 console.log(`\nreleased: ${tag} → https://github.com/Lion-killer/Vendo/releases/tag/${tag}`);
