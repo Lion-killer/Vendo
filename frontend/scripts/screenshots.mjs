@@ -180,19 +180,22 @@ const SHOTS = [
     await page.waitForTimeout(700);                       // домалювати картинку лайтбокса
   } },
   // Каталог — зелена смужка раніше замовлених (у контексті замовлення клієнта).
+  // Запит «ультрапастеризоване 2.5» (крапка!) збігається лише з товаром, який клієнт
+  // замовляв раніше — рядок зі смужкою гарантовано вгорі кадру (демо-каталог великий,
+  // за коротким «мол» замовлений товар тонув нижче кадру).
   { file: 'catalog-ordered', at: async (page) => {
     await openFurshetCatalog(page);
-    await page.getByPlaceholder(/Пошук/).fill('мол');
+    await page.getByPlaceholder(/Пошук/).fill('ультрапастеризоване 2.5');
     await page.getByText('ЗНАЙДЕНО', { exact: false }).waitFor();
     await waitImages(page);
   } },
   // Каталог — панель історії (свайп управо по зеленій смужці): кількість + дата.
   { file: 'catalog-ordered-history', at: async (page) => {
     await openFurshetCatalog(page);
-    await page.getByPlaceholder(/Пошук/).fill('мол');
+    await page.getByPlaceholder(/Пошук/).fill('ультрапастеризоване 2.5');
     await page.getByText('ЗНАЙДЕНО', { exact: false }).waitFor();
     await waitImages(page);
-    const box = await page.locator('div[style*="translateX"]', { hasText: 'Молоко ультрапастеризоване' }).first().boundingBox();
+    const box = await page.locator('div[style*="translateX"]', { hasText: 'Молоко ультрапастеризоване 2.5%' }).first().boundingBox();
     if (box) {
       const y = box.y + box.height / 2, sx = box.x + 28;
       await page.mouse.move(sx, y);
