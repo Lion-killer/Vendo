@@ -51,7 +51,7 @@
 				<xr:Item xsi:type="xr:MDObjectRef">Role.венд_HTTPСервис</xr:Item>
 			</DefaultRoles>
 			<Vendor>Vendo</Vendor>
-			<Version>0.22.0</Version>
+			<Version>0.22.1</Version>
 			<UpdateCatalogAddress />
 			<IncludeHelpInContents>false</IncludeHelpInContents>
 			<UseManagedFormInOrdinaryApplication>false</UseManagedFormInOrdinaryApplication>
