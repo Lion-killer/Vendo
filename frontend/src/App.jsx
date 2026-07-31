@@ -622,10 +622,23 @@ export default function App() {
     return () => { cancelled = true; if (handle) handle.remove(); };
   }, [screen, showLog, showHelp, showSyncHistory]);
 
-  const handleLogin = (name, token) => {
+  // #80: колекції живуть у стані App, а не лише в сховищі. Якщо їх не скинути, дані
+  // попередньої прив'язки лишаються на екрані після виходу — до першого вдалого
+  // завантаження з нового бекенду, а якщо той недоступний, то й назавжди
+  // (fetchFromNetwork свідомо не затирає наявні дані невдалими запитами).
+  const resetCollections = () => {
+    setProducts([]); setCategories([]); setCustomerGroups([]); setCustomers([]); setOrders([]); setLoadError(null);
+    collectionsFpRef.current = {}; // інакше відбиток старих даних погасить перший знімок нових
+  };
+
+  // purged — LoginScreen повідомляє, що зісканували QR ІНШОГО пристрою (#80): сховище
+  // він уже почистив, а стан у пам'яті може пережити вхід, якщо на екран входу потрапили
+  // не через handleLogout.
+  const handleLogin = (name, token, purged) => {
     const resolvedName = name || tr("common.user");
     localStorage.removeItem(K.loginNotice);
     setLoginNotice("");
+    if (purged) resetCollections();
     saveSession({ userName: resolvedName, token: token || null, ts: Date.now() });
     setUserName(resolvedName);
     navStack.current = []; // нова сесія — чистий стек навігації
@@ -639,6 +652,7 @@ export default function App() {
     setOrderItems([]);
     setEditOrderId(null);
     setEditCustomer(null);
+    resetCollections(); // #80: не лишати каталог/клієнтів/замовлення попередньої сесії в пам'яті
     navStack.current = [];
     setScreen("login");
   };
@@ -670,13 +684,12 @@ export default function App() {
     Object.keys(localStorage).forEach(k => { if (!CLEAR_KEEP.includes(k)) localStorage.removeItem(k); });
     clearImageCache();
     clearDataCache();
-    setProducts([]); setCategories([]); setCustomerGroups([]); setCustomers([]); setOrders([]); setLoadError(null);
+    resetCollections(); // стан + відбитки (#80): раніше те саме було розписано тут
     setOrderItems([]); setEditOrderId(null); setEditCustomer(null);
     notify(tr('toast.dataCleared'));
     // Перезавантаження з сервера — ФОРСОВАНЕ (минаємо guard): на повільній 1С фоновий
     // цикл майже завжди «в польоті», і звичайний виклик пропустився б — екран лишався б
     // порожнім до наступного вдалого циклу. Кеш читати нема сенсу (щойно стерли).
-    collectionsFpRef.current = {};
     fetchFromNetwork(false, true);
   };
 

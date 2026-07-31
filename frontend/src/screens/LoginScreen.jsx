@@ -37,7 +37,10 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
         // Зміна пристрою: якщо сканують QR ІНШОГО пристрою — стираємо всі дані попереднього
         // (чернетки, чергу, історію, токен, сесію) + кеш фото і кеш колекцій (IndexedDB).
         // Чужі дані не вантажаться.
-        if (purgeOnDeviceSwitch(deviceId, localStorage)) { clearImageCache(); clearDataCache(); }
+        // purged проброшуємо в onLogin (#80): сховище почищене, але колекції в стані App
+        // переживають вхід — їх скидає вже App.
+        const purged = purgeOnDeviceSwitch(deviceId, localStorage);
+        if (purged) { clearImageCache(); clearDataCache(); }
 
         if (apiUrl) localStorage.setItem(K.apiUrl, apiUrl);
         if (deviceId) localStorage.setItem(K.deviceId, deviceId);
@@ -47,7 +50,7 @@ export const LoginScreen = ({ t, onLogin, onOpenHelp, notice, onOpenLog }) => {
             const res = await auth(deviceId, pairingCode);
             if (res.success) {
                 setLoading(false); setScanned(true);
-                setTimeout(() => onLogin(res.user?.name || deviceId || tr("common.user"), res.token), 700);
+                setTimeout(() => onLogin(res.user?.name || deviceId || tr("common.user"), res.token, purged), 700);
             } else {
                 throw new Error(res.message || tr("login.errUnauthorized"));
             }
