@@ -219,8 +219,11 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
 
     return (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative", overflow: "hidden" }}>
-            {/* Шапка — компактна (максимум місця під позиції) */}
-            <div style={{ padding: "max(12px, env(safe-area-inset-top)) 16px 8px" }}>
+            {/* Шапка — компактна (максимум місця під позиції).
+                key={num} (#82): зміна документа — насамперед «Скопіювати в нове» — перемальовує
+                шапку з анімацією. Без цього підміна номера й статусу проходить непомітно, і
+                незрозуміло, що перед тобою вже інший документ. Анімація — наявна slideUp. */}
+            <div key={num || "new"} style={{ padding: "max(12px, env(safe-area-inset-top)) 16px 8px", animation: "slideUp .3s ease" }}>
                 {/* Рядок 1: назад + назва екрана + статус */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>

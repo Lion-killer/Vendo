@@ -24,7 +24,7 @@ import { SyncHistoryPanel } from './components/SyncHistoryPanel';
 import { HelpScreen } from './screens/HelpScreen';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { checkForUpdate, isUpdatePromptShown, markUpdatePromptShown, downloadAndInstall, openInstallSettings } from './api/updates';
-import { parseMoney, orderNum as orderLabel, fmtDate, DEFAULT_CURRENCY } from './i18n';
+import { parseMoney, orderNum as orderLabel, fmtDate, todayISO, DEFAULT_CURRENCY } from './i18n';
 import { STATUS, normalizeOrder } from './status';
 import { runBack } from './backNav';
 import { K, CLEAR_KEEP, LEGACY } from './storageKeys';
@@ -706,13 +706,30 @@ export default function App() {
   // Копіювати поточне замовлення в нове: лишаємо товари й контрагента, скидаємо
   // прив'язку до існуючого документа (стає "Нове", редаговане).
   const copyOrderToNew = () => {
-    setEditOrderId(null);
+    const num = nextDraftNum();
+    const date = todayISO(); // копія — сьогоднішній документ, а не дата оригіналу
+    // #82: зберігаємо копію ОДРАЗУ, а не чекаємо виходу з екрана. Інакше вона живе лише
+    // в стані App і гине на виходах, які її не помічають (апаратний «назад» бачить стан
+    // до копіювання — його замикання не оновлюється на зміни замовлення).
+    const id = saveLocalOrder({
+      num,
+      ...orderRecordFields({
+        customer: editCustomer, items: orderItems, date,
+        currency: editCurrency, priceType: editPriceType, comment: editComment,
+        unknownClient: tr("common.unknownClient"),
+      }),
+      status: STATUS.NEW,
+    });
+    setEditOrderId(id); // подальші правки оновлюють ЦЕЙ запис, а не плодять другий
     setEditStatus(STATUS.NEW);
     setEditLocked(false);
-    setEditDate(null);
-    setEditNum(nextDraftNum());
+    setEditDate(date);
+    setEditNum(num);
     setEditVersion(null);
     orderHandled.current = false;
+    // Копія вже в черзі — новий базовий знімок, щоб вихід без правок не переписував її
+    // вдруге (і не показував зайве «збережено»).
+    orderBaseline.current = orderSig(orderItems, editCustomer?.id, date, editComment);
     notify(tr("toast.copied"));
   };
 
