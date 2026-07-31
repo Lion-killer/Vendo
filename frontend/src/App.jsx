@@ -607,24 +607,33 @@ export default function App() {
 
   // Апаратна кнопка «Назад» (Android): без обробника Capacitor одразу виходить із додатку.
   // Перехоплюємо й навігуємо всередині: журнал → закрити; підекран → на головну; головна/
-  // логін → вихід. Перепідписка на зміну screen/showLog, щоб у замиканні були свіжі значення.
+  // логін → вихід.
+  //
+  // #83: тіло обробника переприсвоюється щорендера в реф, а слухач реєструється ОДИН раз.
+  // Раніше слухач перепідписувався на [screen, showLog, …] і тому замикав стан замовлення
+  // на момент ВХОДУ на екран: saveLeavingDraft усередині navigateBack порівнював застарілий
+  // підпис зі свіжим (це реф) базовим знімком, вони збігались — і вихід нічого не зберігав.
+  // Додати стан замовлення в залежності не можна: слухач перепідписувався б на кожну зміну
+  // кількості; реф дає свіже замикання без жодної перепідписки.
+  const backHandler = useRef(() => { });
+  backHandler.current = (exitApp) => {
+    if (showHelp) { setShowHelp(false); return; }
+    if (showLog) { setShowLog(false); return; }
+    if (showSyncHistory) { setShowSyncHistory(false); return; }
+    if (closeLightbox()) return;      // відкритий лайтбокс фото — спершу закриваємо його
+    if (runBack()) return;            // #71: заглиблене дерево (каталог/клієнти) — на рівень угору
+    if (screen === 'dashboard') { exitApp(); return; } // головна — вихід із додатку
+    if (navigateBack()) return;       // інакше — на попередній екран зі стека
+    exitApp();                        // стек порожній — виходимо
+  };
   useEffect(() => {
     let handle, cancelled = false;
     import('@capacitor/app').then(async ({ App: CapApp }) => {
-      const h = await CapApp.addListener('backButton', () => {
-        if (showHelp) { setShowHelp(false); return; }
-        if (showLog) { setShowLog(false); return; }
-        if (showSyncHistory) { setShowSyncHistory(false); return; }
-        if (closeLightbox()) return;      // відкритий лайтбокс фото — спершу закриваємо його
-        if (runBack()) return;            // #71: заглиблене дерево (каталог/клієнти) — на рівень угору
-        if (screen === 'dashboard') { CapApp.exitApp(); return; } // головна — вихід із додатку
-        if (navigateBack()) return;       // інакше — на попередній екран зі стека
-        CapApp.exitApp();                 // стек порожній — виходимо
-      });
+      const h = await CapApp.addListener('backButton', () => backHandler.current(() => CapApp.exitApp()));
       if (cancelled) h.remove(); else handle = h;
     }).catch(() => {});
     return () => { cancelled = true; if (handle) handle.remove(); };
-  }, [screen, showLog, showHelp, showSyncHistory]);
+  }, []);
 
   // #80: колекції живуть у стані App, а не лише в сховищі. Якщо їх не скинути, дані
   // попередньої прив'язки лишаються на екрані після виходу — до першого вдалого
