@@ -147,6 +147,7 @@ export default function App() {
   const [showLog, setShowLog] = useState(false); // відкрита панель журналу помилок
   const [showSyncHistory, setShowSyncHistory] = useState(false); // відкрита панель історії синхронізацій
   const [showHelp, setShowHelp] = useState(false); // відкрита вбудована довідка
+  const helpBackRef = useRef(null); // #84: обробник «назад» усередині довідки (кладе HelpScreen)
   const [syncing, setSyncing] = useState(false); // активна ручна синхронізація (для індикатора)
   const fetchingRef = useRef(false); // мережеве перечитування в процесі — не накладати цикли (повільний сервер)
   const collectionsFpRef = useRef({}); // JSON-відбитки колекцій: guard від зайвих setState/перезапису кешу, коли фоновий цикл приніс те саме
@@ -617,7 +618,9 @@ export default function App() {
   // кількості; реф дає свіже замикання без жодної перепідписки.
   const backHandler = useRef(() => { });
   backHandler.current = (exitApp) => {
-    if (showHelp) { setShowHelp(false); return; }
+    // #84: спершу питаємо саму довідку — всередині розділу «назад» має вертати до списку
+    // (чи до розділу, з якого прийшли за посиланням), а не викидати з довідки зовсім.
+    if (showHelp) { if (helpBackRef.current && helpBackRef.current()) return; setShowHelp(false); return; }
     if (showLog) { setShowLog(false); return; }
     if (showSyncHistory) { setShowSyncHistory(false); return; }
     if (closeLightbox()) return;      // відкритий лайтбокс фото — спершу закриваємо його
@@ -905,7 +908,7 @@ export default function App() {
       {showSyncHistory && <SyncHistoryPanel t={t} expandLatest onClose={() => setShowSyncHistory(false)} onOpenOrder={openOrderFromHistory} />}
 
       {/* Вбудована довідка (markdown із docs/user-guide) */}
-      {showHelp && <HelpScreen t={t} onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpScreen t={t} onClose={() => setShowHelp(false)} backRef={helpBackRef} />}
 
       {/* Єдиний лайтбокс фото (каталог + замовлення); закривається апаратним «назад» */}
       <Lightbox />

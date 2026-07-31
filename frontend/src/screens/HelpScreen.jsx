@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import { Z } from '../theme';
@@ -26,9 +26,45 @@ function ord(name) {
 
 const imgUri = (src) => src && src.startsWith('images/') ? '/help-images/' + src.slice(7) : src;
 
-export const HelpScreen = ({ t, onClose }) => {
+// backRef (#84) — App кладе сюди наш обробник «назад» і питає його ПЕРШИМ, коли довідка
+// відкрита. Через registerBack (#71) робити не можна: у стеку перехоплювачів під нами
+// лишається дерево каталогу/клієнтів, і зі списку розділів «назад» піднімав би рівень
+// у ньому замість закриття довідки.
+export const HelpScreen = ({ t, onClose, backRef }) => {
     const { t: tr, i18n } = useTranslation();
     const [active, setActive] = useState(null); // null = список розділів
+    const [trail, setTrail] = useState([]);     // стек розділів, з яких прийшли за посиланнями
+    const bodyRef = useRef(null);
+
+    // Перехід у розділ: попередній лягає в стек, щоб «назад» вертав до місця читання,
+    // а не завжди до списку. Поточний розділ читаємо з рефа, бо цю функцію тримає
+    // мемоїзований набір md-компонентів (deps [t]) — звичайне замикання застигло б (#83).
+    const activeRef = useRef(null);
+    activeRef.current = active;
+    const openSection = (name) => {
+        const from = activeRef.current;
+        if (from) setTrail(prev => [...prev, from]);
+        setActive(name);
+    };
+
+    // true = «назад» поглинуто (є куди повертатись усередині довідки).
+    const goBack = () => {
+        if (!active) return false; // список розділів — далі вирішує App (закрити довідку)
+        setActive(trail.length ? trail[trail.length - 1] : null);
+        setTrail(prev => prev.slice(0, -1));
+        return true;
+    };
+
+    // Без списку залежностей: перереєстрація щорендера тримає замикання свіжим (#83).
+    useEffect(() => {
+        if (!backRef) return;
+        backRef.current = goBack;
+        return () => { backRef.current = null; };
+    });
+
+    // Новий розділ читаємо з початку. Прокручується САМЕ цей контейнер, а не вікно —
+    // тому window.scrollTo тут нічого не давав (#84).
+    useEffect(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; }, [active]);
 
     // Стилі markdown-елементів через токени теми (єдиний вигляд із рештою застосунку).
     const md = useMemo(() => ({
@@ -50,7 +86,7 @@ export const HelpScreen = ({ t, onClose }) => {
             // Внутрішнє посилання на розділ (xxx.md) → перемикаємо розділ, не виходимо із застосунку.
             if (/\.md(#.*)?$/.test(href)) {
                 const target = href.replace(/#.*$/, '').split('/').pop();
-                return <a onClick={(e) => { e.preventDefault(); if (sections.some(s => s.name === target)) { setActive(target); window.scrollTo?.(0, 0); } }}
+                return <a onClick={(e) => { e.preventDefault(); if (sections.some(s => s.name === target)) openSection(target); }}
                     style={{ color: t.accent, fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>{p.children}</a>;
             }
             return <a href={href} target="_blank" rel="noreferrer" style={{ color: t.accent, fontWeight: 600 }}>{p.children}</a>;
@@ -64,7 +100,7 @@ export const HelpScreen = ({ t, onClose }) => {
             {/* Шапка */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${t.line}`, paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
                 {current && (
-                    <button onClick={() => setActive(null)} aria-label={tr('a11y.back')} style={{ background: 'none', border: 'none', color: t.ink, fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>‹</button>
+                    <button onClick={goBack} aria-label={tr('a11y.back')} style={{ background: 'none', border: 'none', color: t.ink, fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>‹</button>
                 )}
                 <div style={{ fontSize: 17, fontWeight: 800, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {current ? current.title : tr('help.title')}
@@ -73,7 +109,7 @@ export const HelpScreen = ({ t, onClose }) => {
             </div>
 
             {/* Тіло */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: current ? '16px 18px 32px' : '8px 0 24px' }}>
+            <div ref={bodyRef} style={{ flex: 1, overflowY: 'auto', padding: current ? '16px 18px 32px' : '8px 0 24px' }}>
                 {current ? (
                     <>
                         {i18n.language !== 'uk' && (
@@ -83,7 +119,7 @@ export const HelpScreen = ({ t, onClose }) => {
                     </>
                 ) : (
                     sections.map(s => (
-                        <button key={s.name} onClick={() => setActive(s.name)} style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'none', border: 'none', borderBottom: `1px solid ${t.lineSoft || t.line}`, cursor: 'pointer', fontFamily: 'inherit', color: t.ink }}>
+                        <button key={s.name} onClick={() => openSection(s.name)} style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'none', border: 'none', borderBottom: `1px solid ${t.lineSoft || t.line}`, cursor: 'pointer', fontFamily: 'inherit', color: t.ink }}>
                             <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>{s.title}</span>
                             <span style={{ color: t.inkMuted, fontSize: 18 }}>›</span>
                         </button>
