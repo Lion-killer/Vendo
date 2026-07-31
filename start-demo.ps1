@@ -34,6 +34,7 @@ Write-Host '=============================================='
 Write-Host '       Vendo demo stand (mock + tunnel)'
 Write-Host '=============================================='
 Write-Host 'Backend:  http://localhost:3000'
+Write-Host 'Docs:     http://localhost:3000/api/docs'
 Write-Host "QR:       $qrFile"
 Write-Host "Ctrl+C stops both.`n"
 
@@ -69,6 +70,7 @@ try {
             try { npx --yes qrcode -o $qrFile -w 600 $payload | Out-Null }
             catch { Write-Host "QR generation failed: $_" }
             Write-Host "`nPublic:   $url/api"
+            Write-Host "Docs:     $url/api/docs   (Swagger UI over the same tunnel)"
             Write-Host "QR ready: $qrFile (regenerated for this address)`n"
             Invoke-Item $qrFile -ErrorAction SilentlyContinue
         } else {
