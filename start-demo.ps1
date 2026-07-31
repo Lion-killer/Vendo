@@ -1,10 +1,18 @@
 # Demo stand for APK testing: mock backend + HTTPS tunnel, both in THIS window.
 #
-# Tunnel is pinggy.io over plain ssh (no account, no install). Its free address
+# Tunnel is localhost.run over plain ssh (no account, no install). Its address
 # changes every session, so the pairing QR is regenerated on every (re)connect
 # and opened for you - just show/send the picture to the tester.
-# loca.lt was tried first: it keeps a fixed subdomain but died after one request
-# (503/408), so a stable-but-dead address lost to a fresh-but-alive one.
+#
+# Two free tunnels were rejected before this one, both for the same reason - they
+# gate requests that look like a browser, and the Capacitor app sends the WebView
+# user agent:
+#   loca.lt   - reminder page, and the client died after a request or two (503/408);
+#   pinggy.io - serves an HTML splash instead of the API response unless the caller
+#               sends X-Pinggy-No-Screen, which the app cannot do. HEAD /health still
+#               passed, so the app showed "online" with empty catalog and customers.
+# If you swap the provider again, test it with an Android WebView user agent, not
+# with curl defaults - that is exactly what hid the pinggy splash from us.
 #
 # Output is ASCII on purpose: works the same under pwsh 7 and Windows PowerShell 5.1.
 $ErrorActionPreference = 'Stop'
@@ -37,18 +45,18 @@ $ssh = $null
 try {
     while ($true) {
         Remove-Item $sshLog -ErrorAction SilentlyContinue
-        Write-Host 'Tunnel: connecting to pinggy.io ...'
+        Write-Host 'Tunnel: connecting to localhost.run ...'
         $ssh = Start-Process ssh -PassThru -NoNewWindow -RedirectStandardOutput $sshLog `
-            -ArgumentList '-T','-p','443','-o','StrictHostKeyChecking=no',
+            -ArgumentList '-T','-o','StrictHostKeyChecking=no',
                           '-o','UserKnownHostsFile=NUL','-o','ServerAliveInterval=30',
-                          '-R0:localhost:3000','a.pinggy.io'
+                          '-R','80:localhost:3000','nokey@localhost.run'
 
         # The public address shows up in ssh output a few seconds in.
         $url = $null
         foreach ($i in 1..20) {
             Start-Sleep -Seconds 2
             if (Test-Path $sshLog) {
-                $m = Select-String -Path $sshLog -Pattern 'https://\S+\.(pinggy\.net|pinggy-free\.link)' |
+                $m = Select-String -Path $sshLog -Pattern 'https://[a-z0-9-]+\.lhr\.life' |
                      Select-Object -First 1
                 if ($m) { $url = $m.Matches[0].Value; break }
             }
@@ -67,8 +75,34 @@ try {
             Write-Host 'Tunnel did not report an address - see' $sshLog
         }
 
-        $ssh.WaitForExit()
-        Write-Host "`nTunnel dropped (free session lasts ~60 min) - reconnecting in 5s..."
+        # Watchdog. localhost.run drops the tunnel on its own side while ssh stays
+        # connected: the address then answers "<h1>no tunnel here</h1>" and the app
+        # gets HTML where it expects JSON (sync dies with "Unexpected token '<'").
+        # Probing the public address is the only way to notice - the local process
+        # looks perfectly healthy. Browser UA on purpose: that is what the app sends,
+        # and some tunnels answer it differently.
+        $fails = 0
+        while (-not $ssh.HasExited) {
+            Start-Sleep -Seconds 30
+            if (-not $url) { break } # no address parsed - just wait for ssh to die
+            $alive = $false
+            try {
+                $probe = Invoke-WebRequest "$url/api/health" -TimeoutSec 15 -UseBasicParsing `
+                    -UserAgent 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'
+                $alive = $probe.Content -like '*"status"*'
+            } catch { $alive = $false }
+            if ($alive) { $fails = 0; continue }
+            $fails++
+            Write-Host "Tunnel check failed ($fails/2)"
+            if ($fails -ge 2) {
+                Write-Host 'Tunnel is dead on the provider side - reconnecting for a fresh address...'
+                Stop-Process -Id $ssh.Id -Force -ErrorAction SilentlyContinue
+                break
+            }
+        }
+
+        if (-not $ssh.HasExited) { $ssh.WaitForExit() }
+        Write-Host "`nTunnel dropped - reconnecting in 5s (the address will change, QR is reissued)..."
         Start-Sleep -Seconds 5
     }
 } finally {
