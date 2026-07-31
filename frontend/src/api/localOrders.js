@@ -1,6 +1,7 @@
 import { normalizeOrder } from '../status.js';
 import { todayISO } from '../dates.js';
 import { K } from '../storageKeys.js';
+import { logError } from '../logger.js';
 
 const STORAGE_KEY = K.localOrders;
 
@@ -51,7 +52,7 @@ export const getLocalOrders = () => {
         // normalizeOrder: черга могла бути записана старою версією (укр. статуси, sColor) — #48.
         return data ? JSON.parse(data).map(normalizeOrder) : [];
     } catch (e) {
-        console.error("Помилка читання localStorage", e);
+        logError("Не вдалося прочитати чергу замовлень", String(e && e.message || e)); // #81: черга виглядатиме порожньою — причина має бути в журналі
         return [];
     }
 };

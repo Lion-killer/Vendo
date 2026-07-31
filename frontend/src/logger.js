@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { K } from './storageKeys';
+import { K } from './storageKeys.js';
 
 // Логер додатку: кільцевий буфер останніх подій у localStorage (переживає краш і
 // перезапуск), глобальні обробники помилок і відправка логу розробнику.

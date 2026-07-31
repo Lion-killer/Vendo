@@ -15,7 +15,7 @@ import { checkCompat, parseIntervals } from './contract';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
-import { logWarn } from './logger';
+import { logWarn, logError } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum, orderRecordFields } from './api/localOrders';
 import { idSet, checkOrderRefs, mergeOrders, recentQtysForCustomer, orderedIdsFromOrders } from './api/refs';
@@ -284,7 +284,7 @@ export default function App() {
       setOrders(arr(data.orders).map(normalizeOrder)); // кеш міг бути записаний старою версією (#48)
       return true;
     } catch (e) {
-      console.error("Помилка відновлення кешу", e);
+      logError("Не вдалося відновити кеш даних", String(e && e.message || e)); // #81: офлайн-екрани лишаться порожні — причина має бути в журналі
       return false;
     }
   };
@@ -368,7 +368,9 @@ export default function App() {
       }
       return true;
     } catch (e) {
-      console.warn("Цикл даних не вдався — лишаємось на кеші (офлайн визначає пінг).", e);
+      // warn, не error (#81): невдалий цикл — рядова офлайн-ситуація польового додатка,
+      // помилкою вона стає лише разом із іншими симптомами.
+      logWarn("Цикл даних не вдався — лишаємось на кеші", String(e && e.message || e));
       return false;
     } finally {
       fetchingRef.current = false;
@@ -512,7 +514,9 @@ export default function App() {
         if (res.order) upsertOrder(res.order); // серверна версія (з номером) видима одразу, без розриву
         removeLocalOrder(o.id); sent++; rec(o, 'sent');
       } catch (e) {
-        console.error("Sync error", o.id, e);
+        // #81: у журнал — інакше збій синхронізації видно лише в її історії, а на
+        // пристрої користувача консолі немає.
+        logError(`Синхронізація: ${orderLabel(o)} (${opCode(o)}) не пройшла`, String(e && e.message || e));
         setLocalOrderError(o.id, e.message || 'syncErr.generic'); failed++; rec(o, 'failed', e.message || 'syncErr.generic');
       }
     }

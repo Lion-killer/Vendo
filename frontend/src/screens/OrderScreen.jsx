@@ -7,6 +7,7 @@ import { saveLocalOrder, removeLocalOrder, getLocalOrder, orderRecordFields, ord
 import { STATUS, statusColor as statusColorOf, statusBg } from '../status';
 import { restoreOrder, deleteOrder } from '../api/client';
 import { idSet } from '../api/refs';
+import { logError } from '../logger';
 
 export const OrderScreen = ({ t, isOnline, locked = false, date = null, status = STATUS.NEW, num = null, baseVersion = null, currency = null, priceType = null, comment = "", pushComment, pushDate, notify, onCopy, markHandled, orderItems, setOrderItems, customers, customerGroups = [], products = [], refreshOrders, editOrderId, setEditOrderId, editCustomer, setEditCustomer, goToOrdersList, goToCatalog }) => {
     const { t: tr } = useTranslation();
@@ -78,7 +79,8 @@ export const OrderScreen = ({ t, isOnline, locked = false, date = null, status =
             };
             const localId = saveLocalOrder(orderData);
             if (localId !== editOrderId) setEditOrderId(localId);
-        } catch (e) { console.error("Помилка автозбереження:", e); }
+        // #81: автозбереження мовчазне — без журналу втрачена чернетка не має пояснення.
+        } catch (e) { logError("Не вдалося автозберегти чернетку", String(e && e.message || e)); }
     }, [orderItems, customer, editOrderId, date, comment, isOnline]);
 
     // Явне збереження (кнопка «Зберегти») — не залежить від isDirty, тож працює

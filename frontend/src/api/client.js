@@ -108,6 +108,27 @@ const tfetch = async (url, opts = {}, timeout) => {
     }
 };
 
+// #81: не-JSON відповідь (сторінка проксі, заглушка тунелю, портал автентифікації)
+// падала як «Unexpected token '<'» — з такого тексту неможливо зрозуміти, що сервер
+// узагалі не наш. Розбираємо тіло самі: логуємо початок відповіді (у журнал пристрою)
+// і кидаємо зрозумілу помилку — вона ж потрапляє в історію синхронізацій.
+// quiet — не писати в журнал (для телеметрії): її власний збій, залогований як помилка,
+// смикає хук телеметрії, той шле новий снапшот, той знову падає — самопідтримний шторм.
+export const NOT_JSON_MARK = 'сервер повернув не JSON';
+const asJson = async (res, quiet = false) => {
+    const text = await res.text();
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        const head = text.trim().slice(0, 120).replace(/\s+/g, ' ');
+        // Порожнє тіло — окремий випадок: це не «чужа сторінка», а обрив або метод,
+        // який нічого не повернув; плутати їх у журналі означає шукати не там.
+        const what = head ? NOT_JSON_MARK : 'сервер повернув порожню відповідь';
+        if (!quiet) logError(`${shortPath(res.url || '')} → ${what}`, `HTTP ${res.status}${head ? `; початок: ${head}` : ''}`);
+        throw new Error(head ? `${NOT_JSON_MARK} (можливо, сторінка проксі або тунелю)` : what);
+    }
+};
+
 // Обмін одноразового коду прив'язки на bearer-токен. Токен зберігаємо локально —
 // далі ним підписуються всі запити (див. h()). На цьому етапі токена ще немає,
 // тому Authorization не шлемо.
@@ -117,7 +138,7 @@ export const auth = async (devId, pairingCode) => {
         headers: { 'Content-Type': 'application/json', ...(devId ? { 'X-Device-Id': devId } : {}) },
         body: JSON.stringify({ deviceId: devId || deviceId(), pairingCode }),
     });
-    const data = await res.json();
+    const data = await asJson(res);
     if (data.success && data.token) localStorage.setItem(K.token, data.token);
     return data;
 };
@@ -125,28 +146,28 @@ export const auth = async (devId, pairingCode) => {
 // ids (#56) — необов'язковий масив GUID: лише вказані товари (точкове оновлення
 // після синхронізації). Без ids — весь каталог пристрою.
 export const fetchProducts = async (ids) =>
-    (await tfetch(`${apiUrl()}/products${Array.isArray(ids) && ids.length ? `?ids=${ids.map(encodeURIComponent).join(',')}` : ''}`, { headers: h() })).json();
+    asJson(await tfetch(`${apiUrl()}/products${Array.isArray(ids) && ids.length ? `?ids=${ids.map(encodeURIComponent).join(',')}` : ''}`, { headers: h() }));
 
 export const fetchCustomers = async () =>
-    (await tfetch(`${apiUrl()}/customers`, { headers: h() })).json();
+    asJson(await tfetch(`${apiUrl()}/customers`, { headers: h() }));
 
 export const fetchCategories = async () =>
-    (await tfetch(`${apiUrl()}/categories`, { headers: h() })).json();
+    asJson(await tfetch(`${apiUrl()}/categories`, { headers: h() }));
 
 // Папки контрагентів (#64) — [{ id, name, parentId }], для дерева на екрані «Клієнти»
 // й у вибірнику замовлення. Плоский список, як /categories.
 export const fetchCustomerGroups = async () =>
-    (await tfetch(`${apiUrl()}/customer-groups`, { headers: h() })).json();
+    asJson(await tfetch(`${apiUrl()}/customer-groups`, { headers: h() }));
 
 // Товари, які контрагент уже замовляв за всю історію (#62) — масив GUID. У 1С джерело —
 // обороти регістра ЗаказыПокупателей (не обмежені глибиною історії, як /orders). Викликач
 // має толерувати не-масив (404 для невідомого контрагента → { success:false }).
 export const fetchOrderedProducts = async (customerId) =>
-    (await tfetch(`${apiUrl()}/customers/${encodeURIComponent(customerId)}/ordered-products`, { headers: h() })).json();
+    asJson(await tfetch(`${apiUrl()}/customers/${encodeURIComponent(customerId)}/ordered-products`, { headers: h() }));
 
 // Доступні типи цін пристрою (для селектора в каталозі): [{ id, name, default }].
 export const fetchPriceTypes = async () =>
-    (await tfetch(`${apiUrl()}/price-types`, { headers: h() })).json();
+    asJson(await tfetch(`${apiUrl()}/price-types`, { headers: h() }));
 
 // Завантажити захищене бінарне зображення за відносним шляхом API (напр. поле Product.img
 // = "/products/{id}/image") і повернути blob-URL для <img src>. Заголовки (X-Device-Id +
@@ -208,7 +229,7 @@ export const fetchOrders = async (startDate, endDate) => {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     if (params.toString()) url += `?${params.toString()}`;
-    return (await tfetch(url, { headers: h() })).json();
+    return asJson(await tfetch(url, { headers: h() }));
 };
 
 // Позиції на дріт у нормалізованому вигляді { productId, qty, price } (ціна-snapshot):
@@ -226,40 +247,40 @@ const wireItems = (orderItems) => (orderItems || []).map(it => ({
 // deletionMark=false — зняти помітку видалення при upsert (для «перезаписати моє» над
 // видаленим на сервері). Якщо не передано — помітку не чіпаємо.
 export const createOrder = async (id, orderItems, customerId, total, status = STATUS.NEW, date, baseVersion, deletionMark, priceType, comment) =>
-    (await tfetch(`${apiUrl()}/orders`, {
+    asJson(await tfetch(`${apiUrl()}/orders`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ id, orderItems: wireItems(orderItems), customerId, total, status, date, baseVersion, ...(deletionMark === false ? { deletionMark: false } : {}), ...(priceType ? { priceType } : {}), ...(comment != null ? { comment } : {}) }),
-    })).json();
+    }));
 
 // baseVersion — токен версії на момент, коли додаток бачив замовлення: 1С виявляє
 // конфлікт (409), якщо помітку/вміст відтоді змінили (видалення/відновлення теж міняють
 // ВерсияДанных). Відсутній baseVersion = беззастережно (force).
 export const deleteOrder = async (id, baseVersion) =>
-    (await tfetch(`${apiUrl()}/orders/${id}`, {
+    asJson(await tfetch(`${apiUrl()}/orders/${id}`, {
         method: 'DELETE',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ baseVersion }),
-    })).json();
+    }));
 
 // Зняти помітку на видалення (PUT із deletionMark:false; інші поля не чіпаємо).
 export const restoreOrder = async (id, baseVersion) =>
-    (await tfetch(`${apiUrl()}/orders/${id}`, {
+    asJson(await tfetch(`${apiUrl()}/orders/${id}`, {
         method: 'PUT',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ deletionMark: false, baseVersion }),
-    })).json();
+    }));
 
 // #42: снапшот телеметрії (стан пристрою; опційно лог). Відповідь: { ok, requestLog }.
 // authReject:false — телеметрія допоміжна: її 401 (немає права на метод у старішій 1С)
 // не повинен викидати користувача з сесії, як це робить 401 основних даних (#40).
 export const postTelemetry = async (payload) =>
-    (await tfetch(`${apiUrl()}/telemetry`, {
+    asJson(await tfetch(`${apiUrl()}/telemetry`, {
         method: 'POST',
         headers: h({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
         authReject: false,
-    })).json();
+    }), true); // quiet: див. asJson — логування тут замикає телеметрію саму на себе
 
 // Найдешевший пінг доступності: HEAD /health (без авторизації, без БД, без тіла) —
 // 1С-шаблон /health має окремий HEAD-метод (HealthHead → порожній 200), Node теж.
@@ -279,7 +300,10 @@ export const pingServer = async () => {
 export const fetchHealth = async () => {
     try {
         const res = await tfetch(`${apiUrl()}/health`, { headers: h() }, 12000);
-        return res.ok ? await res.json() : null;
+        // Не-JSON тут — типовий симптом чужої сторінки на адресі бекенда (заглушка
+        // тунелю, портал): asJson це залогує, а каскад сумісності просто лишиться без
+        // даних (null), як і при офлайні.
+        return res.ok ? await asJson(res) : null;
     } catch (e) {
         return null;
     }

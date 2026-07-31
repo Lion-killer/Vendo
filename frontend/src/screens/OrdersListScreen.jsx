@@ -7,6 +7,7 @@ import { getLocalOrders, removeLocalOrder, saveLocalOrder, orderRecordFields } f
 import { STATUS, statusColor } from '../status';
 import { idSet, checkOrderRefs, mergeOrders } from '../api/refs';
 import { K, LEGACY } from '../storageKeys';
+import { logError } from '../logger';
 
 // #51: одноразова міграція ключів періоду — раніше жили без префікса vendo_.
 [[LEGACY.ordersStart, K.ordersStart], [LEGACY.ordersEnd, K.ordersEnd]].forEach(([from, to]) => {
@@ -131,7 +132,7 @@ export const OrdersListScreen = ({ t, onNav, isOnline, refreshOrders, products =
             recompute(); // миттєво відображаємо локальну зміну
             if (refreshOrders) refreshOrders(); // App перечитає сервер у фоні → appOrders оновиться
         } catch (err) {
-            console.error("Помилка видалення", err);
+            logError(`Не вдалося видалити ${orderNum(o)}`, String(err && err.message || err)); // #81
         }
     };
 
