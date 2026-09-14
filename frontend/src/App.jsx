@@ -417,6 +417,7 @@ export default function App() {
       const next = parseIntervals(hp);
       return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
     });
+    return hp; // #87: циклу відновлення треба знати, чи бекенд узагалі відповів
   };
 
   // Запуск: спершу кеш (одразу), далі мережа у фоні (не блокує UI).
@@ -575,8 +576,24 @@ export default function App() {
   // (подієві фетчі вище і ручний синк — працюють як завжди); 0 вимикає конкретний цикл.
   // Зміна значень на бекенді підхоплюється наступним рефетчем /health і перезапускає таймери.
   useEffect(() => {
-    if (!isLoggedIn || !appIntervals) return;
+    if (!isLoggedIn) return;
     const timers = [];
+
+    // #87: інтервалів ще немає — /health не відповів (бекенд лежить чи віддає помилку).
+    // Без цього гілка виходила достроково й не запускався ЖОДЕН цикл: індикатор застигав
+    // зеленим, а застосунок не оживав сам навіть після відновлення сервера. Фолбечних
+    // значень для самих циклів не вводимо (#68) — цей таймер лише перепитує /health,
+    // поки той не віддасть справжні інтервали; тоді ефект перезапуститься вже нормально.
+    if (!appIntervals) {
+      const retry = async () => {
+        const hp = await refreshCompat();
+        setOnline(!!hp);
+        if (hp) fetchFromNetwork(true); // бекенд ожив — одразу свіжі дані, не чекаючи циклу
+      };
+      retry();
+      const id = setInterval(retry, 60000);
+      return () => clearInterval(id);
+    }
 
     if (appIntervals.pingSec) {
       // Онлайн/офлайн визначає ТІЛЬКИ дешевий пінг HEAD /health (12 с таймаут, без БД):

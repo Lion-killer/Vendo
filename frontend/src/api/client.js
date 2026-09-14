@@ -91,6 +91,9 @@ const tfetch = async (url, opts = {}, timeout) => {
         const ms = Date.now() - started;
         if (!timeout) { netTimes[path] = ms; saveNetTimes(); }
         (res.ok ? logInfo : logWarn)(`${method} ${path} → ${res.status}`, `${ms}ms`);
+        // #87: на пристрої res.url — адреса перехоплювача CapacitorHttp, тож журнал показував
+        // /_capacitor_http_interceptor_ замість ендпоінта. Несемо справжній шлях на відповіді.
+        res.vendoPath = path;
         // authReject:false — запит не бере участі в детекторі відв'язки (#40): 401 такого
         // запиту може означати не відкликаний токен, а відсутнє право на метод у 1С
         // (телеметрія на старішій конфігурації) — з сесії за це не викидаємо.
@@ -115,17 +118,24 @@ const tfetch = async (url, opts = {}, timeout) => {
 // quiet — не писати в журнал (для телеметрії): її власний збій, залогований як помилка,
 // смикає хук телеметрії, той шле новий снапшот, той знову падає — самопідтримний шторм.
 export const NOT_JSON_MARK = 'сервер повернув не JSON';
+// Помилка 1С приходить XML-винятком, де причина лежить у <descr> (напр. «Вичерпано час
+// очікування сеансу»). Без цього в журнал ішли перші 120 символів XML — службовий
+// xml-stylesheet, з якого причини не видно (#87).
+const descrFromXml = (text) => (/<descr[^>]*>([^<]+)<\/descr>/.exec(text) || [])[1];
+
 const asJson = async (res, quiet = false) => {
     const text = await res.text();
     try {
         return JSON.parse(text);
     } catch (e) {
+        const descr = descrFromXml(text);
         const head = text.trim().slice(0, 120).replace(/\s+/g, ' ');
         // Порожнє тіло — окремий випадок: це не «чужа сторінка», а обрив або метод,
         // який нічого не повернув; плутати їх у журналі означає шукати не там.
-        const what = head ? NOT_JSON_MARK : 'сервер повернув порожню відповідь';
-        if (!quiet) logError(`${shortPath(res.url || '')} → ${what}`, `HTTP ${res.status}${head ? `; початок: ${head}` : ''}`);
-        throw new Error(head ? `${NOT_JSON_MARK} (можливо, сторінка проксі або тунелю)` : what);
+        const what = descr ? `сервер відмовив: ${descr}` : (head ? NOT_JSON_MARK : 'сервер повернув порожню відповідь');
+        const where = res.vendoPath || shortPath(res.url || '');
+        if (!quiet) logError(`${where} → ${what}`, `HTTP ${res.status}${!descr && head ? `; початок: ${head}` : ''}`);
+        throw new Error(descr ? what : (head ? `${NOT_JSON_MARK} (можливо, сторінка проксі або тунелю)` : what));
     }
 };
 
