@@ -1,22 +1,16 @@
 @echo off
-echo ==============================================
-echo        Starting Vendo Application
-echo ==============================================
-echo.
-
-echo [1/2] Starting Backend API Server (Port 3000)...
-start "Vendo Backend" cmd /k "cd backend\mock && npm start"
-
-timeout /t 2 /nobreak > nul
-
-echo [2/2] Starting Frontend Vite Server...
-start "Vendo Frontend" cmd /k "cd frontend && npm run dev -- --host"
-
-echo.
-echo All servers are starting up! 
-echo.
-echo The backend is available at:  http://localhost:3000
-echo The frontend is available at: http://localhost:5173 
-echo.
-echo You can close this window. The servers will run in the newly opened windows.
+REM Launcher only - the work is in start.ps1: mock backend + frontend + HTTPS tunnel,
+REM all in THIS window with live logs ([api] / [web] / [tun]).
+REM
+REM Comments are ASCII on purpose: cmd mis-parses UTF-8 Cyrillic and would try to
+REM execute the fragments as commands.
+REM
+REM Plain if/else, not "where pwsh && (A) || (B)": with && || the fallback branch also
+REM runs whenever A exits non-zero (Ctrl+C, port busy) and would start a SECOND instance.
+where pwsh >nul 2>&1
+if %errorlevel%==0 (
+    pwsh -NoProfile -ExecutionPolicy Bypass -File "%~dp0start.ps1"
+) else (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0start.ps1"
+)
 pause
