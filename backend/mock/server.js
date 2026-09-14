@@ -3,15 +3,36 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const apiRoutes = require('./routes/api');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+// Ліміт тіла піднято: телеметрія возить повний лог додатка (#42), а адмінка — правки
+// демо-даних; типові express-ні 100 kb для цього замалі.
+app.use(express.json({ limit: '5mb' }));
+
+// Лог запитів. Обидва сервери тепер живуть в одному вікні (start.ps1), тому рядок
+// підписаний джерелом і часом — інакше в спільній стрічці не зрозуміти, хто відповідав.
+// LOG_REQUESTS=0 вимикає (наприклад, коли шумить пінг пристрою раз на 15 с).
+const hhmmss = () => new Date().toTimeString().slice(0, 8);
+app.use((req, res, next) => {
+    if (process.env.LOG_REQUESTS === '0') return next();
+    const started = Date.now();
+    // Пишемо на finish, а не одразу: інакше не видно ні коду відповіді, ні тривалості.
+    res.on('finish', () => console.log(
+        `${hhmmss()} [api] ${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - started}ms`));
+    next();
+});
 
 // Підключення роутів API
 app.use('/api', apiRoutes);
+
+// Адмінка стенду (#85): JSON-API + одна сторінка. Обидва — лише з локальної машини
+// (стенд публікується тунелем; перевірка всередині adminRoutes).
+app.use('/admin/api', adminRoutes);
+app.use('/admin', adminRoutes.localOnly, express.static(path.join(__dirname, 'public')));
 
 // Документація контракту: OpenAPI-специфікація + Swagger UI (#28).
 // UI вантажиться з CDN — без npm-залежностей; підходить для демо/розробки.
@@ -52,4 +73,11 @@ app.get('/api/docs', (req, res) => res.type('html').send(`<!DOCTYPE html>
 app.listen(PORT, () => {
     console.log(`Backend server is running on http://localhost:${PORT}`);
     console.log(`API docs (Swagger UI): http://localhost:${PORT}/api/docs`);
+    console.log(`Admin panel: http://localhost:${PORT}/admin`);
+
+    // Чистка історії телеметрії за строком зберігання: при старті й раз на добу,
+    // як робить 1С (ОчиститьУстаревшуюТелеметрию). Таймер unref — не тримає процес.
+    apiRoutes.pruneHistory(true);
+    const daily = setInterval(() => apiRoutes.pruneHistory(true), 86400000);
+    if (daily.unref) daily.unref();
 });

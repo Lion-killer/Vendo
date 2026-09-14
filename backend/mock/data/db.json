@@ -4113,9 +4113,6 @@
   "meta": {
     "lastOrderSeq": 2042
   },
-  "telemetry": {
-    "requestLog": false
-  },
   "customerGroups": [
     {
       "id": "cg1",
@@ -4142,5 +4139,67 @@
       "name": "Локальні",
       "parentId": "cg1"
     }
-  ]
+  ],
+  "warehouses": [
+    {
+      "id": "wh-1",
+      "name": "Основний склад"
+    },
+    {
+      "id": "wh-2",
+      "name": "Склад Захід"
+    }
+  ],
+  "currencies": [
+    {
+      "id": "980",
+      "name": "грн"
+    },
+    {
+      "id": "840",
+      "name": "USD"
+    },
+    {
+      "id": "978",
+      "name": "EUR"
+    }
+  ],
+  "managers": [
+    {
+      "id": "mg-1",
+      "name": "Олексій К."
+    },
+    {
+      "id": "mg-2",
+      "name": "Марія П."
+    }
+  ],
+  "devices": [
+    {
+      "id": "a66481df-e6c0-4393-a87a-a19398cde242",
+      "name": "Демо-пристрій",
+      "warehouseId": "wh-1",
+      "currencyId": "980",
+      "managerId": "mg-1",
+      "historyDays": 0,
+      "orderMode": "create",
+      "blocked": false,
+      "customerIds": [],
+      "productIds": [],
+      "priceTypeIds": [],
+      "pairingCode": "DEMO01",
+      "tokenHash": null,
+      "requestLog": false
+    }
+  ],
+  "settings": {
+    "syncSec": 300,
+    "pingSec": 15,
+    "telemetrySec": 900,
+    "minAppVersion": "0.1.0",
+    "currency": "980",
+    "historyDays": 0,
+    "telemetryKeepDays": 30
+  },
+  "telemetry": []
 }

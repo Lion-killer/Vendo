@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vendo — адмінка демо-стенду</title>
+    <!--
+      Адмінка демо-стенду (#85). Одна сторінка на чистому JS без збірки — мок лишається
+      Node-проєктом без build-кроку. Малює QR локальною бібліотекою (qrcode.min.js,
+      вендорена з макета 1С), тож працює і без інтернету. Доступна лише з localhost.
+    -->
+    <script src="qrcode.min.js"></script>
+    <style>
+        :root {
+            --ink: #1b1f24;
+            --muted: #6b7480;
+            --line: #e3e7ec;
+            --bg: #f6f7f9;
+            --accent: #2563eb;
+            --err: #d93025;
+            --ok: #1a8a45;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font: 14px/1.45 'Segoe UI', system-ui, sans-serif;
+            color: var(--ink);
+            background: var(--bg)
+        }
+
+        /* Шапка лишається на місці — гортаються лише списки (кожен у своєму .tw). */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #fff;
+            border-bottom: 1px solid var(--line);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap
+        }
+
+        h1 {
+            font-size: 16px;
+            margin: 0;
+            font-weight: 700
+        }
+
+        nav {
+            display: flex;
+            gap: 4px
+        }
+
+        nav button,
+        .tabs button {
+            background: none;
+            border: 1px solid transparent;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+            color: var(--muted)
+        }
+
+        nav button.on,
+        .tabs button.on {
+            background: #eef3ff;
+            color: var(--accent);
+            border-color: #d3e0ff;
+            font-weight: 600
+        }
+
+        /* Без стелі ширини: на широкому екрані таблиці розтягуються на всю сторінку. */
+        main {
+            padding: 18px
+        }
+
+        section {
+            display: none
+        }
+
+        section.on {
+            display: block
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 13px
+        }
+
+        /* Обгортка списку: власна прокрутка (і горизонтальна — широкі таблиці демо-даних
+           інакше вилазили за межі картки) + приклеєна шапка таблиці. Висоту можна тягнути
+           за правий нижній кут (resize; стелю max-height при цьому знімає wireResize). */
+        .tw {
+            overflow: auto;
+            resize: vertical;
+            min-height: 90px;
+            max-height: calc(100vh - 280px);
+            border: 1px solid var(--line);
+            border-radius: 10px
+        }
+
+        .tw thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+            box-shadow: inset 0 -1px 0 var(--line)
+        }
+
+        .tw table {
+            min-width: max-content
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+            white-space: nowrap
+        }
+
+        tr.sel td {
+            background: #eef3ff
+        }
+
+        tbody tr.pick {
+            cursor: pointer
+        }
+
+        input,
+        select,
+        textarea {
+            font: inherit;
+            padding: 5px 8px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: #fff;
+            color: inherit;
+            max-width: 100%
+        }
+
+        input[type=checkbox] {
+            padding: 0
+        }
+
+        button.act {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit
+        }
+
+        button.act.ghost {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--line)
+        }
+
+        button.act.danger {
+            background: var(--err)
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 8px 12px;
+            align-items: center;
+            max-width: 620px
+        }
+
+        .muted {
+            color: var(--muted)
+        }
+
+        .pill {
+            font-size: 12px;
+            padding: 1px 8px;
+            border-radius: 20px;
+            background: #eef1f4;
+            color: var(--muted)
+        }
+
+        .pill.ok {
+            background: #e6f5ec;
+            color: var(--ok)
+        }
+
+        .pill.err {
+            background: #fdeceb;
+            color: var(--err)
+        }
+
+        .list {
+            height: 320px;
+            overflow: auto;
+            resize: vertical;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 6px
+        }
+
+        .list label {
+            display: block;
+            padding: 2px 4px
+        }
+
+        pre {
+            background: #0f1115;
+            color: #d7dde5;
+            padding: 12px;
+            border-radius: 10px;
+            overflow: auto;
+            max-height: 420px;
+            font-size: 12px
+        }
+
+        /* Одна смуга прокрутки на все вікно: шапка з кнопками зафіксована, скролиться
+           лише тіло. Тому padding — на внутрішніх блоках, а не на самому dialog. */
+        dialog {
+            border: none;
+            border-radius: 14px;
+            padding: 0;
+            width: min(1100px, 92vw);
+            max-height: 90vh;
+            color: inherit;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, .25);
+            overflow: hidden
+        }
+
+        /* ТІЛЬКИ [open]: display на самому dialog перебиває браузерне display:none для
+           закритого вікна — порожня модалка висіла б у потоці сторінки постійно. */
+        dialog[open] {
+            display: flex;
+            flex-direction: column
+        }
+
+        dialog>.head {
+            flex: none;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--line)
+        }
+
+        dialog>.body {
+            flex: 1;
+            overflow: auto;
+            padding: 16px 18px
+        }
+
+        /* Вкладені таблиці власної прокрутки не мають — гортаються разом із тілом. */
+        dialog .body thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+            box-shadow: inset 0 -1px 0 var(--line)
+        }
+
+        dialog::backdrop {
+            background: rgba(15, 17, 21, .4)
+        }
+
+        #toast {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            background: #1b1f24;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: opacity .2s
+        }
+
+        #toast.on {
+            opacity: 1
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Vendo — демо-стенд</h1>
+        <nav>
+            <button data-sec="devices" class="on">Пристрої</button>
+            <button data-sec="telemetry">Телеметрія</button>
+            <button data-sec="data">Демо-дані</button>
+            <button data-sec="settings">Налаштування</button>
+        </nav>
+        <span class="muted" id="counts"></span>
+    </header>
+
+    <main>
+        <!-- ПРИСТРОЇ -->
+        <section id="sec-devices" class="on">
+            <div class="card">
+                <div class="row" style="justify-content:space-between">
+                    <b>Пристрої</b><button class="act ghost" id="devAdd">+ Пристрій</button>
+                </div>
+                <div class="tw" style="max-height:40vh;margin-top:8px">
+                    <table id="devTable">
+                        <thead>
+                            <tr>
+                                <th>Найменування</th>
+                                <th>Ідентифікатор</th>
+                                <th>Стан</th>
+                                <th>Режим</th>
+                                <th>Версія</th>
+                                <th>Активність</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" id="devCard" hidden>
+                <div class="tabs row" style="margin-bottom:12px">
+                    <button data-tab="props" class="on">Реквізити</button>
+                    <button data-tab="qr">QR</button>
+                    <button data-tab="access">Доступ</button>
+                    <button data-tab="tele">Телеметрія</button>
+                    <span style="flex:1"></span>
+                    <button class="act danger" id="devDel">Видалити</button>
+                </div>
+
+                <div data-pane="props">
+                    <div class="grid">
+                        <label>Найменування</label><input id="f-name">
+                        <label>Ідентифікатор (GUID)</label><input id="f-id" readonly class="muted">
+                        <label>Склад</label><select id="f-warehouseId"></select>
+                        <label>Валюта</label><select id="f-currencyId"></select>
+                        <label>Менеджер</label><select id="f-managerId"></select>
+                        <label>Глибина історії, днів</label><input id="f-historyDays" type="number" min="0">
+                        <label>Режим обробки замовлення</label><select id="f-orderMode"></select>
+                        <label>Заблоковано</label><input id="f-blocked" type="checkbox">
+                    </div>
+                    <p class="muted" style="max-width:620px">0 у глибині історії — брати значення зі
+                        стенду. Блокування відкликає токен: застосунок на наступному запиті отримає 401
+                        і вийде на екран входу, а після розблокування потрібен новий код прив'язки.</p>
+                    <button class="act" id="devSave">Зберегти</button>
+                </div>
+
+                <div data-pane="qr" hidden>
+                    <div class="grid">
+                        <label>Адреса сервісу</label><input id="qrApi">
+                        <label>Код прив'язки</label>
+                        <div class="row"><b id="qrCode">—</b><button class="act ghost" id="qrGen">Згенерувати</button></div>
+                    </div>
+                    <p class="muted" style="max-width:620px">Код одноразовий: після прив'язки він гаситься.
+                        Генерація нового коду відв'язує пристрій (токен відкликається).</p>
+                    <div id="qrBox" style="background:#fff;padding:10px;display:inline-block;border-radius:10px"></div>
+                    <div class="row" style="margin-top:10px">
+                        <button class="act ghost" id="qrCopy">Копіювати вміст QR</button>
+                        <button class="act ghost" id="qrDev">Копіювати вхід для браузера</button>
+                    </div>
+                    <p class="muted" style="max-width:620px">У браузері (npm run dev) камери немає, тож
+                        прив'язатись скануванням не можна: скопіюй другу кнопку й встав у консоль
+                        вкладки з додатком — вона обміняє код на токен і перезавантажить сторінку.</p>
+                </div>
+
+                <div data-pane="access" hidden>
+                    <p class="muted">Порожній список = без обмеження (пристрій бачить усе).</p>
+                    <div class="row" style="align-items:flex-start;gap:16px">
+                        <div style="flex:1;min-width:260px"><b>Контрагенти</b>
+                            <input placeholder="пошук" data-filter="customerIds" style="width:100%;margin:6px 0">
+                            <div class="list" id="acc-customerIds"></div>
+                        </div>
+                        <div style="flex:1;min-width:260px"><b>Товари</b>
+                            <input placeholder="пошук" data-filter="productIds" style="width:100%;margin:6px 0">
+                            <div class="list" id="acc-productIds"></div>
+                        </div>
+                        <div style="flex:1;min-width:200px"><b>Типи цін</b>
+                            <div class="list" id="acc-priceTypeIds" style="margin-top:29px"></div>
+                        </div>
+                    </div>
+                    <button class="act" id="accSave" style="margin-top:12px">Зберегти доступи</button>
+                </div>
+
+                <div data-pane="tele" hidden>
+                    <div class="row" style="margin-bottom:10px">
+                        <button class="act ghost" id="reqLog">Запросити лог</button>
+                        <span id="reqLogState" class="muted"></span>
+                    </div>
+                    <div class="tw" style="max-height:45vh">
+                        <table id="teleTable">
+                            <thead>
+                                <tr>
+                                    <th>Момент</th>
+                                    <th>Версія</th>
+                                    <th>Модель</th>
+                                    <th>Черга</th>
+                                    <th>Таймаути</th>
+                                    <th>Запити</th>
+                                    <th>Помилки</th>
+                                    <th>Лог</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <pre id="logView" hidden></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ТЕЛЕМЕТРІЯ (зведення по всіх пристроях) -->
+        <section id="sec-telemetry">
+            <div class="card">
+                <b>Останній стан пристроїв</b>
+                <div class="tw" style="margin-top:8px">
+                    <table id="allTele">
+                        <thead>
+                            <tr>
+                                <th>Пристрій</th>
+                                <th>Версія</th>
+                                <th>Модель</th>
+                                <th>Черга</th>
+                                <th>Таймаути</th>
+                                <th>Запити</th>
+                                <th>Синхронізація</th>
+                                <th>Активність</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="muted">Історія снапшотів і перегляд логу — у картці пристрою, вкладка «Телеметрія».</p>
+            </div>
+        </section>
+
+        <!-- ДЕМО-ДАНІ -->
+        <section id="sec-data">
+            <div class="card">
+                <div class="row" style="justify-content:space-between">
+                    <div class="row">
+                        <select id="colPick">
+                            <option value="products">Товари</option>
+                            <option value="customers">Контрагенти</option>
+                            <option value="categories">Категорії</option>
+                            <option value="customerGroups">Папки контрагентів</option>
+                            <option value="orders">Замовлення</option>
+                            <option value="warehouses">Склади</option>
+                            <option value="currencies">Валюти</option>
+                            <option value="managers">Менеджери</option>
+                        </select>
+                        <input id="colFilter" placeholder="пошук">
+                    </div>
+                    <button class="act ghost" id="rowAdd">+ Рядок</button>
+                </div>
+                <p class="muted">Клік по рядку відкриває запис для редагування. Правки
+                    зберігаються у db.state.json і переживають перезапуск моку.</p>
+                <!-- Список читальний і на всю доступну висоту; правки — у модалці, щоб
+                     редактор не з'їдав місце під самим списком. -->
+                <!-- Висота рахується в fitColBox під фактичний екран (стеля .tw знята);
+                     ручного resize тут не треба. -->
+                <div class="tw" id="colBox" style="max-height:none;resize:none">
+                    <table id="colTable">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <dialog id="colDlg">
+            <div class="head row" style="justify-content:space-between">
+                <b id="colCardTitle"></b>
+                <div class="row">
+                    <button class="act" id="colCardSave">Зберегти</button>
+                    <button class="act danger" id="colCardDel">Видалити</button>
+                    <button class="act ghost" id="colCardClose">Закрити</button>
+                </div>
+            </div>
+            <div class="body">
+                <div class="grid" id="colCardFields" style="max-width:760px"></div>
+                <div id="colCardNested"></div>
+            </div>
+        </dialog>
+
+        <!-- НАЛАШТУВАННЯ -->
+        <section id="sec-settings">
+            <div class="card">
+                <b>Налаштування стенду</b>
+                <div class="grid" style="margin-top:10px">
+                    <label>Синхронізація, с</label><input id="s-syncSec" type="number" min="0">
+                    <label>Пінг, с</label><input id="s-pingSec" type="number" min="0">
+                    <label>Телеметрія, с</label><input id="s-telemetrySec" type="number" min="0">
+                    <label>Мінімальна версія додатка</label><input id="s-minAppVersion">
+                    <label>Валюта стенду (код ISO)</label><input id="s-currency">
+                    <label>Глибина історії, днів</label><input id="s-historyDays" type="number" min="0">
+                    <label>Зберігати телеметрію, днів</label><input id="s-telemetryKeepDays" type="number" min="0">
+                </div>
+                <p class="muted" style="max-width:620px">Інтервали віддаються додатку в <code>/health</code>;
+                    0 вимикає відповідний цикл. 0 у глибині історії — без обмеження.</p>
+                <div class="row">
+                    <button class="act" id="setSave">Зберегти</button>
+                    <button class="act ghost" id="prune">Почистити телеметрію зараз</button>
+                </div>
+            </div>
+            <div class="card">
+                <b>Дані стенду</b>
+                <p class="muted" style="max-width:620px">Повернути демо-дані до еталонного сіду
+                    (<code>data/db.json</code>): усі правки, замовлення з додатка, історія телеметрії
+                    й прив'язки пристроїв будуть втрачені.</p>
+                <button class="act danger" id="reset">Завантажити дані за замовчуванням</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+        const api = async (path, opts) => {
+            const res = await fetch('api' + path, {
+                headers: { 'Content-Type': 'application/json' }, ...opts,
+                body: opts?.body ? JSON.stringify(opts.body) : undefined,
+            });
+            if (!res.ok) { toast('Помилка: ' + res.status); throw new Error(res.status); }
+            return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
+        };
+        let toastTimer;
+        const toast = (t) => {
+            $('#toast').textContent = t; $('#toast').classList.add('on');
+            clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('on'), 2200);
+        };
+        const fmt = (iso) => iso ? String(iso).replace('T', ' ').slice(0, 19) : '—';
+
+        let state = null, cur = null; // cur — вибраний пристрій
+
+        // Ручна зміна висоти списку: браузер при перетягуванні пише інлайновий height, але
+        // max-height його б обрізав — тож знімаємо стелю, щойно висоту задали руками.
+        // Саме MutationObserver, а не ResizeObserver: якщо тягнути ВНИЗ, розмір упирається
+        // в стелю й не змінюється, тож resize-подія просто не приходить.
+        const MO = new MutationObserver(ms => ms.forEach(m => {
+            const el = m.target;
+            if (el.style.height && el.style.maxHeight !== 'none') el.style.maxHeight = 'none';
+        }));
+        // Повторний observe того самого вузла лише перевизначає реєстрацію — дублів немає.
+        const wireResize = () => $$('.tw').forEach(el => MO.observe(el, { attributes: true, attributeFilter: ['style'] }));
+
+        // --- Навігація ---
+        $$('nav button').forEach(b => b.onclick = () => {
+            // Модалка редагування живе поза секціями (top layer), тож при переході на іншу
+            // вкладку її треба закрити явно — інакше висить над «Пристроями»/«Телеметрією».
+            closeColCard();
+            $$('nav button').forEach(x => x.classList.toggle('on', x === b));
+            $$('section').forEach(s => s.classList.toggle('on', s.id === 'sec-' + b.dataset.sec));
+            if (b.dataset.sec === 'data') loadCollection();
+            fitColBox();
+        });
+        $$('.tabs button').forEach(b => b.onclick = () => {
+            $$('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+            $$('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== b.dataset.tab);
+            if (b.dataset.tab === 'qr') drawQr();
+            if (b.dataset.tab === 'tele') loadDeviceTelemetry();
+        });
+
+        // --- Стан ---
+        async function refresh() {
+            state = await api('/state');
+            const c = state.counts;
+            $('#counts').textContent = `товарів ${c.products} · клієнтів ${c.customers} · замовлень ${c.orders} · снапшотів ${c.telemetry}`;
+            renderDevices();
+            renderAllTelemetry();
+            wireResize();
+            for (const k of ['syncSec', 'pingSec', 'telemetrySec', 'minAppVersion', 'currency', 'historyDays', 'telemetryKeepDays']) {
+                $('#s-' + k).value = state.settings[k] ?? '';
+            }
+            if (cur) { cur = state.devices.find(d => d.id === cur.id) || null; cur ? openDevice(cur.id) : ($('#devCard').hidden = true); }
+        }
+
+        const nameOf = (list, id) => (list.find(x => String(x.id) === String(id)) || {}).name || '';
+
+        function renderDevices() {
+            const tb = $('#devTable tbody'); tb.innerHTML = '';
+            for (const d of state.devices) {
+                const tr = document.createElement('tr');
+                tr.className = 'pick';
+                tr.classList.toggle('sel', cur && cur.id === d.id);
+                const statePill = d.blocked ? '<span class="pill err">заблоковано</span>'
+                    : d.paired ? '<span class="pill ok">спарено</span>' : '<span class="pill">не спарено</span>';
+                tr.innerHTML = `<td>${d.name || '—'}</td><td class="muted">${d.id}</td><td>${statePill}</td>
+          <td>${d.orderMode}</td><td>${d.last?.version || '—'}</td><td>${fmt(d.last?.at)}</td>`;
+                // Повторний клік по вибраному рядку ховає картку (як згорнути деталі).
+                tr.onclick = () => (cur && cur.id === d.id) ? closeDevice() : openDevice(d.id);
+                tb.appendChild(tr);
+            }
+        }
+
+        function fillSelect(sel, items, empty) {
+            sel.innerHTML = (empty ? `<option value="">— не задано —</option>` : '')
+                + items.map(i => `<option value="${i.id}">${i.name || i.id}</option>`).join('');
+        }
+
+        function closeDevice() {
+            cur = null;
+            $('#devCard').hidden = true;
+            renderDevices();
+        }
+
+        function openDevice(id) {
+            cur = state.devices.find(d => d.id === id);
+            if (!cur) return;
+            $('#devCard').hidden = false;
+            renderDevices();
+            $('#f-name').value = cur.name || '';
+            $('#f-id').value = cur.id;
+            fillSelect($('#f-warehouseId'), state.warehouses, true);
+            fillSelect($('#f-currencyId'), state.currencies, true);
+            fillSelect($('#f-managerId'), state.managers, true);
+            fillSelect($('#f-orderMode'), state.orderModes.map(m => ({ id: m, name: m })), false);
+            for (const k of ['warehouseId', 'currencyId', 'managerId', 'orderMode']) $('#f-' + k).value = cur[k] || '';
+            $('#f-historyDays').value = cur.historyDays || 0;
+            $('#f-blocked').checked = !!cur.blocked;
+            $('#qrCode').textContent = cur.pairingCode || '—';
+            $('#reqLogState').textContent = cur.requestLog ? 'лог запрошено, чекаємо снапшот' : '';
+            renderAccess();
+            const visible = $$('.tabs button').find(b => b.classList.contains('on'))?.dataset.tab;
+            if (visible === 'qr') drawQr();
+            if (visible === 'tele') loadDeviceTelemetry();
+        }
+
+        $('#devSave').onclick = async () => {
+            await api('/collection/devices/' + cur.id, {
+                method: 'PUT', body: {
+                    name: $('#f-name').value.trim(),
+                    warehouseId: $('#f-warehouseId').value || null,
+                    currencyId: $('#f-currencyId').value || null,
+                    managerId: $('#f-managerId').value || null,
+                    historyDays: Number($('#f-historyDays').value) || 0,
+                    orderMode: $('#f-orderMode').value,
+                    blocked: $('#f-blocked').checked,
+                }
+            });
+            toast('Збережено'); refresh();
+        };
+
+        $('#devAdd').onclick = async () => {
+            const d = await api('/collection/devices', {
+                method: 'POST', body: {
+                    name: 'Новий пристрій', historyDays: 0, orderMode: 'create', blocked: false,
+                    customerIds: [], productIds: [], priceTypeIds: [], requestLog: false,
+                }
+            });
+            await refresh(); openDevice(d.id); toast('Створено — згенеруйте код на вкладці QR');
+        };
+
+        $('#devDel').onclick = async () => {
+            if (!confirm('Видалити пристрій разом з історією телеметрії?')) return;
+            await api('/collection/devices/' + cur.id, { method: 'DELETE' });
+            cur = null; $('#devCard').hidden = true; refresh(); toast('Видалено');
+        };
+
+        // --- QR ---
+        // Вміст QR — той самий JSON, що генерує 1С: {deviceId, apiUrl, code}.
+        const qrPayload = () => JSON.stringify({ deviceId: cur.id, apiUrl: $('#qrApi').value.trim(), code: cur.pairingCode || '' });
+        function drawQr() {
+            if (!cur) return;
+            if (!$('#qrApi').value) $('#qrApi').value = location.origin + '/api';
+            $('#qrBox').innerHTML = '';
+            if (!cur.pairingCode) { $('#qrBox').innerHTML = '<span class="muted">Згенеруйте код прив\'язки</span>'; return; }
+            new QRCode($('#qrBox'), { text: qrPayload(), width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M });
+        }
+        $('#qrGen').onclick = async () => {
+            const { code } = await api(`/devices/${cur.id}/pairing-code`, { method: 'POST' });
+            toast('Код: ' + code); await refresh(); drawQr();
+        };
+        $('#qrApi').oninput = drawQr;
+        $('#qrCopy').onclick = async () => { await navigator.clipboard.writeText(qrPayload()); toast('Скопійовано'); };
+        // Прив'язка з консолі браузера: те саме, що робить сканер QR (ключі localStorage —
+        // з frontend/src/storageKeys.js). Для розробки фронтенду, де камери немає.
+        $('#qrDev').onclick = async () => {
+            const api = $('#qrApi').value.trim();
+            const js = `(async()=>{localStorage.setItem('vendo_api_url','${api}');`
+                + `localStorage.setItem('vendo_device_id','${cur.id}');`
+                + `const r=await(await fetch('${api}/auth',{method:'POST',headers:{'Content-Type':'application/json'},`
+                + `body:JSON.stringify({deviceId:'${cur.id}',pairingCode:'${cur.pairingCode}'})})).json();`
+                + `if(!r.token){console.error(r);return;}localStorage.setItem('vendo_token',r.token);`
+                + `localStorage.setItem('vendo_session',JSON.stringify({userName:r.user&&r.user.name,token:r.token,ts:Date.now()}));`
+                + `location.reload();})()`;
+            await navigator.clipboard.writeText(js);
+            toast(cur.pairingCode ? 'Скопійовано — встав у консоль додатка' : 'Спершу згенеруй код');
+        };
+
+        // --- Доступи ---
+        // Товари й контрагенти — ДЕРЕВА: у списку доступу може стояти категорія/папка,
+        // і тоді пристрою доступне все, що під нею (як узагальнене посилання + В ИЕРАРХИИ
+        // у 1С). Позначений вузол зберігається як є — розгортає його вже бекенд.
+        const TREES = {
+            customerIds: { items: 'customers', groups: 'customerGroups', groupKey: 'groupId' },
+            productIds: { items: 'products', groups: 'categories', groupKey: 'categoryId' },
+        };
+        let access = { customerIds: [], productIds: [], priceTypeIds: [] };
+        let accData = { customers: [], products: [], categories: [], customerGroups: [] };
+
+        async function renderAccess() {
+            access = {
+                customerIds: (cur.customerIds || []).map(String),
+                productIds: (cur.productIds || []).map(String),
+                priceTypeIds: (cur.priceTypeIds || []).map(String),
+            };
+            const [customers, products, categories, customerGroups] = await Promise.all(
+                ['customers', 'products', 'categories', 'customerGroups'].map(n => api('/collection/' + n)));
+            accData = { customers, products, categories, customerGroups };
+            drawTree('customerIds'); drawTree('productIds');
+            drawFlat('priceTypeIds', state.priceTypes);
+        }
+
+        const accBox = (key, x, group) => group
+            // У <summary> чекбокс окремо від тексту: клік по назві розгортає гілку,
+            // клік по прапорцю — позначає (тому й stopPropagation нижче).
+            ? `<input type="checkbox" value="${x.id}" ${access[key].includes(String(x.id)) ? 'checked' : ''}> <b>${x.name}</b>`
+            : `<label><input type="checkbox" value="${x.id}" ${access[key].includes(String(x.id)) ? 'checked' : ''}> ${x.name}</label>`;
+
+        function drawTree(key, filter) {
+            const cfg = TREES[key];
+            const items = accData[cfg.items] || [], groups = accData[cfg.groups] || [];
+            const f = (filter || '').toLowerCase();
+            const box = $('#acc-' + key);
+            if (f) {
+                // Пошук — плоский список збігів (і по групах, і по елементах).
+                box.innerHTML = [...groups, ...items]
+                    .filter(x => String(x.name).toLowerCase().includes(f)).slice(0, 400)
+                    .map(x => accBox(key, x)).join('') || '<span class="muted">нічого не знайдено</span>';
+            } else {
+                const push = (map, k, v) => map.set(k, [...(map.get(k) || []), v]);
+                const kids = new Map(), rows = new Map();
+                for (const g of groups) push(kids, String(g.parentId ?? ''), g);
+                for (const it of items) push(rows, String(it[cfg.groupKey] ?? ''), it);
+                const node = (g) => `<details><summary>${accBox(key, g, true)}</summary>
+          <div style="margin-left:16px">${(kids.get(String(g.id)) || []).map(node).join('')}
+          ${(rows.get(String(g.id)) || []).map(i => accBox(key, i)).join('')}</div></details>`;
+                box.innerHTML = (kids.get('') || []).map(node).join('')
+                    + (rows.get('') || []).map(i => accBox(key, i)).join('');
+            }
+            bindAccess(key);
+        }
+
+        function drawFlat(key, items) {
+            $('#acc-' + key).innerHTML = items.map(i => accBox(key, i)).join('');
+            bindAccess(key);
+        }
+
+        function bindAccess(key) {
+            $$('#acc-' + key + ' input').forEach(cb => {
+                cb.onclick = (e) => e.stopPropagation(); // не згортати/розгортати гілку
+                cb.onchange = () => {
+                    const v = cb.value;
+                    access[key] = cb.checked ? [...new Set([...access[key], v])] : access[key].filter(x => x !== v);
+                };
+            });
+        }
+
+        $$('[data-filter]').forEach(inp => inp.oninput = () => drawTree(inp.dataset.filter, inp.value));
+        $('#accSave').onclick = async () => {
+            await api('/collection/devices/' + cur.id, { method: 'PUT', body: access });
+            toast('Доступи збережено'); refresh();
+        };
+
+        // --- Телеметрія ---
+        async function loadDeviceTelemetry() {
+            if (!cur) return;
+            const list = await api(`/devices/${cur.id}/telemetry`);
+            const tb = $('#teleTable tbody'); tb.innerHTML = '';
+            for (const e of list) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${fmt(e.at)}</td><td>${e.version || '—'}</td><td>${e.model || '—'}</td>
+          <td>${e.pendingOrders ?? '—'}</td><td>${e.netErrors ?? 0}</td><td>${e.requests ?? 0}</td><td>${e.logErrors ?? 0}</td>
+          <td>${e.logSize ? `<a href="#" data-i="${e.i}">${e.logSize} б</a>` : '—'}</td>`;
+                tb.appendChild(tr);
+            }
+            $$('#teleTable a').forEach(a => a.onclick = async (ev) => {
+                ev.preventDefault();
+                $('#logView').hidden = false;
+                $('#logView').textContent = await api(`/devices/${cur.id}/telemetry/${a.dataset.i}/log`);
+            });
+        }
+        $('#reqLog').onclick = async () => {
+            const r = await api(`/devices/${cur.id}/request-log`, { method: 'POST', body: { requestLog: !cur.requestLog } });
+            toast(r.requestLog ? 'Лог запрошено' : 'Запит скасовано'); refresh();
+        };
+
+        function renderAllTelemetry() {
+            const tb = $('#allTele tbody'); tb.innerHTML = '';
+            for (const d of state.devices) {
+                const l = d.last || {};
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${d.name || d.id}</td><td>${l.version || '—'}</td><td>${l.model || '—'}</td>
+          <td>${l.pendingOrders ?? '—'}</td><td>${l.netErrors ?? '—'}</td><td>${l.requests ?? '—'}</td>
+          <td>${fmt(l.lastSyncAt)}</td><td>${fmt(l.at)}</td>`;
+                tb.appendChild(tr);
+            }
+        }
+
+        // --- Демо-дані ---
+        // Плоскі колекції правляться прямо в таблиці. Колекції зі вкладеними позиціями
+        // (замовлення) — списком і карткою: рядок таблиці для них нечитабельний.
+        let colItems = [], colCur = null;
+        const colName = () => $('#colPick').value;
+        const colsOf = () => [...new Set(colItems.flatMap(i => Object.keys(i)))];
+        const isNested = (v) => v !== null && typeof v === 'object';
+        // Вкладені поля рахуємо по ВСІЙ колекції: у контрагента без контактних осіб поле
+        // відсутнє, але таблиця для нього все одно потрібна — інакше додати нікуди.
+        const nestedKeys = () => colsOf().filter(c => colItems.some(i => isNested(i[c])));
+        const asText = (v) => v === undefined || v === null ? '' : (isNested(v) ? JSON.stringify(v, null, 1) : String(v));
+        // Рядок з поля → значення потрібного типу (число/булеве/JSON/null).
+        const parseVal = (raw) => {
+            if (raw === '') return null;
+            if (/^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
+            if (raw === 'true' || raw === 'false') return raw === 'true';
+            if (/^[[{]/.test(raw)) return JSON.parse(raw); // кидає — ловить викликач
+            return raw;
+        };
+        const label = (item) => item.num || item.name || item.id;
+
+        async function loadCollection() {
+            colItems = await api('/collection/' + colName());
+            colCur = null;
+            renderCollection();
+        }
+        const colFiltered = () => {
+            const f = $('#colFilter').value.toLowerCase();
+            return f ? colItems.filter(i => JSON.stringify(i).toLowerCase().includes(f)) : colItems;
+        };
+
+        // Один список для всіх колекцій: читальні рядки (вкладені масиви — лічильником),
+        // на всю доступну висоту. Редагування — у модалці по кліку на рядок.
+        function renderCollection() {
+            const nested = nestedKeys();
+            const cols = colsOf();
+            $('#colTable thead').innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+            const tb = $('#colTable tbody'); tb.innerHTML = '';
+            for (const item of colFiltered().slice(0, 500)) {
+                const tr = document.createElement('tr');
+                tr.className = 'pick';
+                tr.innerHTML = cols.map(c => nested.includes(c)
+                    ? `<td class="muted">${(item[c] || []).length} поз.</td>`
+                    : `<td>${asText(item[c])}</td>`).join('');
+                tr.onclick = () => openColCard(item);
+                tb.appendChild(tr);
+            }
+            fitColBox();
+        }
+
+        // Список демо-даних тягнеться до низу вікна. Рахуємо в рантаймі, а не calc(100vh - N):
+        // відступ згори «плаває» — шапка й рядок фільтрів переносяться на вузькому екрані.
+        function fitColBox() {
+            const el = $('#colBox');
+            if (!el || !el.offsetParent) return; // вкладка прихована — міряти нічого
+            const top = el.getBoundingClientRect().top + window.scrollY;
+            // 48 = padding картки + її margin + нижній padding main (інакше з'їжджає скрол сторінки).
+            el.style.height = Math.max(180, window.innerHeight - top - 48) + 'px';
+        }
+        window.addEventListener('resize', fitColBox);
+
+        // Розблокування сторінки робимо СИНХРОННО тут, а не лише в обробнику close:
+        // на подію close покладатись не можна (після dialog.close() вона доходить не завжди,
+        // і сторінка лишалась заблокованою — виглядало як «модалка не закривається»).
+        // Обробник close лишається для ESC, який закриває вікно повз цю функцію.
+        function closeColCard() { colCur = null; document.body.style.overflow = ''; $('#colDlg').close(); }
+        // ESC обробляємо самі й одним шляхом: рідні cancel/close по-різному доходять у різних
+        // складанках браузера, і сторінка лишалась заблокованою після закриття клавішею.
+        $('#colDlg').addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); closeColCard(); }
+        });
+        for (const ev of ['cancel', 'close']) { // страхувальна сітка, якщо ESC пройшов повз
+            $('#colDlg').addEventListener(ev, () => { colCur = null; document.body.style.overflow = ''; });
+        }
+        // Клік по затемненню (сама подія приходить на dialog, бо вміст лежить у дочірніх блоках).
+        $('#colDlg').addEventListener('click', (e) => { if (e.target === $('#colDlg')) closeColCard(); });
+
+        // Вкладені масиви (позиції замовлення, контактні особи) правляться таблицею, не JSON.
+        // cardNested — робоча копія: правки живуть до «Зберегти».
+        let cardNested = {}, lookupProducts = null;
+
+        // item = null → створення: запис лягає в дані лише на «Зберегти», тож закрита без
+        // збереження модалка не лишає порожнього товару в демо-даних.
+        async function openColCard(item) {
+            colCur = item;
+            $('#colCardTitle').textContent = item ? label(item) : 'Новий запис';
+            $('#colCardDel').hidden = !item;
+            const nested = nestedKeys();
+            $('#colCardFields').innerHTML = colsOf().filter(c => !nested.includes(c)).map(c =>
+                `<label>${c}</label><input data-col="${c}" value="${asText(item?.[c]).replace(/"/g, '&quot;')}"
+          ${c === 'id' && item ? 'readonly class="muted"' : ''} ${!item && c === 'id' ? 'placeholder="буде згенеровано"' : ''}>`).join('');
+            cardNested = {};
+            for (const c of nested) cardNested[c] = JSON.parse(JSON.stringify(item?.[c] ?? []));
+            if (!lookupProducts) lookupProducts = await api('/collection/products');
+            renderNested();
+            if (!$('#colDlg').open) { document.body.style.overflow = 'hidden'; $('#colDlg').showModal(); }
+            $('.body', $('#colDlg')).scrollTop = 0;
+        }
+
+        // Колонки вкладеної таблиці — з УСІХ записів колекції, а не лише з поточного:
+        // інакше новий запис із порожнім масивом не мав би куди вводити рядок.
+        const nestedCols = (key) => [...new Set(colItems.flatMap(i =>
+            (Array.isArray(i[key]) ? i[key] : []).flatMap(r => Object.keys(r || {}))))];
+
+        const productOptions = (v) => {
+            const val = v == null ? '' : String(v);
+            const known = lookupProducts.some(p => String(p.id) === val);
+            return `<option value=""></option>`
+                + (val && !known ? `<option value="${val}" selected>${val} (немає в довіднику)</option>` : '')
+                + lookupProducts.map(p => `<option value="${p.id}" ${String(p.id) === val ? 'selected' : ''}>${p.name}</option>`).join('');
+        };
+
+        function renderNested() {
+            $('#colCardNested').innerHTML = Object.entries(cardNested).map(([key, val]) => {
+                if (!Array.isArray(val) || val.some(r => r !== null && typeof r !== 'object')) {
+                    // Не масив об'єктів (рідкість) — лишаємо текстове поле як запобіжник.
+                    return `<div style="margin-top:14px"><b>${key}</b>
+            <textarea data-raw="${key}" rows="8" style="width:100%;font-family:Consolas,monospace;font-size:12px">${asText(val)}</textarea></div>`;
+                }
+                const cols = nestedCols(key);
+                const cell = (i, c, v) => c === 'productId'
+                    ? `<select data-n="${key}" data-i="${i}" data-c="${c}" style="min-width:220px">${productOptions(v)}</select>`
+                    : `<input data-n="${key}" data-i="${i}" data-c="${c}" value="${asText(v).replace(/"/g, '&quot;')}" style="width:130px">`;
+                return `<div style="margin-top:14px">
+          <div class="row" style="justify-content:space-between"><b>${key}</b>
+            <button class="act ghost" data-add="${key}">+ рядок</button></div>
+          <table style="margin-top:6px"><thead><tr>
+            ${cols.map(c => `<th>${c}</th>`).join('')}<th></th></tr></thead><tbody>
+            ${val.map((r, i) => `<tr>${cols.map(c => `<td>${cell(i, c, r[c])}</td>`).join('')}
+              <td><button class="act ghost" data-del="${key}|${i}">×</button></td></tr>`).join('')}
+          </tbody></table></div>`;
+            }).join('');
+
+            $$('#colCardNested [data-n]').forEach(el => el.onchange = () => {
+                let v; try { v = parseVal(el.value.trim()); } catch (e) { toast('Некоректне значення'); return; }
+                cardNested[el.dataset.n][Number(el.dataset.i)][el.dataset.c] = v;
+            });
+            $$('#colCardNested [data-add]').forEach(b => b.onclick = () => {
+                const key = b.dataset.add;
+                cardNested[key].push(Object.fromEntries(nestedCols(key).map(c => [c, null])));
+                renderNested();
+            });
+            $$('#colCardNested [data-del]').forEach(b => b.onclick = () => {
+                const [key, i] = b.dataset.del.split('|');
+                cardNested[key].splice(Number(i), 1);
+                renderNested();
+            });
+        }
+
+        $('#colCardSave').onclick = async () => {
+            const body = {};
+            for (const el of $$('#colCardFields input')) {
+                if (el.dataset.col === 'id' && colCur) continue; // id наявного запису незмінний
+                try { body[el.dataset.col] = parseVal(el.value.trim()); }
+                catch (e) { toast(`Некоректне значення в полі ${el.dataset.col}`); return; }
+            }
+            for (const [key, val] of Object.entries(cardNested)) body[key] = val;
+            for (const ta of $$('#colCardNested [data-raw]')) {
+                try { body[ta.dataset.raw] = parseVal(ta.value.trim()); }
+                catch (e) { toast(`Некоректний JSON у полі ${ta.dataset.raw}`); return; }
+            }
+            if (colCur) {
+                Object.assign(colCur, await api(`/collection/${colName()}/${colCur.id}`, { method: 'PUT', body }));
+                renderCollection();
+            } else {
+                await api('/collection/' + colName(), { method: 'POST', body });
+                await loadCollection();
+            }
+            closeColCard();
+            toast('Збережено'); refresh();
+        };
+        $('#colCardDel').onclick = () => removeItem(colCur);
+        $('#colCardClose').onclick = closeColCard;
+
+        async function removeItem(item) {
+            if (!confirm('Видалити запис?')) return;
+            await api(`/collection/${colName()}/${item.id}`, { method: 'DELETE' });
+            closeColCard();
+            loadCollection(); refresh();
+        }
+
+        $('#colPick').onchange = loadCollection;
+        $('#colFilter').oninput = renderCollection;
+        $('#rowAdd').onclick = () => openColCard(null);
+
+        // --- Налаштування ---
+        $('#setSave').onclick = async () => {
+            const body = {};
+            for (const k of ['syncSec', 'pingSec', 'telemetrySec', 'minAppVersion', 'currency', 'historyDays', 'telemetryKeepDays']) body[k] = $('#s-' + k).value;
+            await api('/settings', { method: 'PUT', body });
+            toast('Збережено'); refresh();
+        };
+        $('#prune').onclick = async () => {
+            const r = await api('/telemetry/prune', { method: 'POST' });
+            toast(`Прибрано записів: ${r.removed}`); refresh();
+        };
+        $('#reset').onclick = async () => {
+            if (!confirm('Повернути демо-дані до сіду? Правки й прив\'язки будуть втрачені.')) return;
+            await api('/reset', { method: 'POST' });
+            cur = null; $('#devCard').hidden = true; refresh(); toast('Дані повернуто до сіду');
+        };
+
+        refresh();
+    </script>
+</body>
+
+</html>

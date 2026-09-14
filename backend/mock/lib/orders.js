@@ -12,7 +12,12 @@ const MESSAGES = {
     productNotFound: { uk: "Товар не знайдено в базі (id: %1)", ru: "Товар не найден в базе (id: %1)", en: "Product not found (id: %1)" },
     cantDeletePosted: { uk: "Проведене замовлення не можна видалити", ru: "Проведённый заказ нельзя удалить", en: "A posted order cannot be deleted" },
     deleted: { uk: "Замовлення видалено", ru: "Заказ удалён", en: "Order deleted" },
-    marked: { uk: "Помічено на видалення", ru: "Помечено на удаление", en: "Marked for deletion" }
+    marked: { uk: "Помічено на видалення", ru: "Помечено на удаление", en: "Marked for deletion" },
+    // #85 — прив'язка пристрою (тексти дзеркалять 1С-сервіс).
+    deviceUnknown: { uk: "Пристрій не зареєстровано", ru: "Устройство не зарегистрировано", en: "Device is not registered" },
+    deviceBlocked: { uk: "Пристрій заблоковано", ru: "Устройство заблокировано", en: "Device is blocked" },
+    badPairingCode: { uk: "Невірний або використаний код прив'язки", ru: "Неверный или использованный код привязки", en: "Invalid or already used pairing code" },
+    unauthorized: { uk: "Пристрій не авторизовано", ru: "Устройство не авторизовано", en: "Device is not authorized" }
 };
 const pickLang = (req) => {
     const raw = String(req.headers['accept-language'] || '').toLowerCase();

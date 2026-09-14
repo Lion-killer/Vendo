@@ -75,3 +75,6 @@ frontend/assets/
 
 # Локальні інструменти/вивантаження 1С (не для репозиторію)
 _tools/
+
+# Робочий стан демо-стенду: сід (data/db.json) у git, рантайм-стан — ні
+backend/mock/data/db.state.json
