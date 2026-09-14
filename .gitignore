@@ -78,3 +78,7 @@ _tools/
 
 # Робочий стан демо-стенду: сід (data/db.json) у git, рантайм-стан — ні
 backend/mock/data/db.state.json
+
+# Копії інструкцій під інші агенти (канон — CLAUDE.md і .claude/skills)
+AGENTS.md
+.agents/
