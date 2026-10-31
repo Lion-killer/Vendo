@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Vendo — Mobile API",
-    "version": "0.22.5",
+    "version": "0.23.0",
     "description": "Контракт REST API мобільного застосунку торгпреда Vendo. Дві реалізації з однаковим контрактом: демо-бекенд (Node, `backend/`) і HTTP-сервіс 1С (`венд_МобильноеПриложение`). Усі дані фільтруються за пристроєм (заголовок `X-Device-Id`); запити (крім `/auth`) підписуються bearer-токеном. Сумісність (#66): додаток шле `X-App-Version`; будь-який data-ендпоінт при версії, старішій за `minAppVersion` із `/health`, повертає `426` (див. `UpgradeRequired`). `/health`, `/auth`, `/telemetry` не гейтяться."
   },
   "servers": [
@@ -133,6 +133,28 @@
                           "type": "integer",
                           "description": "Телеметрія (#42)",
                           "example": 900
+                        }
+                      }
+                    },
+                    "features": {
+                      "type": "object",
+                      "description": "Функціональні блоки, що вмикаються на бекенді (#39). Та сама конвенція, що й для intervals: поля немає → додаток вважає всі блоки вимкненими. Вимкнений блок у додатку не показується взагалі.",
+                      "properties": {
+                        "price": {
+                          "type": "boolean",
+                          "description": "Прайс у PDF/Excel (#88)"
+                        },
+                        "plans": {
+                          "type": "boolean",
+                          "description": "Плани продажів (#38)"
+                        },
+                        "payments": {
+                          "type": "boolean",
+                          "description": "Оплати клієнтів (#36, #17)"
+                        },
+                        "routes": {
+                          "type": "boolean",
+                          "description": "Маршрути (#16)"
                         }
                       }
                     }
@@ -321,6 +343,81 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/price": {
+      "post": {
+        "tags": [
+          "Довідники"
+        ],
+        "summary": "Прайс-лист файлом (PDF або Excel)",
+        "description": "Формується на сервері: у 1С — штатною обробкою «ПечатьПрайсЛиста» в headless-режимі (СформироватьПрайсЛист). Тип цін і групи завжди перетинаються з доступом пристрою, тож чужі товари у файл не потрапляють. Мок віддає заздалегідь підготовлений зразок — вибрані параметри на його вміст не впливають. Блок вмикається прапорцем features.price (#39); вимкнений — 404.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "priceType"
+                ],
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "pdf",
+                      "xlsx"
+                    ],
+                    "default": "pdf",
+                    "description": "Формат файлу; усе, крім xlsx, трактується як pdf"
+                  },
+                  "priceType": {
+                    "type": "string",
+                    "description": "Ид типу цін; має бути серед доступних пристрою, інакше 403"
+                  },
+                  "categories": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Ид груп каталогу; підгрупи додаються автоматично. Порожній масив або відсутнє поле — усі доступні пристрою товари"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Файл прайса",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Порожнє тіло або за вибраними групами немає товарів"
+          },
+          "401": {
+            "description": "Пристрій не авторизовано"
+          },
+          "403": {
+            "description": "Тип цін недоступний цьому пристрою"
+          },
+          "404": {
+            "description": "Блок «Прайс» вимкнено на бекенді"
           }
         }
       }
