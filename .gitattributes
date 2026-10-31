@@ -1,0 +1,5 @@
+# Бінарні файли: без конвертації кінців рядків — інакше git псує вміст (#88).
+*.pdf binary
+*.xlsx binary
+*.apk binary
+*.keystore binary

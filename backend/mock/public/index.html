@@ -525,6 +525,15 @@
                 </div>
                 <p class="muted" style="max-width:620px">Інтервали віддаються додатку в <code>/health</code>;
                     0 вимикає відповідний цикл. 0 у глибині історії — без обмеження.</p>
+                <b style="display:block;margin-top:14px">Функціональні блоки</b>
+                <div class="grid" style="margin-top:10px">
+                    <label>Прайс</label><input id="f-price" type="checkbox">
+                    <label>Плани продажів</label><input id="f-plans" type="checkbox">
+                    <label>Оплати клієнтів</label><input id="f-payments" type="checkbox">
+                    <label>Маршрути</label><input id="f-routes" type="checkbox">
+                </div>
+                <p class="muted" style="max-width:620px">Вимкнений блок у додатку не показується
+                    взагалі — ні віджета, ні кнопки, ні екрана. Стан підхоплюється на найближчому пінгу.</p>
                 <div class="row">
                     <button class="act" id="setSave">Зберегти</button>
                     <button class="act ghost" id="prune">Почистити телеметрію зараз</button>
@@ -543,6 +552,7 @@
     <div id="toast"></div>
 
     <script>
+        const FEATURES = ['price', 'plans', 'payments', 'routes']; // #39
         const $ = (s, r = document) => r.querySelector(s);
         const $$ = (s, r = document) => [...r.querySelectorAll(s)];
         const api = async (path, opts) => {
@@ -601,6 +611,7 @@
             for (const k of ['syncSec', 'pingSec', 'telemetrySec', 'minAppVersion', 'currency', 'historyDays', 'telemetryKeepDays']) {
                 $('#s-' + k).value = state.settings[k] ?? '';
             }
+            for (const k of FEATURES) $('#f-' + k).checked = !!(state.settings.features || {})[k];
             if (cur) { cur = state.devices.find(d => d.id === cur.id) || null; cur ? openDevice(cur.id) : ($('#devCard').hidden = true); }
         }
 
@@ -1016,6 +1027,7 @@
         $('#setSave').onclick = async () => {
             const body = {};
             for (const k of ['syncSec', 'pingSec', 'telemetrySec', 'minAppVersion', 'currency', 'historyDays', 'telemetryKeepDays']) body[k] = $('#s-' + k).value;
+            body.features = Object.fromEntries(FEATURES.map(k => [k, $('#f-' + k).checked]));
             await api('/settings', { method: 'PUT', body });
             toast('Збережено'); refresh();
         };

@@ -28,6 +28,9 @@ const DEFAULT_SETTINGS = {
     currency: '980',          // валюта стенду; картка пристрою може перекрити
     historyDays: 30,          // глибина історії замовлень за умовчанням
     telemetryKeepDays: 30,    // строк зберігання історії телеметрії
+    // Функціональні блоки (#39): необов'язкові частини додатка. Умолчання — вимкнено,
+    // як і в 1С (ключі в «венд_Сервис»); додаток читає їх із /health.features.
+    features: { price: false, plans: false, payments: false, routes: false },
 };
 
 const fill = (arr, items) => { arr.length = 0; for (const it of items) arr.push(it); };
@@ -95,6 +98,9 @@ const normalize = (raw) => {
     meta.lastOrderSeq = raw.meta?.lastOrderSeq ?? maxSeq;
 
     Object.assign(settings, DEFAULT_SETTINGS, raw.settings || {});
+    // features — вкладений об'єкт, тож Object.assign затер би його цілком: часткову
+    // секцію з db.json добираємо умолчаннями поключово.
+    settings.features = { ...DEFAULT_SETTINGS.features, ...(raw.settings || {}).features };
 };
 
 const snapshot = () => ({

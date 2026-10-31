@@ -162,6 +162,10 @@ router.put('/settings', (req, res) => {
     }
     if (b.minAppVersion) store.settings.minAppVersion = String(b.minAppVersion).trim();
     if (b.currency) store.settings.currency = String(b.currency).trim();
+    // #39: прапорці блоків приходять об'єктом; беремо лише відомі ключі.
+    if (b.features && typeof b.features === 'object') {
+        for (const k of ['price', 'plans', 'payments', 'routes']) store.settings.features[k] = !!b.features[k];
+    }
     store.save();
     res.json(store.settings);
 });

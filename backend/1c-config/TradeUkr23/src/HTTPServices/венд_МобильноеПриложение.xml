@@ -292,6 +292,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="2265c1e3-254f-4461-93b2-f71a81ee27ad">
+				<Properties>
+					<Name>Price</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Price</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/price</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="9cfdf041-f0fb-44b7-b548-475c7ad3aac1">
+						<Properties>
+							<Name>Post</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Post</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>POST</HTTPMethod>
+							<Handler>PricePost</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 			<URLTemplate uuid="fc5f78fb-d616-4918-ba3f-1d244df58703">
 				<Properties>
 					<Name>Auth</Name>

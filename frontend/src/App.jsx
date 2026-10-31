@@ -4,6 +4,7 @@ import { LIGHT, DARK } from './theme';
 import { BottomNav, TopActions, Lightbox, closeLightbox, ConfirmDialog } from './components/ui';
 import { Snackbar } from './components/Shared';
 import { LogPanel } from './components/LogPanel';
+import { PriceSheet } from './components/PriceSheet';
 import { LoginScreen } from './screens/LoginScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { CatalogScreen } from './screens/CatalogScreen';
@@ -11,11 +12,11 @@ import { CustomersScreen } from './screens/CustomersScreen';
 import { OrderScreen } from './screens/OrderScreen';
 import { OrdersListScreen } from './screens/OrdersListScreen';
 import { fetchProducts, fetchCategories, fetchCustomers, fetchOrders, fetchPriceTypes, createOrder, deleteOrder, restoreOrder, fetchAuthedBlobRaw, setOnAuthReject, setOnAppTooOld, pingServer, fetchOrderedProducts, fetchCustomerGroups, fetchHealth } from './api/client';
-import { checkCompat, parseIntervals } from './contract';
+import { checkCompat, parseIntervals, parseFeatures, FEATURE_KEYS } from './contract';
 import { sendTelemetry, enableErrorTelemetry } from './api/telemetry';
 import { prefetchImages, clearImageCache } from './api/imageCache';
 import { dataGet, dataPut, clearDataCache } from './api/dataCache';
-import { logWarn, logError } from './logger';
+import { logInfo, logWarn, logError } from './logger';
 import { getSession, saveSession, clearSession } from './api/session';
 import { saveLocalOrder, getLocalOrders, removeLocalOrder, setLocalOrderError, nextDraftNum, orderRecordFields } from './api/localOrders';
 import { idSet, checkOrderRefs, mergeOrders, recentQtysForCustomer, orderedIdsFromOrders } from './api/refs';
@@ -137,6 +138,15 @@ export default function App() {
   // прочитано) → цикли не запускаються. Оновлюється разом із compat; офлайн-збій /health
   // чинних інтервалів не скидає (тимчасова відсутність мережі не мусить глушити цикли).
   const [appIntervals, setAppIntervals] = useState(null);
+  // Функціональні блоки (#39) — теж із /health. Початкове значення з localStorage: офлайн
+  // на старті діє останній відомий стан, інакше блок зникав би до першого вдалого пінгу.
+  const [features, setFeatures] = useState(() => {
+    try { return parseFeatures({ features: JSON.parse(localStorage.getItem(K.features) || 'null') }); } catch { return parseFeatures(null); }
+  });
+  // Порівнюємо через ref, а не через features: refreshCompat викликається і з інтервалів,
+  // захоплених давнім рендером, — стале значення зі замикання давало б повторні записи в журнал.
+  const featuresRef = useRef(features);
+  const [showPrice, setShowPrice] = useState(false); // #88: діалог параметрів прайса
   const [updPhase, setUpdPhase] = useState(null); // null → downloading → installing/permission/error
   const [updProgress, setUpdProgress] = useState(0);
   const [toast, setToast] = useState(""); // плаваюче повідомлення (збереження/відправка)
@@ -417,6 +427,18 @@ export default function App() {
       const next = parseIntervals(hp);
       return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
     });
+    // #39: прапорці блоків. Зберігаємо лише сире поле — розбір завжди через parseFeatures,
+    // щоб умолчання «все вимкнено» жило в одному місці.
+    if (hp) {
+      const next = parseFeatures(hp);
+      if (JSON.stringify(featuresRef.current) !== JSON.stringify(next)) {
+        featuresRef.current = next;
+        setFeatures(next);
+        try { localStorage.setItem(K.features, JSON.stringify(hp.features || null)); } catch { /* квота/приватний режим */ }
+        // У журнал пристрою: «чому торгпред не бачить блок» — найчастіше питання підтримки.
+        logInfo('Функціональні блоки', FEATURE_KEYS.filter((k) => next[k]).join(', ') || 'усі вимкнені');
+      }
+    }
     return hp; // #87: циклу відновлення треба знати, чи бекенд узагалі відповів
   };
 
@@ -901,11 +923,13 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {screen === "login" && <LoginScreen t={t} onLogin={handleLogin} onOpenHelp={() => setShowHelp(true)} notice={loginNotice} onOpenLog={() => setShowLog(true)} />}
           {screen === "dashboard" && <DashboardScreen t={t} onNav={handleNav} userName={userName} orders={orders} products={products} customersCount={customers.length} onSync={doSync} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} onOpenLog={() => setShowLog(true)} hasErrors={!!loadError} onClearData={clearData} onOpenSyncHistory={() => setShowSyncHistory(true)} onOpenHelp={() => setShowHelp(true)} update={update} onShowUpdate={() => { setUpdPhase(null); setShowUpdatePrompt(true); }} />}
-          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} orderedProductIds={orderedProductIds} recentQtysByProduct={recentQtysByProduct} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} />}
+          {screen === "catalog" && <CatalogScreen t={t} onNav={handleNav} products={products} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onSelectPriceType={handleSelectPriceType} onAddToOrder={handleAddToOrder} orderItems={orderItems} editOrderId={editOrderId} editNum={editNum} editDate={editDate} editCustomer={editCustomer} orderedProductIds={orderedProductIds} recentQtysByProduct={recentQtysByProduct} isOnline={isOnline} notify={notify} connecting={connecting} offsetTop={topOffset} canPrice={features.price} onPrice={() => { if (isOnline) setShowPrice(true); else notify(tr("price.offline")); }} />}
           {screen === "customers" && <CustomersScreen t={t} customers={customers} customerGroups={customerGroups} orders={orders} onNav={handleNav} isOnline={isOnline} connecting={connecting} />}
           {screen === "ordersList" && <OrdersListScreen t={t} onNav={handleNav} isOnline={isOnline} refreshOrders={refreshOrders} products={products} customers={customers} orders={orders} connecting={connecting} />}
           {screen === "orders" && <OrderScreen t={t} isOnline={isOnline} locked={editLocked} date={editDate} status={editStatus} num={editNum} baseVersion={editVersion} currency={editCurrency} priceType={editPriceType} comment={editComment} pushComment={setEditComment} pushDate={setEditDate} notify={notify} onCopy={copyOrderToNew} markHandled={() => { orderHandled.current = true; }} orderItems={orderItems} setOrderItems={setOrderItems} customers={customers} customerGroups={customerGroups} products={products} refreshOrders={refreshOrders} editOrderId={editOrderId} setEditOrderId={setEditOrderId} editCustomer={editCustomer} setEditCustomer={setEditCustomer} goToOrdersList={() => handleNav("ordersList")} goToCatalog={() => handleNav("catalog", { keepOrder: true })} />}
         </div>
+
+        {showPrice && <PriceSheet t={t} categories={categories} priceTypes={priceTypes} activePriceType={editPriceType || selectedPriceType} onClose={() => setShowPrice(false)} notify={notify} />}
 
         {/* Нижня навігація (тільки після логіну) */}
         {isLoggedIn && screen !== "orders" && <BottomNav active={screen} onNav={(s) => handleNav(s, { root: true })} t={t} />}

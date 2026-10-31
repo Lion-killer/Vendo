@@ -22,6 +22,8 @@ export const K = {
     reqCount: 'vendo_req_count',     // лічильник запитів для телеметрії (#69), крім /health
     ordersStart: 'vendo_orders_start', // період списку замовлень
     ordersEnd: 'vendo_orders_end',
+    priceOpts: 'vendo_price_opts',   // останній вибір у діалозі прайса (#88)
+    features: 'vendo_features',   // останні відомі функціональні блоки з /health (#39)
 };
 
 // Імена баз IndexedDB — не localStorage, але той самий принцип єдиного джерела.

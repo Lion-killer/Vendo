@@ -145,7 +145,7 @@ const GroupRow = ({ t, node, onOpen, showNoStock }) => {
     );
 };
 
-export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], activePriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, orderedProductIds = new Set(), recentQtysByProduct = new Map(), notify, connecting, offsetTop = 0 }) => {
+export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [], activePriceType, onSelectPriceType, onAddToOrder, orderItems = [], editOrderId, editNum, editDate, editCustomer, orderedProductIds = new Set(), recentQtysByProduct = new Map(), notify, connecting, offsetTop = 0, canPrice = false, onPrice }) => {
     const { t: tr } = useTranslation();
     const [path, setPath] = useState([]);
     const [query, setQuery] = useState("");
@@ -355,6 +355,11 @@ export const CatalogScreen = ({ t, onNav, products, categories, priceTypes = [],
                 товарів без залишку. Той самий патерн, що в редагуванні замовлення. */}
             {showMenu && (
                 <BottomSheet t={t} onClose={() => setShowMenu(false)} sheetStyle={{ padding: "12px 12px", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+                    {canPrice && (
+                        <button onClick={() => { setShowMenu(false); onPrice(); }} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
+                        <MIcon name="doc" size={20} color={t.ink} /> {tr("price.menu")}
+                    </button>
+                    )}
                     <button onClick={toggleNoStock} role="switch" aria-checked={showNoStock} style={{ width: "100%", height: 50, display: "flex", alignItems: "center", gap: 12, padding: "0 14px", background: "none", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "inherit", fontSize: 15, fontWeight: 600, color: t.ink, textAlign: "left" }}>
                         <MIcon name="grid" size={20} color={t.ink} /> {tr("catalog.showOutOfStock")}
                         {showNoStock && <span style={{ marginLeft: "auto", display: "flex" }}><MIcon name="check" size={20} color={t.accent} /></span>}

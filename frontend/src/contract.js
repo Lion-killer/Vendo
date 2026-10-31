@@ -42,3 +42,14 @@ export const parseIntervals = (health) => {
     return { syncSec: sec(i.syncSec), pingSec: sec(i.pingSec), telemetrySec: sec(i.telemetrySec) };
 };
 
+
+// Функціональні блоки (#39) — ЄДИНЕ джерело: /health.features. Та сама конвенція, що й
+// для intervals: поля немає (старий бекенд) або воно не об'єкт → усі блоки ВИМКНЕНІ.
+// Безпечний умолчальний стан: блоки нові, відсутність прапорця не мусить їх показувати.
+export const FEATURE_KEYS = ['price', 'plans', 'payments', 'routes'];
+export const parseFeatures = (health) => {
+    const f = health && typeof health.features === 'object' ? health.features : null;
+    const out = {};
+    FEATURE_KEYS.forEach((k) => { out[k] = !!(f && f[k]); });
+    return out;
+};

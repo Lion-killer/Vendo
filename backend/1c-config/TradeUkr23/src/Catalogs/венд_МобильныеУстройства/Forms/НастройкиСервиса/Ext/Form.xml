@@ -22,12 +22,12 @@
 				<Type>CommandBarButton</Type>
 				<CommandName>Form.Command.ЗаписатьИЗакрыть</CommandName>
 				<DefaultButton>true</DefaultButton>
-				<ExtendedTooltip name="ЗаписатьИЗакрытьРасширеннаяПодсказка" id="2" />
+				<ExtendedTooltip name="ЗаписатьИЗакрытьРасширеннаяПодсказка" id="2"/>
 			</Button>
 			<Button name="Закрыть" id="3">
 				<Type>CommandBarButton</Type>
 				<CommandName>Form.StandardCommand.Close</CommandName>
-				<ExtendedTooltip name="ЗакрытьРасширеннаяПодсказка" id="4" />
+				<ExtendedTooltip name="ЗакрытьРасширеннаяПодсказка" id="4"/>
 			</Button>
 		</ChildItems>
 	</AutoCommandBar>
@@ -81,8 +81,8 @@
 					<v8:content>http(s)://&lt;server&gt;/&lt;base&gt;/hs/vendo</v8:content>
 				</v8:item>
 			</InputHint>
-			<ContextMenu name="АдресСервисаКонтекстноеМеню" id="6" />
-			<ExtendedTooltip name="АдресСервисаРасширеннаяПодсказка" id="7" />
+			<ContextMenu name="АдресСервисаКонтекстноеМеню" id="6"/>
+			<ExtendedTooltip name="АдресСервисаРасширеннаяПодсказка" id="7"/>
 		</InputField>
 		<InputField name="ХранениеТелеметрииДней" id="8">
 			<DataPath>ХранениеТелеметрииДней</DataPath>
@@ -114,8 +114,8 @@
 					<v8:content>How many days to keep device telemetry history. Older records are deleted automatically when telemetry arrives (at most once a day); the latest record of each device is always kept. Default 30.</v8:content>
 				</v8:item>
 			</ToolTip>
-			<ContextMenu name="ХранениеТелеметрииДнейКонтекстноеМеню" id="9" />
-			<ExtendedTooltip name="ХранениеТелеметрииДнейРасширеннаяПодсказка" id="10" />
+			<ContextMenu name="ХранениеТелеметрииДнейКонтекстноеМеню" id="9"/>
+			<ExtendedTooltip name="ХранениеТелеметрииДнейРасширеннаяПодсказка" id="10"/>
 		</InputField>
 		<InputField name="ГлубинаИсторииДней" id="11">
 			<DataPath>ГлубинаИсторииДней</DataPath>
@@ -147,8 +147,8 @@
 					<v8:content>How many days back the app receives orders when the device card does not set a depth. Caps the size and response time of GET /orders. Default 30.</v8:content>
 				</v8:item>
 			</ToolTip>
-			<ContextMenu name="ГлубинаИсторииДнейКонтекстноеМеню" id="12" />
-			<ExtendedTooltip name="ГлубинаИсторииДнейРасширеннаяПодсказка" id="13" />
+			<ContextMenu name="ГлубинаИсторииДнейКонтекстноеМеню" id="12"/>
+			<ExtendedTooltip name="ГлубинаИсторииДнейРасширеннаяПодсказка" id="13"/>
 		</InputField>
 		<InputField name="ТротлингАктивностиСек" id="14">
 			<DataPath>ТротлингАктивностиСек</DataPath>
@@ -180,8 +180,8 @@
 					<v8:content>How often the device "last activity" is updated on its requests (a column in the device list). Lower is more precise but writes more. Default 300 (5 minutes).</v8:content>
 				</v8:item>
 			</ToolTip>
-			<ContextMenu name="ТротлингАктивностиСекКонтекстноеМеню" id="15" />
-			<ExtendedTooltip name="ТротлингАктивностиСекРасширеннаяПодсказка" id="16" />
+			<ContextMenu name="ТротлингАктивностиСекКонтекстноеМеню" id="15"/>
+			<ExtendedTooltip name="ТротлингАктивностиСекРасширеннаяПодсказка" id="16"/>
 		</InputField>
 		<LabelDecoration name="ПодсказкаУмолчаний" id="17">
 			<Title formatted="false">
@@ -198,8 +198,8 @@
 					<v8:content>0 in a numeric field resets to the default. Device card overrides the history depth.</v8:content>
 				</v8:item>
 			</Title>
-			<ContextMenu name="ПодсказкаУмолчанийКонтекстноеМеню" id="18" />
-			<ExtendedTooltip name="ПодсказкаУмолчанийРасширеннаяПодсказка" id="19" />
+			<ContextMenu name="ПодсказкаУмолчанийКонтекстноеМеню" id="18"/>
+			<ExtendedTooltip name="ПодсказкаУмолчанийРасширеннаяПодсказка" id="19"/>
 		</LabelDecoration>
 		<UsualGroup name="ГруппаИнтервалыПриложения" id="20">
 			<Title>
@@ -209,7 +209,7 @@
 				</v8:item>
 			</Title>
 			<Group>Vertical</Group>
-			<ExtendedTooltip name="ГруппаИнтервалыПриложенияРасширеннаяПодсказка" id="21" />
+			<ExtendedTooltip name="ГруппаИнтервалыПриложенияРасширеннаяПодсказка" id="21"/>
 			<ChildItems>
 				<InputField name="ИнтервалСинхронизацииСек" id="22">
 					<DataPath>ИнтервалСинхронизацииСек</DataPath>
@@ -219,8 +219,8 @@
 							<v8:content>Синхронизация данных, секунд</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ИнтервалСинхронизацииСекКонтекстноеМеню" id="23" />
-					<ExtendedTooltip name="ИнтервалСинхронизацииСекРасширеннаяПодсказка" id="24" />
+					<ContextMenu name="ИнтервалСинхронизацииСекКонтекстноеМеню" id="23"/>
+					<ExtendedTooltip name="ИнтервалСинхронизацииСекРасширеннаяПодсказка" id="24"/>
 				</InputField>
 				<InputField name="ИнтервалПингаСек" id="25">
 					<DataPath>ИнтервалПингаСек</DataPath>
@@ -230,8 +230,8 @@
 							<v8:content>Пинг (онлайн-индикатор), секунд</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ИнтервалПингаСекКонтекстноеМеню" id="26" />
-					<ExtendedTooltip name="ИнтервалПингаСекРасширеннаяПодсказка" id="27" />
+					<ContextMenu name="ИнтервалПингаСекКонтекстноеМеню" id="26"/>
+					<ExtendedTooltip name="ИнтервалПингаСекРасширеннаяПодсказка" id="27"/>
 				</InputField>
 				<InputField name="ИнтервалТелеметрииСек" id="28">
 					<DataPath>ИнтервалТелеметрииСек</DataPath>
@@ -241,8 +241,8 @@
 							<v8:content>Телеметрия, секунд</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ИнтервалТелеметрииСекКонтекстноеМеню" id="29" />
-					<ExtendedTooltip name="ИнтервалТелеметрииСекРасширеннаяПодсказка" id="30" />
+					<ContextMenu name="ИнтервалТелеметрииСекКонтекстноеМеню" id="29"/>
+					<ExtendedTooltip name="ИнтервалТелеметрииСекРасширеннаяПодсказка" id="30"/>
 				</InputField>
 				<LabelDecoration name="ПодсказкаИнтервалов" id="31">
 					<Title formatted="false">
@@ -251,8 +251,82 @@
 							<v8:content>0 — цикл отключён. Приложение не имеет собственных значений: циклы работают только с интервалами, полученными из /health.</v8:content>
 						</v8:item>
 					</Title>
-					<ContextMenu name="ПодсказкаИнтерваловКонтекстноеМеню" id="32" />
-					<ExtendedTooltip name="ПодсказкаИнтерваловРасширеннаяПодсказка" id="33" />
+					<ContextMenu name="ПодсказкаИнтерваловКонтекстноеМеню" id="32"/>
+					<ExtendedTooltip name="ПодсказкаИнтерваловРасширеннаяПодсказка" id="33"/>
+				</LabelDecoration>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаФункциональныеБлоки" id="34">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Функциональные блоки</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<ExtendedTooltip name="ГруппаФункциональныеБлокиРасширеннаяПодсказка" id="35"/>
+			<ChildItems>
+				<CheckBoxField name="БлокПрайс" id="36">
+					<DataPath>БлокПрайс</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Прайс (PDF/Excel)</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="БлокПрайсКонтекстноеМеню" id="37"/>
+					<ExtendedTooltip name="БлокПрайсРасширеннаяПодсказка" id="38"/>
+				</CheckBoxField>
+				<CheckBoxField name="БлокПланы" id="39">
+					<DataPath>БлокПланы</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Планы продаж</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="БлокПланыКонтекстноеМеню" id="40"/>
+					<ExtendedTooltip name="БлокПланыРасширеннаяПодсказка" id="41"/>
+				</CheckBoxField>
+				<CheckBoxField name="БлокОплаты" id="42">
+					<DataPath>БлокОплаты</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Оплаты клиентов</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="БлокОплатыКонтекстноеМеню" id="43"/>
+					<ExtendedTooltip name="БлокОплатыРасширеннаяПодсказка" id="44"/>
+				</CheckBoxField>
+				<CheckBoxField name="БлокМаршруты" id="45">
+					<DataPath>БлокМаршруты</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Маршруты</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="БлокМаршрутыКонтекстноеМеню" id="46"/>
+					<ExtendedTooltip name="БлокМаршрутыРасширеннаяПодсказка" id="47"/>
+				</CheckBoxField>
+				<LabelDecoration name="ПодсказкаБлоков" id="48">
+					<Title formatted="false">
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Отключённый блок приложение не показывает вообще — ни виджета, ни кнопки, ни экрана. Состояние подхватывается при ближайшем пинге.</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ПодсказкаБлоковКонтекстноеМеню" id="49"/>
+					<ExtendedTooltip name="ПодсказкаБлоковРасширеннаяПодсказка" id="50"/>
 				</LabelDecoration>
 			</ChildItems>
 		</UsualGroup>
@@ -349,6 +423,50 @@
 					<v8:FractionDigits>0</v8:FractionDigits>
 					<v8:AllowedSign>Any</v8:AllowedSign>
 				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="БлокПрайс" id="27">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Блок прайс</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="БлокПланы" id="28">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Блок планы</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="БлокОплаты" id="29">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Блок оплаты</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="БлокМаршруты" id="30">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Блок маршруты</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
 			</Type>
 		</Attribute>
 	</Attributes>

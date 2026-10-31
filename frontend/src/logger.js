@@ -82,7 +82,7 @@ export const buildReport = (note) => {
 
 // Uint8Array → base64 (для запису бінарного файлу через Filesystem). Чанками, щоб не
 // впертись у ліміт аргументів String.fromCharCode на великих масивах.
-const u8ToBase64 = (bytes) => {
+export const u8ToBase64 = (bytes) => {
     let bin = '';
     const CH = 0x8000;
     for (let i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));

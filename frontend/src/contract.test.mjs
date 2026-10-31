@@ -1,7 +1,7 @@
 // node --test src/contract.test.mjs — версійний каскад сумісності (#66) + інтервали (#68)
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { BACKEND_FULL, checkCompat, parseIntervals } from './contract.js';
+import { BACKEND_FULL, checkCompat, parseIntervals, parseFeatures } from './contract.js';
 
 const APP = '9.9.9'; // свідомо вище за будь-який minAppVersion у тестах
 
@@ -52,3 +52,13 @@ test('parseIntervals: 0/відсутнє/сміття у полі → 0 (цик�
     { syncSec: 0, pingSec: 15, telemetrySec: 0 });
 });
 
+
+test('parseFeatures: бекенд без features (стара збірка) → усі блоки вимкнені', () => {
+  assert.deepEqual(parseFeatures({ status: 'ok' }), { price: false, plans: false, payments: false, routes: false });
+  assert.deepEqual(parseFeatures(null), { price: false, plans: false, payments: false, routes: false });
+});
+
+test('parseFeatures: відомі ключі булеві, невідомі ігноруються', () => {
+  const f = parseFeatures({ features: { price: true, routes: 1, plans: 0, невідоме: true } });
+  assert.deepEqual(f, { price: true, plans: false, payments: false, routes: true });
+});

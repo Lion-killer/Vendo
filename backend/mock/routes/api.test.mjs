@@ -68,6 +68,10 @@ test('/health і /auth лишаються відкритими без токен
     assert.equal(h.status, 200);
     const body = await h.json();
     assert.ok(body.intervals && body.minAppVersion, 'health має нести intervals і minAppVersion');
+    // Перевіряємо СКЛАД, а не значення: прапорці живуть у стані стенду (db.state.json),
+    // і ввімкнений оператором блок не має валити тест.
+    assert.deepEqual(Object.keys(body.features || {}).sort(), ['payments', 'plans', 'price', 'routes'], 'health має нести всі прапорці блоків (#39)');
+    assert.ok(Object.values(body.features).every(v => typeof v === 'boolean'), 'прапорці мають бути булевими');
 });
 
 test('блокування пристрою — 401 на наступному запиті (сценарій відв\'язки #40)', async () => {
@@ -146,4 +150,25 @@ test('телеметрія: снапшот лягає в історію, зап�
     });
     assert.equal((await r2.json()).requestLog, false, 'лог отримано — запит виконано');
     assert.equal(store.telemetry.length, before + 2, 'снапшоти мають накопичуватись, а не затирати один одного');
+});
+
+test('прайс (#88): вимкнений блок — 404, увімкнений — файл потрібного типу', async () => {
+    const body = (format) => ({
+        method: 'POST', headers: auth({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ format, priceType: 'retail', categories: [] }),
+    });
+
+    store.settings.features.price = false;
+    assert.equal((await call('/price', body('pdf'))).status, 404, 'вимкнений блок не має себе викривати');
+
+    store.settings.features.price = true;
+    const pdf = await call('/price', body('pdf'));
+    assert.equal(pdf.status, 200);
+    assert.match(pdf.headers.get('content-type'), /application\/pdf/);
+    assert.ok((await pdf.arrayBuffer()).byteLength > 0, 'порожній файл');
+
+    const xlsx = await call('/price', body('xlsx'));
+    assert.match(xlsx.headers.get('content-type'), /spreadsheetml\.sheet/);
+
+    store.settings.features.price = false; // не впливаємо на наступні тести
 });

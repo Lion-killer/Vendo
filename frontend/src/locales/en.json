@@ -150,6 +150,21 @@
     "recalcYes": "Recalculate",
     "recalcNo": "Keep current"
   },
+  "price": {
+    "title": "Price list",
+    "build": "Create",
+    "building": "Creating…",
+    "priceType": "Price type",
+    "groups": "Product groups",
+    "allGroups": "All groups",
+    "noGroups": "No groups",
+    "hintAll": "The price list will include every available product.",
+    "hintSelected": "Groups selected: {{count}} (with subgroups).",
+    "fileName": "Price",
+    "failed": "Could not create the price list: {{error}}",
+    "offline": "The price list is built on the server — connection required",
+    "menu": "Price list"
+  },
   "lightbox": {
     "loading": "Image is still loading",
     "loadingHint": "Queued — will appear after photo sync",

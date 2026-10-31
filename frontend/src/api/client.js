@@ -230,6 +230,44 @@ export const fetchAuthedBlobRaw = async (relPath) => {
     }
 };
 
+// Прайс файлом (#88): POST із параметрами → PDF/XLSX. Окрема від fetchAuthedBlobRaw
+// гілка лише тому, що там GET; решта — той самий трюк із CapacitorHttp на нативі
+// (патчений fetch бінарну відповідь не віддає).
+// Формування на сервері триває довго (обробка 1С по всьому каталогу), тож таймаут
+// явний і великий — адаптивна оцінка тут не допомагає, запит рідкісний.
+// Повертає Blob; кидає помилку з текстом від бекенда (JSON {message}) або мережеву.
+const PRICE_TIMEOUT = 180000;
+export const fetchPriceFile = async (params) => {
+    const url = `${apiUrl()}/price`;
+    const headers = h({ 'Content-Type': 'application/json' });
+    const body = JSON.stringify(params);
+    if (Capacitor.isNativePlatform()) {
+        const path = shortPath(url);
+        countRequest(path);
+        const started = Date.now();
+        const res = await CapacitorHttp.post({ url, headers, data: params, responseType: 'blob', connectTimeout: PRICE_TIMEOUT, readTimeout: PRICE_TIMEOUT });
+        const ok = res.status >= 200 && res.status < 300 && !!res.data;
+        (ok ? logInfo : logWarn)(`POST ${path} → ${res.status}`, `${Date.now() - started}ms`);
+        if (res.status === 401) maybeAuthReject(headers['X-Auth-Token']);
+        if (!ok) throw new Error(priceError(res.data, res.status));
+        const ct = res.headers && (res.headers['Content-Type'] || res.headers['content-type']);
+        return base64ToBlob(res.data, ct);
+    }
+    const res = await tfetch(url, { method: 'POST', headers, body }, PRICE_TIMEOUT);
+    if (!res.ok) throw new Error(priceError(await res.text(), res.status));
+    return await res.blob();
+};
+
+// Текст помилки прайса: бекенд відповідає JSON {success,message} — показуємо message,
+// інакше (HTML від IIS без PassThrough, порожнє тіло) — код статусу.
+const priceError = (payload, status) => {
+    try {
+        const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+        if (data && data.message) return String(data.message);
+    } catch { /* не JSON — нижче */ }
+    return `HTTP ${status}`;
+};
+
 // Основне зображення товару за id (зручний шорткат над fetchAuthedBlob).
 export const fetchProductImage = (id) => fetchAuthedBlob(`/products/${id}/image`);
 

@@ -1,5 +1,7 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const store = require('../db');
 
 const router = express.Router();
@@ -179,10 +181,20 @@ const appIntervals = () => ({
     syncSec: store.settings.syncSec, pingSec: store.settings.pingSec, telemetrySec: store.settings.telemetrySec,
 });
 
+// #39: функціональні блоки. Віддаємо завжди всі ключі булевими — додаток не має
+// розрізняти «вимкнено» і «бекенд про такий блок не знає».
+const FEATURE_KEYS = ['price', 'plans', 'payments', 'routes'];
+const appFeatures = () => {
+    const f = store.settings.features || {};
+    const out = {};
+    for (const k of FEATURE_KEYS) out[k] = !!f[k];
+    return out;
+};
+
 // GET/HEAD /health — найдешевша перевірка доступності. Без авторизації: лише підтверджує,
 // що процес живий. Використовується клієнтом для online-пінгу.
 router.head('/health', (req, res) => res.status(200).end());
-router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString(), version: BACKEND_VERSION, minAppVersion: minAppVersion(), intervals: appIntervals() }));
+router.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString(), version: BACKEND_VERSION, minAppVersion: minAppVersion(), intervals: appIntervals(), features: appFeatures() }));
 
 // #66 Хард-гейт сумісності: застарілий додаток (X-App-Version < minAppVersion) → 426,
 // щоб він не бив по змінених ендпоінтах і не падав тихо. Реєструється ПІСЛЯ /health і /auth
@@ -255,6 +267,18 @@ router.get('/price-types', (req, res) => {
     const types = devicePriceTypes(req.device);
     const hasDefault = types.some(t => t.default);
     res.json(types.map((t, i) => ({ id: t.id, name: t.name, default: hasDefault ? !!t.default : i === 0 })));
+});
+
+// POST /price — прайс файлом (#88). Мок віддає ЗАЗДАЛЕГІДЬ ПІДГОТОВЛЕНИЙ зразок:
+// вибраний тип цін і групи на вміст не впливають — справжній файл будує обробка 1С.
+// Цього досить, щоб прогнати клієнтський сценарій (запит → файл → «Поділитися»),
+// і не тягне в мок жодної залежності для генерації PDF/XLSX.
+router.post('/price', (req, res) => {
+    if (!store.settings.features || !store.settings.features.price) return res.status(404).end();
+    const xlsx = String((req.body || {}).format || '') === 'xlsx';
+    const file = path.join(__dirname, '..', 'data', xlsx ? 'price-sample.xlsx' : 'price-sample.pdf');
+    res.type(xlsx ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf');
+    res.send(fs.readFileSync(file));
 });
 
 router.get('/products', (req, res) => {
