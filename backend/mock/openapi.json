@@ -116,7 +116,8 @@
                 "properties": {
                   "format": { "type": "string", "enum": ["pdf", "xlsx"], "default": "pdf", "description": "Формат файлу; усе, крім xlsx, трактується як pdf" },
                   "priceType": { "type": "string", "description": "Ид типу цін; має бути серед доступних пристрою, інакше 403" },
-                  "categories": { "type": "array", "items": { "type": "string" }, "description": "Ид груп каталогу; підгрупи додаються автоматично. Порожній масив або відсутнє поле — усі доступні пристрою товари" }
+                  "categories": { "type": "array", "items": { "type": "string" }, "description": "Ид груп каталогу; підгрупи додаються автоматично. Порожній масив або відсутнє поле — усі доступні пристрою товари" },
+                  "images": { "type": "boolean", "default": true, "description": "Фото товарів у прайсі. Типово увімкнені (клієнт обирає очима); false робить файл значно легшим" }
                 }
               }
             }

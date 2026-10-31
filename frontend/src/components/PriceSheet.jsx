@@ -68,6 +68,8 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
         return ids[0] || '';
     });
     const [selected, setSelected] = useState(() => new Set(Array.isArray(saved.categories) ? saved.categories : []));
+    // Фото в прайсі — головне, тож типово ввімкнені; вимикають заради ваги файлу.
+    const [images, setImages] = useState(saved.images !== false);
     const [expanded, setExpanded] = useState(() => new Set());
     const [busy, setBusy] = useState(false);
 
@@ -84,7 +86,7 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
         setBusy(true);
         try {
             const ids = topMost(tree, selected);
-            const blob = await fetchPriceFile({ format, priceType, categories: ids });
+            const blob = await fetchPriceFile({ format, priceType, categories: ids, images });
             const name = (priceTypes.find(p => p.id === priceType) || {}).name || '';
             // Пробіли й службові символи в імені файлу месенджери показують криво.
             const safe = String(name).replace(/[\\/:*?"<>|\s]+/g, '_');
@@ -92,7 +94,7 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
             const fileName = `${tr('price.fileName')}${safe ? '_' + safe : ''}_${todayISO()}.${ext}`;
             await shareFile(blob, fileName, tr('price.title'));
             // Запам'ятовуємо лише вдалий вибір — інакше збережемо параметри, що не працюють.
-            try { localStorage.setItem(K.priceOpts, JSON.stringify({ format, priceType, categories: ids })); } catch { /* квота */ }
+            try { localStorage.setItem(K.priceOpts, JSON.stringify({ format, priceType, categories: ids, images })); } catch { /* квота */ }
             onClose();
         } catch (e) {
             logWarn('Прайс: формування не вдалося', String(e && e.message || e));
@@ -130,9 +132,14 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
                     ? <div style={{ color: t.inkMuted, fontSize: 13, padding: '10px 0' }}>{tr('price.noGroups')}</div>
                     : tree.map(n => <Row key={n.id} t={t} node={n} depth={0} selected={selected} expanded={expanded} onToggle={toggle} onExpand={expand} />)}
             </div>
-            <div style={{ color: t.inkMuted, fontSize: 12, marginBottom: 14 }}>
+            <div style={{ color: t.inkMuted, fontSize: 12, marginBottom: 10 }}>
                 {all ? tr('price.hintAll') : tr('price.hintSelected', { count: topMost(tree, selected).length })}
             </div>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, cursor: 'pointer' }}>
+                <input type="checkbox" checked={images} onChange={() => setImages(v => !v)} style={{ accentColor: t.accent, width: 18, height: 18 }} />
+                <span style={{ color: t.ink, fontSize: 14 }}>{tr('price.images')}</span>
+            </label>
 
             <button onClick={build} disabled={busy || !priceType}
                 style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: busy || !priceType ? t.line : t.accent, color: '#fff', fontWeight: 800, fontSize: 15, cursor: busy || !priceType ? 'default' : 'pointer', fontFamily: 'inherit' }}>

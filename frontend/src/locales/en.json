@@ -157,6 +157,7 @@
     "priceType": "Price type",
     "groups": "Product groups",
     "allGroups": "All groups",
+    "images": "Product photos (heavier file)",
     "noGroups": "No groups",
     "hintAll": "The price list will include every available product.",
     "hintSelected": "Groups selected: {{count}} (with subgroups).",
