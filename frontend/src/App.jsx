@@ -895,6 +895,15 @@ export default function App() {
         @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
         button { -webkit-tap-highlight-color: transparent; color: inherit; }
         body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; background: ${t.bg}; color: ${t.ink}; }
+        /* Інтерфейс не має розʼїжджатися по ширині ні від якого вмісту. Два рівні:
+           overflow-wrap успадковується всім текстом — довгий токен без пробілів (URL, id,
+           артикул) переноситься, а не розпирає контейнер; break-word, а не anywhere, щоб
+           не міняти min-content і не ламати рядки чипів/кнопок, які мають лишатися цілими.
+           overflow-x на корені — страховка для всього іншого (широкий елемент, помилка
+           верстки): сторінку неможливо зсунути вбік. clip не робить body контейнером
+           прокрутки; hidden — для старих WebView, де clip ще немає. */
+        html { overflow-x: hidden; overflow-x: clip; }
+        body { overflow-x: clip; overflow-wrap: break-word; }
       `}</style>
 
       {/* Головний контейнер (з повноцінною висотою і нативним прокручуванням для Capacitor) */}
