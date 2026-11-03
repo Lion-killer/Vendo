@@ -284,9 +284,15 @@ export const fetchBuiltPrice = async (id, fileName, onProgress) => {
         logInfo(`GET ${path} → файл`, `${Date.now() - started}ms`);
         return { path: res.path };
     } catch (e) {
-        // downloadFile кидає і на 4xx/5xx, і на мережі — тексту тіла в ньому немає.
-        logWarn(`GET ${path} → помилка`, String(e && e.message || e));
-        throw e;
+        // downloadFile кидає і на 4xx/5xx, і на мережі — тексту тіла в ньому немає, а
+        // повідомлення Java містить повну URL. У лог — як є, користувачу — лише код.
+        // HttpURLConnection на 404 кидає FileNotFoundException, чиє повідомлення — сама
+        // URL; на решті кодів — «Server returned HTTP response code: N for URL: …».
+        const raw = String(e && e.message || e);
+        logWarn(`GET ${path} → помилка`, raw);
+        const code = /response code: (\d{3})/.exec(raw);
+        const bareUrl = /^Error downloading file:\s*https?:\/\/\S+$/.test(raw.trim());
+        throw new Error(code ? `HTTP ${code[1]}` : (bareUrl || /FileNotFound/.test(raw) ? 'HTTP 404' : raw.replace(/https?:\/\/\S+/g, '').trim()));
     } finally {
         if (listener) await listener.remove();
     }
