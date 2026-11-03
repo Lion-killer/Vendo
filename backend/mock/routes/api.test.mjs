@@ -182,7 +182,8 @@ test('прайс (#89): deferred → id, GET забирає файл один р
     });
     assert.equal(built.status, 200);
     const meta = await built.json();
-    assert.match(meta.id, /\.pdf$/);
+    assert.doesNotMatch(meta.id, /\./, 'крапка в id дає 404 на IIS/1С — формат несе поле format');
+    assert.equal(meta.format, 'pdf');
     assert.ok(meta.size > 0, 'розмір потрібен застосунку для шкали прогресу');
 
     const file = await call(`/price/${meta.id}`, { headers: auth() });

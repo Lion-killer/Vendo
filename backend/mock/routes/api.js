@@ -286,8 +286,10 @@ router.post('/price', (req, res) => {
     // окремим GET — так на пристрої він пишеться на диск повз JS. Без прапорця
     // поводимось як раніше, щоб не ламати вже випущені APK.
     if ((req.body || {}).deferred === true) {
-        const id = `${req.device.id}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.${xlsx ? 'xlsx' : 'pdf'}`;
-        builtPrices.set(id, { deviceId: req.device.id, file, type: priceMime(xlsx) });
+        // Без розширення в id: «….pdf» у кінці URL IIS/1С можуть віддати як статичний
+        // файл і відповісти 404 ще до обробника — формат сервер знає сам.
+        const id = `${req.device.id}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+        builtPrices.set(id, { deviceId: req.device.id, file, type: priceMime(xlsx), ext: xlsx ? 'xlsx' : 'pdf' });
         return res.json({ id, format: xlsx ? 'xlsx' : 'pdf', size: fs.statSync(file).size });
     }
     res.type(priceMime(xlsx));
@@ -304,7 +306,7 @@ router.get('/price/:id', (req, res) => {
     const body = fs.readFileSync(built.file);
     res.type(built.type);
     res.setHeader('Content-Length', body.length);
-    res.setHeader('Content-Disposition', `attachment; filename="price.${req.params.id.endsWith('.xlsx') ? 'xlsx' : 'pdf'}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="price.${built.ext}"`);
     res.send(body);
 });
 
