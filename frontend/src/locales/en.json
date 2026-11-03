@@ -164,7 +164,9 @@
     "fileName": "Price",
     "failed": "Could not create the price list: {{error}}",
     "offline": "The price list is built on the server — connection required",
-    "menu": "Price list"
+    "menu": "Price list",
+    "downloading": "Downloading {{done}} / {{total}} MB",
+    "downloadingNoTotal": "Downloaded {{done}} MB"
   },
   "lightbox": {
     "loading": "Image is still loading",

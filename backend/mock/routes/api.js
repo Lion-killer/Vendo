@@ -273,12 +273,39 @@ router.get('/price-types', (req, res) => {
 // вибраний тип цін і групи на вміст не впливають — справжній файл будує обробка 1С.
 // Цього досить, щоб прогнати клієнтський сценарій (запит → файл → «Поділитися»),
 // і не тягне в мок жодної залежності для генерації PDF/XLSX.
+// Готові прайси (#89): id → { deviceId, file, type }. Живуть у пам'яті до забору, бо
+// на боці 1С це так само тимчасові файли, які GET видаляє після віддачі.
+const builtPrices = new Map();
+const priceMime = (xlsx) => (xlsx ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf');
+
 router.post('/price', (req, res) => {
     if (!store.settings.features || !store.settings.features.price) return res.status(404).end();
     const xlsx = String((req.body || {}).format || '') === 'xlsx';
     const file = path.join(__dirname, '..', 'data', xlsx ? 'price-sample.xlsx' : 'price-sample.pdf');
-    res.type(xlsx ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf');
+    // #89 Двокрокова віддача: застосунок просить лише побудувати файл і забирає його
+    // окремим GET — так на пристрої він пишеться на диск повз JS. Без прапорця
+    // поводимось як раніше, щоб не ламати вже випущені APK.
+    if ((req.body || {}).deferred === true) {
+        const id = `${req.device.id}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.${xlsx ? 'xlsx' : 'pdf'}`;
+        builtPrices.set(id, { deviceId: req.device.id, file, type: priceMime(xlsx) });
+        return res.json({ id, format: xlsx ? 'xlsx' : 'pdf', size: fs.statSync(file).size });
+    }
+    res.type(priceMime(xlsx));
     res.send(fs.readFileSync(file));
+});
+
+// GET /price/:id — забрати готовий прайс (#89). Ідентифікатор одноразовий і прив'язаний
+// до пристрою: чужий — 404, як у 1С, де префіксом імені файлу є ідентифікатор пристрою.
+router.get('/price/:id', (req, res) => {
+    if (!store.settings.features || !store.settings.features.price) return res.status(404).end();
+    const built = builtPrices.get(req.params.id);
+    if (!built || built.deviceId !== req.device.id) return res.status(404).end();
+    builtPrices.delete(req.params.id);
+    const body = fs.readFileSync(built.file);
+    res.type(built.type);
+    res.setHeader('Content-Length', body.length);
+    res.setHeader('Content-Disposition', `attachment; filename="price.${req.params.id.endsWith('.xlsx') ? 'xlsx' : 'pdf'}"`);
+    res.send(body);
 });
 
 router.get('/products', (req, res) => {

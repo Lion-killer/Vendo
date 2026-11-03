@@ -172,3 +172,28 @@ test('прайс (#88): вимкнений блок — 404, увімкнени�
 
     store.settings.features.price = false; // не впливаємо на наступні тести
 });
+
+test('прайс (#89): deferred → id, GET забирає файл один раз', async () => {
+    store.settings.features.price = true;
+
+    const built = await call('/price', {
+        method: 'POST', headers: auth({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ format: 'pdf', priceType: 'retail', categories: [], deferred: true }),
+    });
+    assert.equal(built.status, 200);
+    const meta = await built.json();
+    assert.match(meta.id, /\.pdf$/);
+    assert.ok(meta.size > 0, 'розмір потрібен застосунку для шкали прогресу');
+
+    const file = await call(`/price/${meta.id}`, { headers: auth() });
+    assert.equal(file.status, 200);
+    assert.match(file.headers.get('content-type'), /application\/pdf/);
+    assert.equal(Number(file.headers.get('content-length')), meta.size);
+
+    const again = await call(`/price/${meta.id}`, { headers: auth() });
+    assert.equal(again.status, 404, 'ідентифікатор одноразовий');
+
+    assert.equal((await call('/price/чужий.pdf', { headers: auth() })).status, 404);
+
+    store.settings.features.price = false;
+});

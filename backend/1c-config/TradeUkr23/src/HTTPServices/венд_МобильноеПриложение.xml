@@ -292,6 +292,33 @@
 					</Method>
 				</ChildObjects>
 			</URLTemplate>
+			<URLTemplate uuid="bb8c1543-f02b-43de-9b86-7500a65ce15f">
+				<Properties>
+					<Name>PriceFile</Name>
+					<Synonym>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>PriceFile</v8:content>
+						</v8:item>
+					</Synonym>
+					<Template>/price/{id}</Template>
+				</Properties>
+				<ChildObjects>
+					<Method uuid="961a5c47-e565-439a-bd4a-b9856ca9967d">
+						<Properties>
+							<Name>Get</Name>
+							<Synonym>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Get</v8:content>
+								</v8:item>
+							</Synonym>
+							<HTTPMethod>GET</HTTPMethod>
+							<Handler>PriceFileGet</Handler>
+						</Properties>
+					</Method>
+				</ChildObjects>
+			</URLTemplate>
 			<URLTemplate uuid="2265c1e3-254f-4461-93b2-f71a81ee27ad">
 				<Properties>
 					<Name>Price</Name>

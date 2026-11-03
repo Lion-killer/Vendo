@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MIcon, BottomSheet } from './ui';
 import { byName, todayISO } from '../i18n';
 import { K } from '../storageKeys';
-import { fetchPriceFile } from '../api/client';
+import { buildPriceFile, fetchBuiltPrice } from '../api/client';
 import { shareFile } from '../api/shareFile';
 import { logWarn } from '../logger';
 
@@ -72,6 +72,8 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
     const [images, setImages] = useState(saved.images !== false);
     const [expanded, setExpanded] = useState(() => new Set());
     const [busy, setBusy] = useState(false);
+    // null — ще будується на сервері (прогресу нема), інакше { done, total } у байтах.
+    const [progress, setProgress] = useState(null);
 
     const all = selected.size === 0; // порожній вибір = весь доступний каталог
     const toggle = (node) => setSelected(prev => {
@@ -84,15 +86,19 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
 
     const build = async () => {
         setBusy(true);
+        setProgress(null);
         try {
             const ids = topMost(tree, selected);
-            const blob = await fetchPriceFile({ format, priceType, categories: ids, images });
+            const meta = await buildPriceFile({ format, priceType, categories: ids, images });
             const name = (priceTypes.find(p => p.id === priceType) || {}).name || '';
             // Пробіли й службові символи в імені файлу месенджери показують криво.
             const safe = String(name).replace(/[\\/:*?"<>|\s]+/g, '_');
-            const ext = format === 'xlsx' ? 'xlsx' : 'pdf';
+            // Формат беремо з відповіді: xlsx міг відкотитися на xls, якщо платформа 1С його не тягне.
+            const ext = meta.format || (format === 'xlsx' ? 'xlsx' : 'pdf');
             const fileName = `${tr('price.fileName')}${safe ? '_' + safe : ''}_${todayISO()}.${ext}`;
-            await shareFile(blob, fileName, tr('price.title'));
+            setProgress({ done: 0, total: meta.size || 0 });
+            const file = await fetchBuiltPrice(meta.id, fileName, (done, total) => setProgress({ done, total: total || meta.size || 0 }));
+            await shareFile(file.blob, fileName, tr('price.title'));
             // Запам'ятовуємо лише вдалий вибір — інакше збережемо параметри, що не працюють.
             try { localStorage.setItem(K.priceOpts, JSON.stringify({ format, priceType, categories: ids, images })); } catch { /* квота */ }
             onClose();
@@ -100,7 +106,17 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
             logWarn('Прайс: формування не вдалося', String(e && e.message || e));
             if (notify) notify(tr('price.failed', { error: String(e && e.message || e) }));
             setBusy(false);
+            setProgress(null);
         }
+    };
+
+    const mb = (bytes) => (bytes / 1048576).toFixed(1);
+    const buttonLabel = () => {
+        if (!busy) return tr('price.build');
+        if (!progress) return tr('price.building');
+        return progress.total
+            ? tr('price.downloading', { done: mb(progress.done), total: mb(progress.total) })
+            : tr('price.downloadingNoTotal', { done: mb(progress.done) });
     };
 
     const fmtBtn = (active) => ({ flex: 1, padding: 10, borderRadius: 10, border: `1px solid ${active ? t.accent : t.line}`, background: active ? t.accent + '18' : t.surfaceMuted, color: active ? t.accent : t.ink, fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' });
@@ -142,8 +158,9 @@ export const PriceSheet = ({ t, categories, priceTypes = [], activePriceType, on
             </label>
 
             <button onClick={build} disabled={busy || !priceType}
-                style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: busy || !priceType ? t.line : t.accent, color: '#fff', fontWeight: 800, fontSize: 15, cursor: busy || !priceType ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-                {busy ? tr('price.building') : tr('price.build')}
+                style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: busy || !priceType ? t.line : t.accent, color: '#fff', fontWeight: 800, fontSize: 15, cursor: busy || !priceType ? 'default' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                {busy && <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
+                {buttonLabel()}
             </button>
         </BottomSheet>
     );

@@ -230,32 +230,66 @@ export const fetchAuthedBlobRaw = async (relPath) => {
     }
 };
 
-// Прайс файлом (#88): POST із параметрами → PDF/XLSX. Окрема від fetchAuthedBlobRaw
-// гілка лише тому, що там GET; решта — той самий трюк із CapacitorHttp на нативі
-// (патчений fetch бінарну відповідь не віддає).
-// Формування на сервері триває довго (обробка 1С по всьому каталогу), тож таймаут
-// явний і великий — адаптивна оцінка тут не допомагає, запит рідкісний.
-// Повертає Blob; кидає помилку з текстом від бекенда (JSON {message}) або мережеву.
+// Прайс (#88, #89): двокрокова схема. POST будує файл на сервері й повертає JSON з
+// ідентифікатором, GET /price/{id} віддає байти. Файл НЕ проходить через JS: на нативі
+// його тягне Filesystem.downloadFile одразу в кеш застосунку. Через міст Capacitor
+// бінарна відповідь їде base64-рядком, і прайс із фото (десятки МБ) кладе WebView
+// разом із промисом, який ніколи не завершується.
+// Формування триває довго (обробка 1С по всьому каталогу), тож таймаут явний і великий.
 const PRICE_TIMEOUT = 180000;
-export const fetchPriceFile = async (params) => {
+
+// Крок 1: побудувати. Повертає { id, format, size }; кидає помилку з текстом від
+// бекенда (JSON {message}) або мережеву.
+export const buildPriceFile = async (params) => {
     const url = `${apiUrl()}/price`;
     const headers = h({ 'Content-Type': 'application/json' });
-    const body = JSON.stringify(params);
+    const data = { ...params, deferred: true };
+    const path = shortPath(url);
+    const started = Date.now();
     if (Capacitor.isNativePlatform()) {
-        const path = shortPath(url);
         countRequest(path);
-        const started = Date.now();
-        const res = await CapacitorHttp.post({ url, headers, data: params, responseType: 'blob', connectTimeout: PRICE_TIMEOUT, readTimeout: PRICE_TIMEOUT });
-        const ok = res.status >= 200 && res.status < 300 && !!res.data;
+        const res = await CapacitorHttp.post({ url, headers, data, connectTimeout: PRICE_TIMEOUT, readTimeout: PRICE_TIMEOUT });
+        const ok = res.status >= 200 && res.status < 300 && res.data && res.data.id;
         (ok ? logInfo : logWarn)(`POST ${path} → ${res.status}`, `${Date.now() - started}ms`);
         if (res.status === 401) maybeAuthReject(headers['X-Auth-Token']);
         if (!ok) throw new Error(priceError(res.data, res.status));
-        const ct = res.headers && (res.headers['Content-Type'] || res.headers['content-type']);
-        return base64ToBlob(res.data, ct);
+        return res.data;
     }
-    const res = await tfetch(url, { method: 'POST', headers, body }, PRICE_TIMEOUT);
+    const res = await tfetch(url, { method: 'POST', headers, body: JSON.stringify(data) }, PRICE_TIMEOUT);
     if (!res.ok) throw new Error(priceError(await res.text(), res.status));
-    return await res.blob();
+    return await res.json();
+};
+
+// Крок 2: забрати. На нативі пише файл прямо в кеш і повертає його шлях — у JS не
+// потрапляє жодного байта; onProgress(отримано, усього) приходить із нативного шару
+// (усього = 0, якщо бекенд не дав Content-Length). У вебі файлу на диску немає, тож
+// повертаємо Blob — там десятки МБ проблем не створюють.
+// Повертає { path } на нативі або { blob } у вебі.
+export const fetchBuiltPrice = async (id, fileName, onProgress) => {
+    const url = `${apiUrl()}/price/${encodeURIComponent(id)}`;
+    const headers = h();
+    const path = shortPath(url);
+    const started = Date.now();
+    if (!Capacitor.isNativePlatform()) {
+        const res = await tfetch(url, { headers }, PRICE_TIMEOUT);
+        if (!res.ok) throw new Error(priceError(await res.text(), res.status));
+        return { blob: await res.blob() };
+    }
+    countRequest(path);
+    const { Filesystem, Directory } = await import('@capacitor/filesystem');
+    let listener;
+    if (onProgress) listener = await Filesystem.addListener('progress', (e) => onProgress(e.bytes || 0, e.contentLength || 0));
+    try {
+        const res = await Filesystem.downloadFile({ url, method: 'GET', headers, path: fileName, directory: Directory.Cache, progress: !!onProgress, connectTimeout: PRICE_TIMEOUT, readTimeout: PRICE_TIMEOUT });
+        logInfo(`GET ${path} → файл`, `${Date.now() - started}ms`);
+        return { path: res.path };
+    } catch (e) {
+        // downloadFile кидає і на 4xx/5xx, і на мережі — тексту тіла в ньому немає.
+        logWarn(`GET ${path} → помилка`, String(e && e.message || e));
+        throw e;
+    } finally {
+        if (listener) await listener.remove();
+    }
 };
 
 // Текст помилки прайса: бекенд відповідає JSON {success,message} — показуємо message,
